@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 // import { useOrigin } from "@/hooks/use-origin";
 import { ImageUploadBillboard } from "@/components/image-upload-billboard";
 import { useCallback, useRef, useState } from "react";
+import { Hint } from "@/components/hint";
 
 interface BillboardFormProps {
     billboardId: string;
@@ -274,14 +275,18 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                                     alt="Image"
                                                     className="md:h-[80%] md:w-[80%] h-full w-full object-cover"
                                                 />
-                                                <Button
-                                                    size="icon-xs"
-                                                    variant="destructive"
-                                                    onClick={handleRemoveImage}
-                                                    type="button"
-                                                >
-                                                    <TrashIcon />
-                                                </Button>
+                                                <Hint text="Redo">
+                                                    <Button
+                                                        size="icon-xs"
+                                                        variant="destructive"
+                                                        onClick={
+                                                            handleRemoveImage
+                                                        }
+                                                        type="button"
+                                                    >
+                                                        <TrashIcon />
+                                                    </Button>
+                                                </Hint>
                                             </div>
                                         ) : (
                                             <div className="flex item-center justify-start gap-4">
@@ -292,20 +297,24 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                                     }
                                                 />
                                                 {initialData && (
-                                                    <Button
-                                                        size="icon-xs"
-                                                        variant="secondary"
-                                                        onClick={() => {
-                                                            setShowImage(true);
-                                                            form.setFieldValue(
-                                                                "imageUrl",
-                                                                initialData.imageUrl,
-                                                            );
-                                                        }}
-                                                        type="button"
-                                                    >
-                                                        <ArchiveRestoreIcon />
-                                                    </Button>
+                                                    <Hint text="Undo">
+                                                        <Button
+                                                            size="icon-xs"
+                                                            variant="secondary"
+                                                            onClick={() => {
+                                                                setShowImage(
+                                                                    true,
+                                                                );
+                                                                form.setFieldValue(
+                                                                    "imageUrl",
+                                                                    initialData.imageUrl,
+                                                                );
+                                                            }}
+                                                            type="button"
+                                                        >
+                                                            <ArchiveRestoreIcon />
+                                                        </Button>
+                                                    </Hint>
                                                 )}
                                             </div>
                                         )}

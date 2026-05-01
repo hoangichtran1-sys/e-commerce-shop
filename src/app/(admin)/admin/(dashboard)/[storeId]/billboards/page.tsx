@@ -12,7 +12,9 @@ interface PageProps {
 const Page = async ({ params }: PageProps) => {
     const { storeId } = await params;
 
-    await prefetch(orpc.stores.getOne.queryOptions({ input: { id: storeId } }));
+    await prefetch(
+        orpc.billboards.getMany.queryOptions({ input: { storeId } }),
+    );
 
     return (
         <HydrateClient>

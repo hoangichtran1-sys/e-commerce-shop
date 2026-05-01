@@ -188,6 +188,50 @@ export const billboardsRouter = base.router({
 
             return billboardDeleted;
         }),
+    bulkDelete: admin
+        .input(
+            z.object({
+                ids: z.array(z.string().min(1)),
+                storeId: z.string().min(1),
+            }),
+        )
+        .handler(async ({ input, context }) => {
+            const storeOwner = await prisma.store.findUnique({
+                where: {
+                    id: input.storeId,
+                    userId: context.user.id,
+                },
+            });
+
+            if (!storeOwner) {
+                throw new ORPCError("UNAUTHORIZED");
+            }
+
+            const billboardsDeleted = await prisma.$transaction(async (tx) => {
+                const results = [];
+
+                for (const id of input.ids) {
+                    const billboardDeleted = await tx.billboard.delete({
+                        where: { id },
+                    });
+
+                    if (billboardDeleted) {
+                        await tx.upload.update({
+                            where: { url: billboardDeleted.imageUrl },
+                            data: { isLinked: false },
+                        });
+                    }
+
+                    results.push(billboardDeleted);
+                }
+
+                return results;
+            });
+
+            return {
+                count: billboardsDeleted.length,
+            };
+        }),
     getOne: admin
         .input(
             z.object({
@@ -203,24 +247,7 @@ export const billboardsRouter = base.router({
                 },
             });
 
-            if (billboard) {
-                const upload = await prisma.upload.findUnique({
-                    where: {
-                        url: billboard.imageUrl,
-                    },
-                });
-
-                if (!upload) {
-                    throw new ORPCError("NOT_FOUND");
-                }
-
-                return {
-                    ...billboard,
-                    imageLinked: upload.isLinked,
-                };
-            }
-
-            return null;
+            return billboard;
         }),
     getMany: admin
         .input(z.object({ storeId: z.string().min(1) }))
@@ -228,6 +255,9 @@ export const billboardsRouter = base.router({
             const billboards = await prisma.billboard.findMany({
                 where: {
                     storeId: input.storeId,
+                },
+                orderBy: {
+                    createdAt: "desc",
                 },
             });
 
