@@ -5,12 +5,6 @@ import { z } from "zod";
 
 export const storesRouter = base.router({
     create: admin
-        .route({
-            method: "POST",
-            path: "/stores",
-            summary: "Create new store",
-            tags: ["stores"],
-        })
         .input(
             z.object({
                 name: z.string(),
@@ -27,15 +21,9 @@ export const storesRouter = base.router({
             return storeCreated;
         }),
     getOne: admin
-        .route({
-            method: "GET",
-            path: "/stores/{id}",
-            summary: "Get store by ID",
-            tags: ["stores"],
-        })
         .input(
             z.object({
-                id: z.string().uuid(),
+                id: z.string().min(1),
             }),
         )
         .handler(async ({ input, context }) => {
@@ -51,5 +39,71 @@ export const storesRouter = base.router({
             }
 
             return store;
+        }),
+    getMany: admin
+        .handler(async ({ context }) => {
+            const stores = await prisma.store.findMany({
+                where: {
+                    userId: context.user.id,
+                },
+            });
+
+            return stores;
+        }),
+    update: admin
+        .input(
+            z.object({
+                id: z.string().min(1),
+                name: z.string().min(1),
+            }),
+        )
+        .handler(async ({ input, context }) => {
+            const store = await prisma.store.findUnique({
+                where: {
+                    id: input.id,
+                    userId: context.user.id,
+                },
+            });
+
+            if (!store) {
+                throw new ORPCError("NOT_FOUND");
+            }
+
+            const storeUpdated = await prisma.store.update({
+                where: {
+                    id: input.id,
+                },
+                data: {
+                    name: input.name,
+                },
+            });
+
+            return storeUpdated;
+        }),
+    delete: admin
+        .input(
+            z.object({
+                id: z.string().min(1),
+            }),
+        )
+        .handler(async ({ input, context }) => {
+            const store = await prisma.store.findUnique({
+                where: {
+                    id: input.id,
+                    userId: context.user.id,
+                },
+            });
+
+            if (!store) {
+                throw new ORPCError("NOT_FOUND");
+            }
+
+            const storeDeleted = await prisma.store.delete({
+                where: {
+                    id: input.id,
+                },
+            });
+
+            return storeDeleted;
         }),
 });

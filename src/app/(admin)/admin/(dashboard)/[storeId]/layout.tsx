@@ -1,3 +1,4 @@
+import { Navbar } from "@/features/admin/dashboard/components/navbar";
 import { requireAdmin } from "@/lib/auth-utils";
 
 interface LayoutProps {
@@ -8,12 +9,14 @@ interface LayoutProps {
 }
 
 const Layout = async ({ children }: LayoutProps) => {
-    await requireAdmin();
+    const session = await requireAdmin();
 
-    return <div className="">
-        Navbar
-        {children}
-    </div>;
+    return (
+        <>
+            <Navbar currentUser={session.user} />
+            {children}
+        </>
+    );
 };
 
 export default Layout;

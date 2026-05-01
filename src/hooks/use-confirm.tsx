@@ -30,8 +30,8 @@ export const useConfirm = (
 
     const ConfirmationDialog = () => (
         <ResponsiveModal
-            open={promise !== null}
-            onOpenChange={handleClose}
+            isOpen={promise !== null}
+            onClose={handleClose}
             title={title}
             description={description}
             isSeparator={false}
@@ -44,7 +44,11 @@ export const useConfirm = (
                 >
                     Cancel
                 </Button>
-                <Button onClick={handleConfirm} className="w-full lg:w-auto">
+                <Button
+                    variant="destructive"
+                    onClick={handleConfirm}
+                    className="w-full lg:w-auto"
+                >
                     Confirm
                 </Button>
             </div>

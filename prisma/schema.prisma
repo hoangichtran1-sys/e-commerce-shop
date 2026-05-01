@@ -12,6 +12,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UploadType {
+  BILLBOARD
+  PRODUCT
+}
+
 model User {
   id            String    @id
   name          String
@@ -77,15 +82,45 @@ model Verification {
   @@map("verification")
 }
 
-model Store {
-  id        String @id @default(uuid())
-  name      String
-  userId    String
+model Upload {
+  id          String   @id @default(uuid())
+  publicId    String   @unique
+  url         String   @unique
+  refType     UploadType
+  mimetype    String?
+  size        Int?
+  isLinked    Boolean  @default(false)
+  createdAt   DateTime @default(now())
 
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([mimetype])
+  @@index([isLinked, createdAt])
+  @@index([refType])
+}
+
+model Store {
+  id         String @id @default(uuid())
+  name       String
+  userId     String
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billboards Billboard[] @relation("StoreToBillboard")
   
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Billboard {
+  id        String @id @default(uuid())
+  storeId   String
+  label     String
+  imageUrl  String
+
+  store     Store @relation("StoreToBillboard", fields: [storeId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
+  @@index([storeId])
 }
