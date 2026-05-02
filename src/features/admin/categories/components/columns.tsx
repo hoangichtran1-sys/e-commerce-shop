@@ -4,11 +4,11 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDownIcon, MoreVerticalIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BillboardGetMany } from "../types";
-import { BillboardActions } from "./billboard-actions";
 import { format } from "date-fns";
+import { CategoriesGetMany } from "../types";
+import { CategoryActions } from "./category-actions";
 
-export const columns: ColumnDef<BillboardGetMany[number]>[] = [
+export const columns: ColumnDef<CategoriesGetMany[number]>[] = [
     {
         id: "select",
         header: ({ table }) => (
@@ -34,7 +34,7 @@ export const columns: ColumnDef<BillboardGetMany[number]>[] = [
         enableHiding: false,
     },
     {
-        accessorKey: "label",
+        accessorKey: "name",
         header: ({ column }) => {
             return (
                 <Button
@@ -49,9 +49,30 @@ export const columns: ColumnDef<BillboardGetMany[number]>[] = [
             );
         },
         cell: ({ row }) => {
-            const label = row.original.label;
+            const name = row.original.name;
 
-            return <p className="line-clamp-1">{label}</p>;
+            return <p className="line-clamp-1">{name}</p>;
+        },
+    },
+    {
+        accessorKey: "billboard",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() =>
+                        column.toggleSorting(column.getIsSorted() === "asc")
+                    }
+                >
+                    Billboard
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => {
+            const billboardLabel = row.original.billboard.label;
+
+            return <p className="line-clamp-1">{billboardLabel}</p>;
         },
     },
     {
@@ -85,11 +106,11 @@ export const columns: ColumnDef<BillboardGetMany[number]>[] = [
             const storeId = row.original.storeId;
 
             return (
-                <BillboardActions id={id} storeId={storeId}>
+                <CategoryActions id={id} storeId={storeId}>
                     <Button className="size-8 p-0" variant="ghost">
                         <MoreVerticalIcon className="size-4" />
                     </Button>
-                </BillboardActions>
+                </CategoryActions>
             );
         },
     },

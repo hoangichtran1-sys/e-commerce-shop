@@ -118,7 +118,6 @@ export const billboardsRouter = base.router({
             const billboardUpdated = await prisma.billboard.update({
                 where: {
                     id: input.id,
-                    storeId: input.storeId,
                 },
                 data: {
                     label: input.label,
@@ -171,7 +170,6 @@ export const billboardsRouter = base.router({
             const billboardDeleted = await prisma.billboard.delete({
                 where: {
                     id: input.id,
-                    storeId: input.storeId,
                 },
             });
 

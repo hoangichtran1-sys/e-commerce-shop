@@ -29,6 +29,7 @@ import { TrashIcon } from "lucide-react";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
+    searchKey: string;
     data: TData[];
     onDelete?: (rows: Row<TData>[]) => void;
     disabled?: boolean;
@@ -37,6 +38,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
     columns,
     data,
+    searchKey,
     onDelete,
     disabled,
 }: DataTableProps<TData, TValue>) {
@@ -71,12 +73,12 @@ export function DataTable<TData, TValue>({
                     placeholder="Filter billboards..."
                     value={
                         (table
-                            .getColumn("label")
+                            .getColumn(searchKey)
                             ?.getFilterValue() as string) ?? ""
                     }
                     onChange={(event) =>
                         table
-                            .getColumn("label")
+                            .getColumn(searchKey)
                             ?.setFilterValue(event.target.value)
                     }
                     className="h-8 text-sm max-w-xs mr-2"

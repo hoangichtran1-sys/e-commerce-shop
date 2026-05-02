@@ -16,22 +16,22 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { columns } from "../components/columns";
 
-interface BillboardViewProps {
+interface CategoriesViewProps {
     storeId: string;
 }
 
-export const BillboardView = ({ storeId }: BillboardViewProps) => {
+export const CategoriesView = ({ storeId }: CategoriesViewProps) => {
     const router = useRouter();
     const queryClient = useQueryClient();
 
-    const { data: billboards } = useSuspenseQuery(
-        orpc.billboards.getMany.queryOptions({ input: { storeId } }),
+    const { data: categories } = useSuspenseQuery(
+        orpc.categories.getMany.queryOptions({ input: { storeId } }),
     );
 
     const bullDelete = useMutation(
         orpc.billboards.bulkDelete.mutationOptions({
             onSuccess: (data) => {
-                toast.success(`${data.count} billboards deleted`);
+                toast.success(`${data.count} categories deleted`);
                 queryClient.invalidateQueries(
                     orpc.billboards.getMany.queryOptions({
                         input: { storeId },
@@ -46,7 +46,7 @@ export const BillboardView = ({ storeId }: BillboardViewProps) => {
 
     const [RemoveConfirmation, confirmRemove] = useConfirm(
         "Are you sure?",
-        "The following action will permanently remove this billboards",
+        "The following action will permanently remove this categories",
     );
 
     return (
@@ -54,12 +54,12 @@ export const BillboardView = ({ storeId }: BillboardViewProps) => {
             <RemoveConfirmation />
             <div className="flex items-center justify-between">
                 <Heading
-                    title={`Billboards (${billboards.length})`}
-                    description="Manage billboards for your store"
+                    title={`Categories (${categories.length})`}
+                    description="Manage categories for your store"
                 />
                 <Button
                     onClick={() =>
-                        router.push(`/admin/${storeId}/billboards/new`)
+                        router.push(`/admin/${storeId}/categories/new`)
                     }
                 >
                     <PlusIcon className="size-4" />
@@ -68,9 +68,9 @@ export const BillboardView = ({ storeId }: BillboardViewProps) => {
             </div>
             <Separator />
             <DataTable
-                data={billboards}
+                data={categories}
                 columns={columns}
-                searchKey="label"
+                searchKey="name"
                 disabled={bullDelete.isPending}
                 onDelete={async (rows) => {
                     const ok = await confirmRemove();

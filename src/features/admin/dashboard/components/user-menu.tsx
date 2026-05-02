@@ -11,7 +11,7 @@ import { User } from "@/lib/auth";
 import { authClient } from "@/lib/auth-client";
 import { LogOutIcon } from "lucide-react";
 import { CgProfile } from "react-icons/cg";
-import { CiSettings } from "react-icons/ci";
+import { IoSettingsSharp } from "react-icons/io5";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
@@ -38,7 +38,7 @@ export const UserMenu = ({ currentUser }: UserMenuProps) => {
     return (
         <div className="flex flex-row items-center gap-3">
             <DropdownMenu>
-                <DropdownMenuTrigger className="p-4 md:py-1 md:px-2 border border-neutral-200 flex flex-row items-center gap-3 rounded-full cursor-pointer hover:shadow-md transition">
+                <DropdownMenuTrigger className="md:p-4 md:py-1 md:px-2 border border-neutral-200 flex flex-row items-center gap-3 rounded-full cursor-pointer hover:shadow-md transition">
                     {currentUser.image ? (
                         <Avatar>
                             <AvatarImage src={currentUser.image} />
@@ -50,20 +50,20 @@ export const UserMenu = ({ currentUser }: UserMenuProps) => {
                     )}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                    sideOffset={8}
-                    className="w-48 md:w-36 rounded-xl shadow-md bg-white overflow-hidden right-0 top-12 text-sm font-semibold"
+                    sideOffset={10}
+                    className="w-48 md:w-36 rounded-xl shadow-md bg-white overflow-hidden right-1 top-12 text-sm font-semibold"
                 >
-                    <DropdownMenuItem onClick={() => {}}>
-                        <CgProfile />
+                    <DropdownMenuItem className="mt-2" onClick={() => {}}>
+                        <CgProfile className="size-5" />
                         My profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {}}>
-                        <CiSettings />
+                    <DropdownMenuItem className="mt-2" onClick={() => {}}>
+                        <IoSettingsSharp className="size-5" />
                         Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={onLogout}>
-                        <LogOutIcon />
+                    <DropdownMenuItem className="mt-4" onClick={onLogout}>
+                        <LogOutIcon className="size-5" />
                         Logout
                     </DropdownMenuItem>
                 </DropdownMenuContent>

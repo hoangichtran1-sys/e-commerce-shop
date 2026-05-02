@@ -125,7 +125,7 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
                 className="space-y-8 w-full"
             >
                 <div className="grid grid-cols-3 gap-8">
-                    <FieldGroup>
+                    <FieldGroup className="min-w-50">
                         <form.Field
                             name="name"
                             children={(field) => {

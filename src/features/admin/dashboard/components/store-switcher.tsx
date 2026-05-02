@@ -25,7 +25,7 @@ export const StoreSwitcher = () => {
     const router = useRouter();
 
     const { data, isLoading } = useQuery(orpc.stores.getMany.queryOptions());
-    
+
     const formattedItems = useMemo(() => {
         return (data || []).map((item) => ({
             label: item.name,
@@ -53,7 +53,7 @@ export const StoreSwitcher = () => {
             autoHighlight
         >
             <ComboboxInput
-                className="w-50"
+                className="w-50 min-w-50"
                 placeholder="Select a store"
                 showClear
             >

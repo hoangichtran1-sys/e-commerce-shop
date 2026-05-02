@@ -219,7 +219,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                 className="space-y-8 w-full"
             >
                 <div className="grid grid-cols-3 gap-8">
-                    <FieldGroup>
+                    <FieldGroup className="min-w-50">
                         <form.Field
                             name="label"
                             children={(field) => {
@@ -232,6 +232,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                             Label
                                         </FieldLabel>
                                         <Input
+                                            className="max-w-50"
                                             type="text"
                                             placeholder="Billboard label"
                                             id={field.name}
@@ -368,7 +369,6 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                     }}
                 />
             </form>
-            <Separator />
         </>
     );
 };

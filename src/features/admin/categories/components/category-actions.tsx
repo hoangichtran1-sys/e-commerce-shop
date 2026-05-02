@@ -6,7 +6,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
     CopyIcon,
-    ExternalLinkIcon,
     PencilIcon,
     TrashIcon,
 } from "lucide-react";
@@ -17,24 +16,24 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { toast } from "sonner";
 
-interface BillboardActionProps {
+interface CategoryActionProps {
     id: string;
     storeId: string;
     children: React.ReactNode;
 }
 
-export const BillboardActions = ({
+export const CategoryActions = ({
     id,
     storeId,
     children,
-}: BillboardActionProps) => {
+}: CategoryActionProps) => {
     const router = useRouter();
     const queryClient = useQueryClient();
 
     const remove = useMutation(
         orpc.billboards.delete.mutationOptions({
             onSuccess: () => {
-                toast.success("Billboard deleted");
+                toast.success("Category deleted");
                 queryClient.invalidateQueries(
                     orpc.billboards.getMany.queryOptions({
                         input: { storeId },
@@ -49,12 +48,12 @@ export const BillboardActions = ({
 
     const [RemoveConfirmation, confirmRemove] = useConfirm(
         "Are you sure?",
-        "The following action will permanently remove this billboard",
+        "The following action will permanently remove this category",
     );
 
     const onCopy = () => {
         navigator.clipboard.writeText(id);
-        toast.success("Billboard ID copied to the clipboard");
+        toast.success("Category ID copied to the clipboard");
     };
 
     return (
@@ -72,25 +71,12 @@ export const BillboardActions = ({
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={() =>
-                            window.open(
-                                `/admin/${storeId}/billboards/${id}`,
-                                "_blank",
-                            )
-                        }
-                        className="font-medium p-2.5"
-                    >
-                        <ExternalLinkIcon className="size-4 stroke-2" />
-                        Billboard details
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                        onClick={() =>
-                            router.push(`/admin/${storeId}/billboards/${id}`)
+                            router.push(`/admin/${storeId}/categories/${id}`)
                         }
                         className="font-medium p-2.5"
                     >
                         <PencilIcon className="size-4 stroke-2" />
-                        Edit billboard
+                        Edit category
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={async () => {
@@ -102,7 +88,7 @@ export const BillboardActions = ({
                         className="text-destructive focus:text-destructive font-medium p-2.5"
                     >
                         <TrashIcon className="size-4 stroke-2" />
-                        Delete billboard
+                        Delete category
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
