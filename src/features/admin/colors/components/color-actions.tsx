@@ -16,26 +16,26 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { toast } from "sonner";
 
-interface SizeActionProps {
+interface ColorActionProps {
     id: string;
     storeId: string;
     children: React.ReactNode;
 }
 
-export const SizeActions = ({
+export const ColorActions = ({
     id,
     storeId,
     children,
-}: SizeActionProps) => {
+}: ColorActionProps) => {
     const router = useRouter();
     const queryClient = useQueryClient();
 
     const remove = useMutation(
-        orpc.sizes.delete.mutationOptions({
+        orpc.colors.delete.mutationOptions({
             onSuccess: () => {
-                toast.success("Size deleted");
+                toast.success("Color deleted");
                 queryClient.invalidateQueries(
-                    orpc.sizes.getManyByStore.queryOptions({
+                    orpc.colors.getManyByStore.queryOptions({
                         input: { storeId },
                     }),
                 );
@@ -48,12 +48,12 @@ export const SizeActions = ({
 
     const [RemoveConfirmation, confirmRemove] = useConfirm(
         "Are you sure?",
-        "The following action will permanently remove this size",
+        "The following action will permanently remove this color",
     );
 
     const onCopy = () => {
         navigator.clipboard.writeText(id);
-        toast.success("Size ID copied to the clipboard");
+        toast.success("Color ID copied to the clipboard");
     };
 
     return (
@@ -71,12 +71,12 @@ export const SizeActions = ({
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={() =>
-                            router.push(`/admin/${storeId}/sizes/${id}`)
+                            router.push(`/admin/${storeId}/colors/${id}`)
                         }
                         className="font-medium p-2.5"
                     >
                         <PencilIcon className="size-4 stroke-2" />
-                        Edit size
+                        Edit color
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={async () => {
@@ -88,7 +88,7 @@ export const SizeActions = ({
                         className="text-destructive focus:text-destructive font-medium p-2.5"
                     >
                         <TrashIcon className="size-4 stroke-2" />
-                        Delete size
+                        Delete color
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

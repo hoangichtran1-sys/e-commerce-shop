@@ -230,7 +230,7 @@ export const SizeForm = ({ storeId, sizeId }: SizeFormProps) => {
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>
-                                        Name
+                                        Value
                                     </FieldLabel>
                                     <Input
                                         className="max-w-60"

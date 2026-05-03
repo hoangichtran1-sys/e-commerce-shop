@@ -31,11 +31,11 @@ export const CategoryActions = ({
     const queryClient = useQueryClient();
 
     const remove = useMutation(
-        orpc.billboards.delete.mutationOptions({
+        orpc.categories.delete.mutationOptions({
             onSuccess: () => {
                 toast.success("Category deleted");
                 queryClient.invalidateQueries(
-                    orpc.billboards.getMany.queryOptions({
+                    orpc.categories.getMany.queryOptions({
                         input: { storeId },
                     }),
                 );
