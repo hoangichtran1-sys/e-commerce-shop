@@ -40,21 +40,21 @@ export const storesRouter = base.router({
 
             return store;
         }),
-    getMany: admin
-        .handler(async ({ context }) => {
-            const stores = await prisma.store.findMany({
-                where: {
-                    userId: context.user.id,
-                },
-            });
+    getMany: admin.handler(async ({ context }) => {
+        const stores = await prisma.store.findMany({
+            where: {
+                userId: context.user.id,
+            },
+        });
 
-            return stores;
-        }),
+        return stores;
+    }),
     update: admin
         .input(
             z.object({
                 id: z.string().min(1),
                 name: z.string().min(1),
+                description: z.string().optional(),
             }),
         )
         .handler(async ({ input, context }) => {
@@ -75,6 +75,7 @@ export const storesRouter = base.router({
                 },
                 data: {
                     name: input.name,
+                    description: input.description,
                 },
             });
 

@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { ApiAlert } from "@/components/api-alert";
 import { useOrigin } from "@/hooks/use-origin";
+import { Textarea } from "@/components/ui/textarea";
 
 interface StoreSettingsFormProps {
     storeId: string;
@@ -32,6 +33,7 @@ interface StoreSettingsFormProps {
 
 const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
+    description: z.string(),
 });
 
 export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
@@ -78,12 +80,17 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
     const form = useForm({
         defaultValues: {
             name: initialData.name,
+            description: initialData.description || "",
         },
         validators: {
             onSubmit: formSchema,
         },
         onSubmit: async ({ value }) => {
-            edit.mutate({ id: storeId, name: value.name });
+            edit.mutate({
+                id: storeId,
+                name: value.name,
+                description: value.description,
+            });
         },
     });
 
@@ -161,12 +168,48 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
                                 );
                             }}
                         />
+                        <form.Field
+                            name="description"
+                            children={(field) => {
+                                const isInvalid =
+                                    field.state.meta.isTouched &&
+                                    !field.state.meta.isValid;
+                                return (
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldLabel htmlFor={field.name}>
+                                            Description{" "}(optional)
+                                        </FieldLabel>
+                                        <Textarea
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={(e) =>
+                                                field.handleChange(
+                                                    e.target.value,
+                                                )
+                                            }
+                                            aria-invalid={isInvalid}
+                                            placeholder="Provide more information about the store..."
+                                            className="min-h-30"
+                                        />
+                                        {isInvalid && (
+                                            <FieldError
+                                                errors={field.state.meta.errors}
+                                            />
+                                        )}
+                                    </Field>
+                                );
+                            }}
+                        />
                     </FieldGroup>
                 </div>
                 <form.Subscribe
                     selector={(state) => [state.values]}
                     children={([values]) => {
-                        const hasChanged = values.name !== initialData.name;
+                        const hasChanged =
+                            values.name !== initialData.name ||
+                            values.description !== initialData.description;
 
                         return (
                             <Button

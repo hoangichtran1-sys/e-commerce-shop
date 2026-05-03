@@ -28,6 +28,12 @@ enum ProductStatus {
   ARCHIVED
 }
 
+enum SizeType {
+  CLOTHING
+  SHOES
+  PANTS
+}
+
 model User {
   id            String    @id
   name          String
@@ -109,16 +115,18 @@ model Upload {
 }
 
 model Store {
-  id         String @id @default(uuid())
-  name       String
-  userId     String
+  id          String @id @default(uuid())
+  name        String
+  description String? @db.Text
+  userId      String
 
-  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  billboards Billboard[] @relation("StoreToBillboard")
-  categories Category[]  @relation("StoreToCategory")
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billboards  Billboard[] @relation("StoreToBillboard")
+  categories  Category[]  @relation("StoreToCategory")
+  sizes       Size[]      @relation("StoreToSize")
   
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([userId])
 }
@@ -142,7 +150,9 @@ model Category {
   id          String @id @default(uuid())
   storeId     String
   billboardId String
-  name        String @unique
+  name        String
+
+  sizes       Size[]
 
   store       Store @relation("StoreToCategory", fields: [storeId], references: [id])
   billboard   Billboard @relation(fields: [billboardId], references: [id])
@@ -152,4 +162,22 @@ model Category {
 
   @@index([storeId])
   @@index([billboardId])
+}
+
+model Size {
+  id          String @id @default(uuid())
+  storeId     String
+  categoryId  String
+  name        String
+  value       String @db.VarChar(10)
+
+  store       Store @relation("StoreToSize", fields: [storeId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId])
+  @@index([storeId, categoryId])
+  @@unique([storeId, categoryId, value])
 }

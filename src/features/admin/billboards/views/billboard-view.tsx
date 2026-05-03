@@ -28,7 +28,7 @@ export const BillboardView = ({ storeId }: BillboardViewProps) => {
         orpc.billboards.getMany.queryOptions({ input: { storeId } }),
     );
 
-    const bullDelete = useMutation(
+    const bulkDelete = useMutation(
         orpc.billboards.bulkDelete.mutationOptions({
             onSuccess: (data) => {
                 toast.success(`${data.count} billboards deleted`);
@@ -71,13 +71,13 @@ export const BillboardView = ({ storeId }: BillboardViewProps) => {
                 data={billboards}
                 columns={columns}
                 searchKey="label"
-                disabled={bullDelete.isPending}
+                disabled={bulkDelete.isPending}
                 onDelete={async (rows) => {
                     const ok = await confirmRemove();
                     if (!ok) return;
 
                     const ids = rows.map((row) => row.original.id);
-                    await bullDelete.mutateAsync({ ids, storeId });
+                    await bulkDelete.mutateAsync({ ids, storeId });
                 }}
             />
         </>

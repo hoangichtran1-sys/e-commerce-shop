@@ -83,24 +83,25 @@ export function DataTable<TData, TValue>({
                     }
                     className="h-8 text-sm max-w-xs mr-2"
                 />
-                {table.getFilteredSelectedRowModel().rows.length > 0 && (
-                    <Button
-                        onClick={() => {
-                            onDelete?.(
-                                table.getFilteredSelectedRowModel().rows,
-                            );
-                            table.resetRowSelection();
-                        }}
-                        disabled={disabled}
-                        size="sm"
-                        variant="outline"
-                        className="ml-auto font-normal text-xs"
-                    >
-                        <TrashIcon className="size-4" />
-                        <span className="hidden lg:block">Delete</span> (
-                        {table.getFilteredSelectedRowModel().rows.length})
-                    </Button>
-                )}
+                {table.getFilteredSelectedRowModel().rows.length > 0 &&
+                    onDelete && (
+                        <Button
+                            onClick={() => {
+                                onDelete(
+                                    table.getFilteredSelectedRowModel().rows,
+                                );
+                                table.resetRowSelection();
+                            }}
+                            disabled={disabled}
+                            size="sm"
+                            variant="outline"
+                            className="ml-auto font-normal text-xs"
+                        >
+                            <TrashIcon className="size-4" />
+                            <span className="hidden lg:block">Delete</span> (
+                            {table.getFilteredSelectedRowModel().rows.length})
+                        </Button>
+                    )}
             </div>
             <div className="overflow-hidden rounded-md border">
                 <Table>

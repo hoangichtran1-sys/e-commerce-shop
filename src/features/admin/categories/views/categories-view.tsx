@@ -28,12 +28,12 @@ export const CategoriesView = ({ storeId }: CategoriesViewProps) => {
         orpc.categories.getMany.queryOptions({ input: { storeId } }),
     );
 
-    const bullDelete = useMutation(
-        orpc.billboards.bulkDelete.mutationOptions({
+    const bulkDelete = useMutation(
+        orpc.categories.bulkDelete.mutationOptions({
             onSuccess: (data) => {
                 toast.success(`${data.count} categories deleted`);
                 queryClient.invalidateQueries(
-                    orpc.billboards.getMany.queryOptions({
+                    orpc.categories.getMany.queryOptions({
                         input: { storeId },
                     }),
                 );
@@ -71,13 +71,13 @@ export const CategoriesView = ({ storeId }: CategoriesViewProps) => {
                 data={categories}
                 columns={columns}
                 searchKey="name"
-                disabled={bullDelete.isPending}
+                disabled={bulkDelete.isPending}
                 onDelete={async (rows) => {
                     const ok = await confirmRemove();
                     if (!ok) return;
 
                     const ids = rows.map((row) => row.original.id);
-                    await bullDelete.mutateAsync({ ids, storeId });
+                    await bulkDelete.mutateAsync({ ids, storeId });
                 }}
             />
         </>

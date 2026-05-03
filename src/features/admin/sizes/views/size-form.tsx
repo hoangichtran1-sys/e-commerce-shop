@@ -12,11 +12,7 @@ import {
 } from "@tanstack/react-query";
 import { PlusCircleIcon, TrashIcon } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
-import {
-    Field,
-    FieldError,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
     Select,
     SelectContent,
@@ -31,45 +27,51 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-interface CategoryFormProps {
-    categoryId: string;
+interface SizeFormProps {
+    sizeId: string;
     storeId: string;
 }
 
 const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    billboardId: z.string().min(1),
+    value: z
+        .string()
+        .min(1)
+        .max(10)
+        .regex(/^[a-zA-Z0-9\s]+$/)
+        .transform((val) => val.toUpperCase()),
+    categoryId: z.string().min(1),
 });
 
-export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
+export const SizeForm = ({ storeId, sizeId }: SizeFormProps) => {
     const router = useRouter();
     const queryClient = useQueryClient();
 
     const { data: initialData } = useSuspenseQuery(
-        orpc.categories.getOne.queryOptions({
-            input: { id: categoryId, storeId },
+        orpc.sizes.getOneByID.queryOptions({
+            input: { id: sizeId, storeId },
         }),
     );
 
-    const { data: billboards } = useSuspenseQuery(
-        orpc.billboards.getMany.queryOptions({ input: { storeId } }),
+    const { data: categories } = useSuspenseQuery(
+        orpc.categories.getMany.queryOptions({ input: { storeId } }),
     );
 
-    const billboardFormatted = billboards.map((billboard) => ({
-        label: billboard.label,
-        value: billboard.id,
+    const categoriesFormatted = categories.map((category) => ({
+        label: category.name,
+        value: category.id,
     }));
 
     const create = useMutation(
-        orpc.categories.create.mutationOptions({
+        orpc.sizes.create.mutationOptions({
             onSuccess: () => {
-                toast.success("Category created");
+                toast.success("Size created");
                 queryClient.invalidateQueries(
-                    orpc.categories.getMany.queryOptions({
+                    orpc.sizes.getManyByStore.queryOptions({
                         input: { storeId },
                     }),
                 );
-                router.push(`/admin/${storeId}/categories`);
+                router.push(`/admin/${storeId}/sizes`);
             },
             onError: (error) => {
                 toast.error(error.message);
@@ -78,16 +80,16 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
     );
 
     const edit = useMutation(
-        orpc.categories.update.mutationOptions({
+        orpc.sizes.update.mutationOptions({
             onSuccess: (data) => {
-                toast.success("Category updated");
+                toast.success("Size updated");
                 queryClient.invalidateQueries(
-                    orpc.categories.getMany.queryOptions({
+                    orpc.sizes.getManyByStore.queryOptions({
                         input: { storeId },
                     }),
                 );
                 queryClient.invalidateQueries(
-                    orpc.categories.getOne.queryOptions({
+                    orpc.sizes.getOneByID.queryOptions({
                         input: { id: data.id, storeId },
                     }),
                 );
@@ -99,15 +101,15 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
     );
 
     const remove = useMutation(
-        orpc.categories.delete.mutationOptions({
+        orpc.sizes.delete.mutationOptions({
             onSuccess: () => {
-                toast.success("Category deleted");
+                toast.success("Size deleted");
                 queryClient.invalidateQueries(
                     orpc.categories.getMany.queryOptions({
                         input: { storeId },
                     }),
                 );
-                router.push(`/admin/${storeId}/categories`);
+                router.push(`/admin/${storeId}/sizes`);
             },
             onError: (error) => {
                 toast.error(error.message);
@@ -118,7 +120,8 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
     const form = useForm({
         defaultValues: {
             name: initialData?.name || "",
-            billboardId: initialData?.billboardId || "",
+            value: initialData?.value || "",
+            categoryId: initialData?.categoryId || "",
         },
         validators: {
             onSubmit: formSchema,
@@ -126,16 +129,18 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
         onSubmit: async ({ value }) => {
             if (initialData) {
                 edit.mutate({
-                    id: categoryId,
+                    id: sizeId,
                     storeId,
                     name: value.name,
-                    billboardId: value.billboardId,
+                    value: value.value,
+                    categoryId: value.categoryId,
                 });
             } else {
                 create.mutate({
                     storeId,
                     name: value.name,
-                    billboardId: value.billboardId,
+                    value: value.value,
+                    categoryId: value.categoryId,
                 });
             }
         },
@@ -145,16 +150,16 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
         const ok = await confirmRemove();
         if (!ok) return;
 
-        await remove.mutateAsync({ id: categoryId, storeId });
+        await remove.mutateAsync({ id: sizeId, storeId });
     };
 
     const [RemoveConfirmation, confirmRemove] = useConfirm(
         "Are you sure?",
-        "The following action will permanently remove this category",
+        "The following action will permanently remove this size",
     );
 
-    const title = initialData ? "Edit category" : "Create category";
-    const description = initialData ? "Edit a category" : "Add a new category";
+    const title = initialData ? "Edit size" : "Create size";
+    const description = initialData ? "Edit a size" : "Add a new size";
     const actionLabel = initialData ? "Save changes" : "Create";
 
     return (
@@ -196,7 +201,7 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                                     <Input
                                         className="max-w-60"
                                         type="text"
-                                        placeholder="Category name"
+                                        placeholder="Size name"
                                         id={field.name}
                                         name={field.name}
                                         value={field.state.value}
@@ -217,7 +222,7 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                         }}
                     />
                     <form.Field
-                        name="billboardId"
+                        name="value"
                         children={(field) => {
                             const isInvalid =
                                 field.state.meta.isTouched &&
@@ -225,7 +230,41 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                             return (
                                 <Field data-invalid={isInvalid}>
                                     <FieldLabel htmlFor={field.name}>
-                                        Billboard
+                                        Name
+                                    </FieldLabel>
+                                    <Input
+                                        className="max-w-60"
+                                        type="text"
+                                        placeholder="e.g: M, L, XL or 39, 40, 41..."
+                                        id={field.name}
+                                        name={field.name}
+                                        value={field.state.value}
+                                        onBlur={field.handleBlur}
+                                        onChange={(e) =>
+                                            field.handleChange(e.target.value)
+                                        }
+                                        aria-invalid={isInvalid}
+                                        autoComplete="off"
+                                    />
+                                    {isInvalid && (
+                                        <FieldError
+                                            errors={field.state.meta.errors}
+                                        />
+                                    )}
+                                </Field>
+                            );
+                        }}
+                    />
+                    <form.Field
+                        name="categoryId"
+                        children={(field) => {
+                            const isInvalid =
+                                field.state.meta.isTouched &&
+                                !field.state.meta.isValid;
+                            return (
+                                <Field data-invalid={isInvalid}>
+                                    <FieldLabel htmlFor={field.name}>
+                                        Category
                                     </FieldLabel>
                                     <div className="flex items-center justify-start gap-2">
                                         <Select
@@ -238,10 +277,10 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                                                 aria-invalid={isInvalid}
                                                 className="min-w-60"
                                             >
-                                                <SelectValue placeholder="Select billboard" />
+                                                <SelectValue placeholder="Select category" />
                                             </SelectTrigger>
                                             <SelectContent position="popper">
-                                                {billboardFormatted.map(
+                                                {categoriesFormatted.map(
                                                     (item) => (
                                                         <SelectItem
                                                             key={item.value}
@@ -253,15 +292,15 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                                                 )}
                                             </SelectContent>
                                         </Select>
-                                        {billboardFormatted.length === 0 && (
-                                            <Hint text="Add billboard">
+                                        {categoriesFormatted.length === 0 && (
+                                            <Hint text="New category">
                                                 <Button
                                                     size="icon-sm"
                                                     type="button"
                                                     variant="outline"
                                                     onClick={() =>
                                                         router.push(
-                                                            `/admin/${storeId}/billboards/new`,
+                                                            `/admin/${storeId}/categories/new`,
                                                         )
                                                     }
                                                 >
@@ -285,8 +324,9 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                     children={([values]) => {
                         const isDirty =
                             values.name !== (initialData?.name || "") ||
-                            values.billboardId !==
-                                (initialData?.billboardId || "");
+                            values.value !== (initialData?.value || "") ||
+                            values.categoryId !==
+                                (initialData?.categoryId || "");
 
                         const isDisabled = initialData
                             ? !isDirty || edit.isPending

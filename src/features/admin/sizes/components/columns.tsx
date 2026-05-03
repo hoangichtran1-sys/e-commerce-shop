@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDownIcon, MoreVerticalIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
-import { CategoriesGetMany } from "../types";
-import { CategoryActions } from "./category-actions";
+import { SizesGetManyByStore } from "../types";
+import { SizeActions } from "./size-actions";
 
-export const columns: ColumnDef<CategoriesGetMany[number]>[] = [
+export const columns: ColumnDef<SizesGetManyByStore[number]>[] = [
     {
         id: "select",
         header: ({ table }) => (
@@ -55,12 +55,33 @@ export const columns: ColumnDef<CategoriesGetMany[number]>[] = [
         },
     },
     {
-        accessorKey: "billboard",
-        header: "Billboard",
+        accessorKey: "value",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() =>
+                        column.toggleSorting(column.getIsSorted() === "asc")
+                    }
+                >
+                    Value
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
         cell: ({ row }) => {
-            const billboardLabel = row.original.billboard.label;
+            const value = row.original.value;
 
-            return <p className="line-clamp-1">{billboardLabel}</p>;
+            return <p className="line-clamp-1">{value}</p>;
+        },
+    },
+    {
+        accessorKey: "category",
+        header: "Category",
+        cell: ({ row }) => {
+            const categoryName = row.original.category.name;
+
+            return <p className="line-clamp-1">{categoryName}</p>;
         },
     },
     {
@@ -94,11 +115,11 @@ export const columns: ColumnDef<CategoriesGetMany[number]>[] = [
             const storeId = row.original.storeId;
 
             return (
-                <CategoryActions id={id} storeId={storeId}>
+                <SizeActions id={id} storeId={storeId}>
                     <Button className="size-8 p-0" variant="ghost">
                         <MoreVerticalIcon className="size-4" />
                     </Button>
-                </CategoryActions>
+                </SizeActions>
             );
         },
     },
