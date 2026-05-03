@@ -86,7 +86,7 @@ export const colorsRouter = base.router({
                 throw new ORPCError("NOT_FOUND");
             }
 
-            const colorDeleted = await prisma.category.delete({
+            const colorDeleted = await prisma.color.delete({
                 where: {
                     id: input.id,
                 },

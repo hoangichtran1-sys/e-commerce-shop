@@ -90,7 +90,7 @@ export const sizesRouter = base.router({
                 throw new ORPCError("NOT_FOUND");
             }
 
-            const sizeDeleted = await prisma.category.delete({
+            const sizeDeleted = await prisma.size.delete({
                 where: {
                     id: input.id,
                 },
