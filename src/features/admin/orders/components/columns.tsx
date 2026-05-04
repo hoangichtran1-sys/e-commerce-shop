@@ -2,18 +2,21 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import {
-    ArrowUpDownIcon,
-    MoreVerticalIcon,
-} from "lucide-react";
+import { ArrowUpDownIcon, MoreVerticalIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { OrderGetMany } from "../types";
+import { OrderActions } from "./order-actions";
 import { format } from "date-fns";
-import { ProductGetMany } from "../types";
+import { Badge } from "@/components/ui/badge";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { formatPrice } from "@/lib/utils";
-import { ProductActions } from "./product-actions";
 import { SupportIcon } from "@/components/support-icon";
 
-export const columns: ColumnDef<ProductGetMany[number]>[] = [
+export const columns: ColumnDef<OrderGetMany[number]>[] = [
     {
         id: "select",
         header: ({ table }) => (
@@ -39,123 +42,152 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         enableHiding: false,
     },
     {
-        accessorKey: "name",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Name
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
+        accessorKey: "products",
+        header: "Products",
+        cell: ({ row }) => {
+            const products = row.original.orderItems.map(
+                (orderItem) => orderItem.product.name,
             );
-        },
-        cell: ({ row }) => {
-            const name = row.original.name;
+            if (products.length === 0) {
+                return <p className="line-clamp-1">N/A</p>;
+            }
 
-            return <p className="line-clamp-1">{name}</p>;
-        },
-    },
-    {
-        accessorKey: "isArchived",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Archived
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
-            );
-        },
-        cell: ({ row }) => {
-            const isArchived = row.original.isArchived;
+            if (products.length < 3) {
+                return (
+                    <div className="flex items-center gap-x-2">
+                        {products.map((name, index) => (
+                            <Badge key={index} variant="secondary">
+                                {name}
+                            </Badge>
+                        ))}
+                    </div>
+                );
+            }
 
-            return <SupportIcon supported={isArchived} />;
-        },
-    },
-    {
-        accessorKey: "isFeatured",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Featured
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
-            );
-        },
-
-        cell: ({ row }) => {
-            const isFeatured = row.original.isFeatured;
-
-            return <SupportIcon supported={isFeatured} />;
-        },
-    },
-    {
-        accessorKey: "Price",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Price
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
-            );
-        },
-        cell: ({ row }) => {
-            const price = row.original.price;
-
-            return <p className="line-clamp-1">{formatPrice(price)}</p>;
-        },
-    },
-    {
-        accessorKey: "category",
-        header: "Category",
-        cell: ({ row }) => {
-            const categoryName = row.original.category.name;
-
-            return <p className="line-clamp-1">{categoryName}</p>;
-        },
-    },
-    {
-        accessorKey: "Size",
-        header: "Size",
-        cell: ({ row }) => {
-            const sizeValue = row.original.size.value;
-
-            return <p className="line-clamp-1">{sizeValue}</p>;
-        },
-    },
-    {
-        accessorKey: "color",
-        header: "Color",
-        cell: ({ row }) => {
-            const colorValue = row.original.color.value;
+            const productsDisplay = products.slice(0, 1);
+            const productsHidden = products.slice(2, products.length - 1);
 
             return (
                 <div className="flex items-center gap-x-2">
-                    {colorValue}
-                    <div
-                        className="h-6 w-6 rounded-full border"
-                        style={{ backgroundColor: colorValue }}
-                    />
+                    {productsDisplay.map((name, index) => (
+                        <Badge key={index} variant="secondary">
+                            {name}
+                        </Badge>
+                    ))}
+                    <Popover>
+                        <PopoverTrigger>
+                            <Badge variant="outline">
+                                +{productsHidden.length}
+                            </Badge>
+                        </PopoverTrigger>
+                        <PopoverContent>
+                            <div className="space-y-2">
+                                {productsHidden.map((name, index) => (
+                                    <p
+                                        key={index}
+                                        className="text-sm font-medium"
+                                    >
+                                        {name}
+                                    </p>
+                                ))}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </div>
             );
+        },
+    },
+    {
+        accessorKey: "phone",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() =>
+                        column.toggleSorting(column.getIsSorted() === "asc")
+                    }
+                >
+                    Phone
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => {
+            const phone = row.original.phone;
+
+            return (
+                <p className="line-clamp-1">{phone !== "" ? phone : "N/A"}</p>
+            );
+        },
+    },
+    {
+        accessorKey: "address",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() =>
+                        column.toggleSorting(column.getIsSorted() === "asc")
+                    }
+                >
+                    Address
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => {
+            const address = row.original.address;
+
+            return (
+                <p className="line-clamp-1">
+                    {address !== "" ? address : "N/A"}
+                </p>
+            );
+        },
+    },
+    {
+        accessorKey: "totalPrice",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() =>
+                        column.toggleSorting(column.getIsSorted() === "asc")
+                    }
+                >
+                    Total Price
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => {
+            const totalPrice = row.original.orderItems.reduce(
+                (total, item) => total + item.product.price,
+                0,
+            );
+
+            return <p className="line-clamp-1">{formatPrice(totalPrice)}</p>;
+        },
+    },
+    {
+        accessorKey: "isPaid",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() =>
+                        column.toggleSorting(column.getIsSorted() === "asc")
+                    }
+                >
+                    Paid
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => {
+            const isPaid = row.original.isPaid;
+
+            return <SupportIcon supported={isPaid} />;
         },
     },
     {
@@ -185,15 +217,14 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
     {
         id: "actions",
         cell: ({ row }) => {
-            const id = row.original.id;
-            const storeId = row.original.storeId;
+            const order = row.original;
 
             return (
-                <ProductActions id={id} storeId={storeId}>
+                <OrderActions data={order}>
                     <Button className="size-8 p-0" variant="ghost">
                         <MoreVerticalIcon className="size-4" />
                     </Button>
-                </ProductActions>
+                </OrderActions>
             );
         },
     },

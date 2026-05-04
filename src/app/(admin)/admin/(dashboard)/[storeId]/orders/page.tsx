@@ -1,4 +1,4 @@
-import { StoreView } from "@/features/admin/stores/views/store-view";
+import { OrdersView } from "@/features/admin/orders/views/orders-view";
 import { HydrateClient, orpc, prefetch } from "@/orpc/orpc-rq.server";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
@@ -12,13 +12,17 @@ interface PageProps {
 const Page = async ({ params }: PageProps) => {
     const { storeId } = await params;
 
-    await prefetch(orpc.stores.getOne.queryOptions({ input: { id: storeId } }));
+    await prefetch(orpc.orders.getMany.queryOptions({ input: { storeId } }));
 
     return (
         <HydrateClient>
             <Suspense fallback={<p>Loading...</p>}>
                 <ErrorBoundary fallback={<p>Error!</p>}>
-                    <StoreView storeId={storeId} />
+                    <div className="flex-col">
+                        <div className="flex-1 space-y-4 p-8 pt-6">
+                            <OrdersView storeId={storeId} />
+                        </div>
+                    </div>
                 </ErrorBoundary>
             </Suspense>
         </HydrateClient>

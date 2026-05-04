@@ -186,7 +186,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
 
     const handleFilesUpload = useCallback(
         (newFiles: File[]) => {
-            if (!isUploadingRef.current && !upload.isPending) {
+            if (!isUploadingRef.current) {
                 isUploadingRef.current = true;
 
                 upload.mutate(
@@ -213,7 +213,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
 
     const categoryId = useStore(form.store, (state) => state.values.categoryId);
 
-    const prevCategoryId = useRef(categoryId);
+    const isFirstRender = useRef(true);
 
     const { data: sizes } = useQuery({
         ...orpc.sizes.getManyByStoreAndCategory.queryOptions({
@@ -239,9 +239,10 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
     }));
 
     useEffect(() => {
-        if (prevCategoryId.current === categoryId) return;
-
-        prevCategoryId.current = categoryId;    
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
 
         form.setFieldValue("sizeId", "");
         form.setFieldValue("colorId", "");
