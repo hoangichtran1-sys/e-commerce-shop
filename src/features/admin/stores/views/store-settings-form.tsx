@@ -177,7 +177,10 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
                                 return (
                                     <Field data-invalid={isInvalid}>
                                         <FieldLabel htmlFor={field.name}>
-                                            Description{" "}(optional)
+                                            Description
+                                            <span className="text-neutral-600">
+                                                (optional)
+                                            </span>
                                         </FieldLabel>
                                         <Textarea
                                             id={field.name}

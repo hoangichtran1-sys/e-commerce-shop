@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import InputColor from "@/components/input-color";
+import { InputColor } from "@/components/input-color";
 
 interface ColorFormProps {
     colorId: string;
@@ -42,7 +42,10 @@ const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
     value: z
         .string()
-        .regex(/^[#][0-9A-Fa-f]{6}$/)
+        .regex(
+            /^[#][0-9A-Fa-f]{6}$/,
+            "Color must be a valid hex color (e.g., #FFFFFF)",
+        )
         .transform((val) => val.toUpperCase()),
     categoryId: z.string().min(1),
 });
@@ -124,7 +127,7 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
     const form = useForm({
         defaultValues: {
             name: initialData?.name || "",
-            value: initialData?.value || "",
+            value: initialData?.value || "#000000",
             categoryId: initialData?.categoryId || "",
         },
         validators: {
@@ -236,7 +239,10 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
                                 return (
                                     <Field data-invalid={isInvalid}>
                                         <FieldLabel htmlFor={field.name}>
-                                            Value <span className="text-neutral-600 text-xs">(Select with color)</span>
+                                            Value
+                                            <span className="text-neutral-600">
+                                                (Select color)
+                                            </span>
                                         </FieldLabel>
                                         <InputColor
                                             label=""
@@ -244,9 +250,7 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
                                             onChange={(value) =>
                                                 field.handleChange(value)
                                             }
-                                            onBlur={() =>
-                                                console.log("color picker")
-                                            }
+                                            onBlur={field.handleBlur}
                                             className="mt-0"
                                         />
                                         {isInvalid && (
@@ -280,7 +284,7 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
                                                 }
                                             >
                                                 <SelectTrigger
-                                                    id="select-billboard"
+                                                    id="select-category"
                                                     aria-invalid={isInvalid}
                                                     className="min-w-60"
                                                 >

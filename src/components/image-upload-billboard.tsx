@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageIcon, X, ZoomIn } from "lucide-react";
+import { ImageIcon, Loader2Icon, X, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     FileUpload,
@@ -24,11 +24,13 @@ import { toast } from "sonner";
 interface ImageUploadBillboardProps {
     files: File[];
     onFilesChange: (files: File[]) => void;
+    isUploading?: boolean;
 }
 
 export const ImageUploadBillboard = ({
     files,
     onFilesChange,
+    isUploading,
 }: ImageUploadBillboardProps) => {
     const onFileReject = useCallback((file: File, message: string) => {
         toast.error(message, {
@@ -58,8 +60,18 @@ export const ImageUploadBillboard = ({
                     </p>
                 </div>
                 <FileUploadTrigger asChild>
-                    <Button variant="outline" size="sm" className="mt-2">
-                        Select Image
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        disabled={isUploading}
+                    >
+                        {isUploading ? (
+                            <Loader2Icon className="size-4 text-muted-foreground animate-spin" />
+                        ) : (
+                            "Select Image"
+                        )}
                     </Button>
                 </FileUploadTrigger>
             </FileUploadDropzone>
@@ -68,7 +80,10 @@ export const ImageUploadBillboard = ({
                     <FileUploadItem key={index} value={file}>
                         <Dialog>
                             <DialogTrigger asChild>
-                                <button className="group relative cursor-pointer">
+                                <button
+                                    type="button"
+                                    className="group relative cursor-pointer"
+                                >
                                     <FileUploadItemPreview className="size-12 rounded-md" />
                                     <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
                                         <ZoomIn className="size-4 text-white" />
@@ -93,6 +108,7 @@ export const ImageUploadBillboard = ({
                                 variant="ghost"
                                 size="icon"
                                 className="size-7"
+                                type="button"
                             >
                                 <X className="size-4" />
                             </Button>

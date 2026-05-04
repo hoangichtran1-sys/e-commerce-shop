@@ -273,7 +273,7 @@ export const SizeForm = ({ storeId, sizeId }: SizeFormProps) => {
                                             onValueChange={field.handleChange}
                                         >
                                             <SelectTrigger
-                                                id="select-billboard"
+                                                id="select-category"
                                                 aria-invalid={isInvalid}
                                                 className="min-w-60"
                                             >

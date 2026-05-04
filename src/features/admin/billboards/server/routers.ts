@@ -17,7 +17,7 @@ export const billboardsRouter = base.router({
                     )
                     .refine(
                         (file) => file.type.startsWith("image/"),
-                        "Image is required",
+                        "Type image is required",
                     ),
             }),
         )
@@ -31,7 +31,7 @@ export const billboardsRouter = base.router({
                 (resolve, reject) => {
                     cloudinary.uploader
                         .upload_stream(
-                            { folder: "billboard" },
+                            { folder: "billboards" },
                             (
                                 error: UploadApiErrorResponse | undefined,
                                 result: UploadApiResponse | undefined,

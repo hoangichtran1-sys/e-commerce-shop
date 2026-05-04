@@ -10,7 +10,7 @@ import {
     useQueryClient,
     useSuspenseQuery,
 } from "@tanstack/react-query";
-import { TrashIcon, ArchiveRestoreIcon } from "lucide-react";
+import { TrashIcon, RedoIcon, UndoIcon } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
 import {
     Field,
@@ -285,7 +285,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                                         }
                                                         type="button"
                                                     >
-                                                        <TrashIcon />
+                                                        <RedoIcon />
                                                     </Button>
                                                 </Hint>
                                             </div>
@@ -295,6 +295,9 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                                     files={files}
                                                     onFilesChange={
                                                         handleFilesChange
+                                                    }
+                                                    isUploading={
+                                                        upload.isPending
                                                     }
                                                 />
                                                 {initialData && (
@@ -313,7 +316,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                                             }}
                                                             type="button"
                                                         >
-                                                            <ArchiveRestoreIcon />
+                                                            <UndoIcon />
                                                         </Button>
                                                     </Hint>
                                                 )}
