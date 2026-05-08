@@ -1,3 +1,4 @@
+import { ProductStatus } from "@/generated/prisma/enums";
 import { z } from "zod";
 
 export const createProductSchema = z.object({
@@ -7,9 +8,11 @@ export const createProductSchema = z.object({
     colorId: z.string().min(1),
     name: z.string().min(1),
     price: z.number().min(0.01),
+    status: z.enum(ProductStatus),
     isFeatured: z.boolean(),
-    isArchived: z.boolean(),
+    inStock: z.boolean(),
     images: z.array(z.string()).min(1).max(3),
+    description: z.string().nullable()
 })
 
 export const updateProductSchema = createProductSchema.extend({

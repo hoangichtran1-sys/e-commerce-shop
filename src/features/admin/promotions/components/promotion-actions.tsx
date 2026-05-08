@@ -4,7 +4,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CopyIcon, PencilIcon, TrashIcon } from "lucide-react";
+import { PencilIcon, TrashIcon } from "lucide-react";
 import React from "react";
 import { useConfirm } from "@/hooks/use-confirm";
 import { useRouter } from "next/navigation";
@@ -12,26 +12,26 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { toast } from "sonner";
 
-interface ProductActionProps {
+interface PromotionActionProps {
     id: string;
     storeId: string;
     children: React.ReactNode;
 }
 
-export const ProductActions = ({
+export const PromotionActions = ({
     id,
     storeId,
     children,
-}: ProductActionProps) => {
+}: PromotionActionProps) => {
     const router = useRouter();
     const queryClient = useQueryClient();
 
     const remove = useMutation(
-        orpc.products.delete.mutationOptions({
+        orpc.promotions.delete.mutationOptions({
             onSuccess: () => {
-                toast.success("Product deleted");
+                toast.success("Promotion deleted");
                 queryClient.invalidateQueries(
-                    orpc.products.getMany.queryOptions({
+                    orpc.promotions.getManyByStore.queryOptions({
                         input: { storeId },
                     }),
                 );
@@ -44,13 +44,8 @@ export const ProductActions = ({
 
     const [RemoveConfirmation, confirmRemove] = useConfirm(
         "Are you sure?",
-        "The following action will permanently remove this product",
+        "The following action will permanently remove this promotion",
     );
-
-    const onCopy = () => {
-        navigator.clipboard.writeText(id);
-        toast.success("Product ID copied to the clipboard");
-    };
 
     return (
         <div className="flex justify-end">
@@ -59,20 +54,13 @@ export const ProductActions = ({
                 <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem
-                        onClick={onCopy}
-                        className="font-medium p-2.5"
-                    >
-                        <CopyIcon className="size-4 stroke-2" />
-                        Copy ID
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
                         onClick={() =>
-                            router.push(`/admin/${storeId}/products/${id}`)
+                            router.push(`/admin/${storeId}/promotions/${id}`)
                         }
                         className="font-medium p-2.5"
                     >
                         <PencilIcon className="size-4 stroke-2" />
-                        Edit product
+                        Edit promotion
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={async () => {
@@ -84,7 +72,7 @@ export const ProductActions = ({
                         className="text-destructive focus:text-destructive font-medium p-2.5"
                     >
                         <TrashIcon className="size-4 stroke-2" />
-                        Delete product
+                        Delete promotion
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

@@ -1,7 +1,6 @@
 /* eslint-disable react/no-children-prop */
 "use client";
 
-import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
@@ -32,6 +31,7 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { InputColor } from "@/components/input-color";
+import { BreadcrumbHeader } from "@/components/breadcrumb-header";
 
 interface ColorFormProps {
     colorId: string;
@@ -112,7 +112,7 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
             onSuccess: () => {
                 toast.success("Color deleted");
                 queryClient.invalidateQueries(
-                    orpc.categories.getMany.queryOptions({
+                    orpc.colors.getManyByStore.queryOptions({
                         input: { storeId },
                     }),
                 );
@@ -165,15 +165,18 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
         "The following action will permanently remove this color",
     );
 
-    const title = initialData ? "Edit color" : "Create color";
-    const description = initialData ? "Edit a color" : "Add a new color";
     const actionLabel = initialData ? "Save changes" : "Create";
 
     return (
         <>
             <RemoveConfirmation />
             <div className="flex items-center justify-between">
-                <Heading title={title} description={description} />
+                <BreadcrumbHeader
+                    id={colorId}
+                    storeId={storeId}
+                    name={initialData?.name || "New"}
+                    topic="colors"
+                />
                 {initialData && (
                     <Button
                         variant="destructive"
@@ -194,144 +197,172 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
                 className="space-y-8 w-full"
             >
                 <div className="grid md:grid-cols-3 grid-cols-1 gap-8">
-                    <FieldGroup className="max-w-60">
-                        <form.Field
-                            name="name"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Name
-                                        </FieldLabel>
-                                        <Input
-                                            type="text"
-                                            placeholder="Color name"
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={(e) =>
-                                                field.handleChange(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            aria-invalid={isInvalid}
-                                            autoComplete="off"
-                                        />
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
-                                            />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
-                        <form.Field
-                            name="value"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Value
-                                            <span className="text-neutral-600">
-                                                (Select color)
-                                            </span>
-                                        </FieldLabel>
-                                        <InputColor
-                                            label=""
-                                            value={field.state.value}
-                                            onChange={(value) =>
-                                                field.handleChange(value)
-                                            }
-                                            onBlur={field.handleBlur}
-                                            className="mt-0"
-                                        />
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
-                                            />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
-                    </FieldGroup>
-                    <FieldGroup>
-                        <form.Field
-                            name="categoryId"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Category
-                                        </FieldLabel>
-                                        <div className="flex items-center justify-start gap-2">
-                                            <Select
-                                                name={field.name}
-                                                value={field.state.value}
-                                                onValueChange={
-                                                    field.handleChange
-                                                }
-                                            >
-                                                <SelectTrigger
-                                                    id="select-category"
-                                                    aria-invalid={isInvalid}
-                                                    className="min-w-60"
+                    <FieldGroup className="md:col-span-3">
+                        <div className="w-full flex items-center justify-start gap-x-10">
+                            <div className="flex-1 max-w-60">
+                                <form.Field
+                                    name="name"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched &&
+                                            !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel
+                                                    htmlFor={field.name}
                                                 >
-                                                    <SelectValue placeholder="Select category" />
-                                                </SelectTrigger>
-                                                <SelectContent position="popper">
-                                                    {categoriesFormatted.map(
-                                                        (item) => (
-                                                            <SelectItem
-                                                                key={item.value}
-                                                                value={
-                                                                    item.value
-                                                                }
-                                                            >
-                                                                {item.label}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            {categoriesFormatted.length ===
-                                                0 && (
-                                                <Hint text="New category">
-                                                    <Button
-                                                        size="icon-sm"
-                                                        type="button"
-                                                        variant="outline"
-                                                        onClick={() =>
-                                                            router.push(
-                                                                `/admin/${storeId}/categories/new`,
-                                                            )
+                                                    Name
+                                                </FieldLabel>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Color name"
+                                                    id={field.name}
+                                                    name={field.name}
+                                                    value={field.state.value}
+                                                    onBlur={field.handleBlur}
+                                                    onChange={(e) =>
+                                                        field.handleChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                    aria-invalid={isInvalid}
+                                                    autoComplete="off"
+                                                />
+                                                {isInvalid && (
+                                                    <FieldError
+                                                        errors={
+                                                            field.state.meta
+                                                                .errors
+                                                        }
+                                                    />
+                                                )}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1 max-w-60">
+                                <form.Field
+                                    name="categoryId"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched &&
+                                            !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel
+                                                    htmlFor={field.name}
+                                                >
+                                                    Category
+                                                </FieldLabel>
+                                                <div className="flex items-center justify-start gap-2">
+                                                    <Select
+                                                        name={field.name}
+                                                        value={
+                                                            field.state.value
+                                                        }
+                                                        onValueChange={
+                                                            field.handleChange
                                                         }
                                                     >
-                                                        <PlusCircleIcon className="size-4" />
-                                                    </Button>
-                                                </Hint>
-                                            )}
-                                        </div>
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
+                                                        <SelectTrigger
+                                                            id="select-category"
+                                                            aria-invalid={
+                                                                isInvalid
+                                                            }
+                                                            className="w-full"
+                                                        >
+                                                            <SelectValue placeholder="Select category" />
+                                                        </SelectTrigger>
+                                                        <SelectContent position="popper">
+                                                            {categoriesFormatted.map(
+                                                                (item) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            item.value
+                                                                        }
+                                                                        value={
+                                                                            item.value
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            item.label
+                                                                        }
+                                                                    </SelectItem>
+                                                                ),
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {categoriesFormatted.length ===
+                                                        0 && (
+                                                        <Hint text="New category">
+                                                            <Button
+                                                                size="icon-sm"
+                                                                type="button"
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    router.push(
+                                                                        `/admin/${storeId}/categories/new`,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <PlusCircleIcon className="size-4" />
+                                                            </Button>
+                                                        </Hint>
+                                                    )}
+                                                </div>
+                                                {isInvalid && (
+                                                    <FieldError
+                                                        errors={
+                                                            field.state.meta
+                                                                .errors
+                                                        }
+                                                    />
+                                                )}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </FieldGroup>
+                    <FieldGroup className="md:col-span-3">
+                        <div className="w-full max-w-60">
+                            <form.Field
+                                name="value"
+                                children={(field) => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched &&
+                                        !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Value
+                                                <span className="text-neutral-600">
+                                                    (Select color)
+                                                </span>
+                                            </FieldLabel>
+                                            <InputColor
+                                                label=""
+                                                value={field.state.value}
+                                                onChange={(value) =>
+                                                    field.handleChange(value)
+                                                }
+                                                onBlur={field.handleBlur}
+                                                className="mt-0"
                                             />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
+                                            {isInvalid && (
+                                                <FieldError
+                                                    errors={
+                                                        field.state.meta.errors
+                                                    }
+                                                />
+                                            )}
+                                        </Field>
+                                    );
+                                }}
+                            />
+                        </div>
                     </FieldGroup>
                 </div>
                 <form.Subscribe

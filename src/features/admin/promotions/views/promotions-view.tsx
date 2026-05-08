@@ -6,46 +6,49 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { BookCheckIcon, PackageIcon, PlusIcon, ScissorsIcon } from "lucide-react";
+import { CalendarIcon, PlayIcon, PlusIcon, StopCircleIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { columns } from "../components/columns";
-import { ProductStatus } from "@/generated/prisma/enums";
 
-interface ProductsViewProps {
+interface PromotionsViewProps {
     storeId: string;
 }
 
-export const ProductsView = ({ storeId }: ProductsViewProps) => {
+export const PromotionsView = ({ storeId }: PromotionsViewProps) => {
     const router = useRouter();
 
-    const { data: products } = useSuspenseQuery(
-        orpc.products.getMany.queryOptions({ input: { storeId } }),
+    const { data: promotions } = useSuspenseQuery(
+        orpc.promotions.getManyByStore.queryOptions({ input: { storeId } }),
     );
 
     const statusOption = [
-        { label: "Draft", value: ProductStatus.DRAFT, icon: ScissorsIcon },
-        { label: "Published", value: ProductStatus.PUBLISHED, icon: BookCheckIcon },
-        { label: "Archived", value: ProductStatus.ARCHIVED, icon: PackageIcon },
+        { label: "Running", value: "running", icon: PlayIcon },
+        { label: "Upcoming", value: "upcoming", icon: CalendarIcon },
+        { label: "Expired", value: "expired", icon: StopCircleIcon },
     ];
 
     return (
         <>
             <div className="flex items-center justify-between">
                 <Heading
-                    title={`Products (${products.length})`}
-                    description="Manage products for your store"
+                    title={`Promotions (${promotions.length})`}
+                    description="Manage promotions for your store"
                 />
-                <Button onClick={() => router.push(`/admin/${storeId}/products/new`)}>
+                <Button
+                    onClick={() =>
+                        router.push(`/admin/${storeId}/promotions/new`)
+                    }
+                >
                     <PlusIcon className="size-4" />
                     Add New
                 </Button>
             </div>
             <Separator />
             <DataTable
-                statusOption={statusOption}
-                data={products}
+                data={promotions}
                 columns={columns}
                 searchKey="name"
+                statusOption={statusOption}
             />
         </>
     );

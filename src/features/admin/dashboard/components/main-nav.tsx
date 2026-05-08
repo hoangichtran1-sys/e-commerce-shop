@@ -61,6 +61,11 @@ export const MainNav = ({ className }: MainNavProps) => {
             active: pathname === `/admin/${params.storeId}/orders`,
         },
         {
+            href: `/admin/${params.storeId}/promotions`,
+            label: "Promotions",
+            active: pathname === `/admin/${params.storeId}/promotions`,
+        },
+        {
             href: `/admin/${params.storeId}/settings`,
             label: "Settings",
             active: pathname === `/admin/${params.storeId}/settings`,
@@ -85,7 +90,7 @@ export const MainNav = ({ className }: MainNavProps) => {
                             <SheetTitle>Dashboard CMS</SheetTitle>
                         </div>
                     </SheetHeader>
-                    <div className="flex flex-col w-full">
+                    <div className="flex flex-col w-full overflow-y-auto">
                         {routes.map((route) => (
                             <Link
                                 key={route.href}

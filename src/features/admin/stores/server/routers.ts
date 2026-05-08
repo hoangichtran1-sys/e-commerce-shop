@@ -54,7 +54,7 @@ export const storesRouter = base.router({
             z.object({
                 id: z.string().min(1),
                 name: z.string().min(1),
-                description: z.string().optional(),
+                description: z.string().nullable(),
             }),
         )
         .handler(async ({ input, context }) => {

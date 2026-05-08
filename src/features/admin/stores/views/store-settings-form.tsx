@@ -33,7 +33,7 @@ interface StoreSettingsFormProps {
 
 const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    description: z.string(),
+    description: z.string().nullable(),
 });
 
 export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
@@ -80,7 +80,7 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
     const form = useForm({
         defaultValues: {
             name: initialData.name,
-            description: initialData.description || "",
+            description: initialData.description,
         },
         validators: {
             onSubmit: formSchema,
@@ -132,79 +132,89 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
                 className="space-y-8 w-full"
             >
                 <div className="grid grid-cols-3 gap-8">
-                    <FieldGroup className="min-w-50">
-                        <form.Field
-                            name="name"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Name
-                                        </FieldLabel>
-                                        <Input
-                                            type="text"
-                                            placeholder="Store name"
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={(e) =>
-                                                field.handleChange(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            aria-invalid={isInvalid}
-                                            autoComplete="off"
-                                        />
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
+                    <FieldGroup className="col-span-3">
+                        <div className="w-full max-w-60">
+                            <form.Field
+                                name="name"
+                                children={(field) => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched &&
+                                        !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Name
+                                            </FieldLabel>
+                                            <Input
+                                                type="text"
+                                                placeholder="Store name"
+                                                id={field.name}
+                                                name={field.name}
+                                                value={field.state.value}
+                                                onBlur={field.handleBlur}
+                                                onChange={(e) =>
+                                                    field.handleChange(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                aria-invalid={isInvalid}
+                                                autoComplete="off"
                                             />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
-                        <form.Field
-                            name="description"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Description
-                                            <span className="text-neutral-600">
-                                                (optional)
-                                            </span>
-                                        </FieldLabel>
-                                        <Textarea
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={(e) =>
-                                                field.handleChange(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            aria-invalid={isInvalid}
-                                            placeholder="Provide more information about the store..."
-                                            className="min-h-30"
-                                        />
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
+                                            {isInvalid && (
+                                                <FieldError
+                                                    errors={
+                                                        field.state.meta.errors
+                                                    }
+                                                />
+                                            )}
+                                        </Field>
+                                    );
+                                }}
+                            />
+                        </div>
+                    </FieldGroup>
+                    <FieldGroup className="col-span-3">
+                        <div className="w-full max-w-100">
+                            <form.Field
+                                name="description"
+                                children={(field) => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched &&
+                                        !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Description
+                                                <span className="text-neutral-600">
+                                                    (optional)
+                                                </span>
+                                            </FieldLabel>
+                                            <Textarea
+                                                id={field.name}
+                                                name={field.name}
+                                                value={field.state.value || ""}
+                                                onBlur={field.handleBlur}
+                                                onChange={(e) =>
+                                                    field.handleChange(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                aria-invalid={isInvalid}
+                                                placeholder="Provide more information about the store..."
+                                                className="min-h-30"
                                             />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
+                                            {isInvalid && (
+                                                <FieldError
+                                                    errors={
+                                                        field.state.meta.errors
+                                                    }
+                                                />
+                                            )}
+                                        </Field>
+                                    );
+                                }}
+                            />
+                        </div>
                     </FieldGroup>
                 </div>
                 <form.Subscribe

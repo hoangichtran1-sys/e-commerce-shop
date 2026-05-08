@@ -28,6 +28,28 @@ enum ProductStatus {
   ARCHIVED
 }
 
+enum OrderStatus {
+  PAID
+  REFUND
+  FAILED
+}
+
+enum PromotionType {
+  PERCENT
+  FIXED
+}
+
+enum PromotionMode {
+  COUPON
+  CATEGORY_CAMPAIGN
+}
+
+enum AutoReplyType {
+  NEGATIVE
+  POSITIVE
+  NORMAL
+}
+
 model User {
   id            String    @id
   name          String
@@ -37,9 +59,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   role          String    @default("customer")
+
   sessions      Session[]
   accounts      Account[]
   stores        Store[]
+  reviews       Review[]
 
   @@unique([email])
   @@map("user")
@@ -121,6 +145,10 @@ model Store {
   colors      Color[]     @relation("StoreToColor")
   products    Product[]   @relation("StoreToProduct")
   orders      Order[]     @relation("StoreToOrder")
+  promotions  Promotion[] @relation("StoreToPromotion")
+  coupons     Coupon[]    @relation("StoreToCoupon")
+  reviews     Review[]    @relation("StoreToReview")
+  autoReplies AutoReply[] @relation("StoreToAutoReply")   
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -133,6 +161,7 @@ model Billboard {
   storeId    String
   label      String
   imageUrl   String
+  isActive   Boolean @default(false)
 
   store      Store @relation("StoreToBillboard", fields: [storeId], references: [id])
   categories Category[]
@@ -140,7 +169,7 @@ model Billboard {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([storeId])
+  @@index([storeId, isActive])
 }
 
 model Category {
@@ -149,9 +178,10 @@ model Category {
   billboardId String
   name        String
 
-  sizes       Size[]    @relation("CategoryToSize")
-  colors      Color[]   @relation("CategoryToColor")
-  products    Product[] @relation("CategoryToProduct")
+  sizes       Size[]      @relation("CategoryToSize")
+  colors      Color[]     @relation("CategoryToColor")
+  products    Product[]   @relation("CategoryToProduct")
+  promotions  Promotion[] @relation("CategoryToPromotion")
 
   store       Store @relation("StoreToCategory", fields: [storeId], references: [id])
   billboard   Billboard @relation(fields: [billboardId], references: [id])
@@ -202,30 +232,32 @@ model Color {
 }
 
 model Product {
-  id         String @id @default(uuid())
-  storeId    String
-  categoryId String
-  sizeId     String
-  colorId    String
-  name       String
-  price      Decimal
-  isFeatured Boolean @default(false)
-  isArchived Boolean @default(false)
+  id          String @id @default(uuid())
+  storeId     String
+  categoryId  String
+  sizeId      String
+  colorId     String
+  name        String
+  description String? @db.Text
+  price       Decimal
+  status      ProductStatus
+  inStock     Boolean @default(false)
+  isFeatured  Boolean @default(false)
 
-  images     ProductImage[]
-  orderItems OrderItem[]
+  images      ProductImage[]
+  orderItems  OrderItem[]
+  reviews     Review[]
 
-  store      Store @relation("StoreToProduct", fields: [storeId], references: [id])
-  category   Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
-  size       Size @relation(fields: [sizeId], references: [id])
-  color      Color @relation(fields: [colorId], references: [id])
+  store       Store @relation("StoreToProduct", fields: [storeId], references: [id])
+  category    Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
+  size        Size @relation(fields: [sizeId], references: [id])
+  color       Color @relation(fields: [colorId], references: [id])
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@index([storeId, isArchived])
-  @@index([storeId, categoryId])
-  @@index([storeId, isFeatured])
+  @@index([storeId, categoryId, status])
+  @@index([storeId, isFeatured, status])
 }
 
 model ProductImage {
@@ -244,7 +276,7 @@ model ProductImage {
 model Order {
   id         String @id @default(uuid())
   storeId    String
-  isPaid     Boolean @default(false)
+  status     OrderStatus
   phone      String @default("")
   address    String @default("")
 
@@ -255,7 +287,7 @@ model Order {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([storeId])
+  @@index([storeId, status])
 }
 
 model OrderItem {
@@ -270,4 +302,89 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+}
+
+model Promotion {
+  id         String @id @default(uuid())
+  name       String
+  storeId    String
+  type       PromotionType
+  mode       PromotionMode
+  value      Float
+  startAt    DateTime?
+  endAt      DateTime?
+  isActive   Boolean  @default(false)
+
+  minOrderValue    Decimal  @default(0)
+  maxDiscountValue Decimal?
+
+  coupons    Coupon[]
+  categories Category[] @relation("CategoryToPromotion")
+
+  store      Store @relation("StoreToPromotion", fields: [storeId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([storeId, startAt, endAt])
+  @@index([storeId, isActive])
+  @@index([storeId, mode])
+}
+
+model Coupon {
+  id          String @id @default(uuid())
+  storeId     String
+  promotionId String
+  code        String @unique
+
+  usageLimit  Int
+  usedCount   Int @default(0)
+
+  promotion   Promotion @relation(fields: [promotionId], references: [id])
+  store       Store     @relation("StoreToCoupon", fields: [storeId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId, code])
+  @@index([promotionId])
+}
+
+model Review {
+  id          String @id @default(uuid())
+  storeId     String
+  userId      String
+  productId   String
+  autoReplyId String?
+  rating      Int     @db.SmallInt 
+  comment     String? @db.Text
+
+  store       Store     @relation("StoreToReview", fields: [storeId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  autoReply   AutoReply? @relation(fields: [autoReplyId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId, productId])
+  @@index([storeId, rating])
+  @@unique([storeId, userId, productId])
+}
+
+model AutoReply {
+  id        String @id @default(uuid())
+  storeId   String
+  content   String @db.Text
+  type      AutoReplyType @default(NORMAL)
+  isActive  Boolean @default(false)
+
+  reviews   Review[]
+
+  store       Store     @relation("StoreToAutoReply", fields: [storeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([storeId, isActive, type])
 }

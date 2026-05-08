@@ -1,7 +1,6 @@
 /* eslint-disable react/no-children-prop */
 "use client";
 
-import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
@@ -12,11 +11,7 @@ import {
 } from "@tanstack/react-query";
 import { PlusCircleIcon, TrashIcon } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
-import {
-    Field,
-    FieldError,
-    FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
     Select,
     SelectContent,
@@ -30,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { BreadcrumbHeader } from "@/components/breadcrumb-header";
 
 interface CategoryFormProps {
     categoryId: string;
@@ -153,15 +149,18 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
         "The following action will permanently remove this category",
     );
 
-    const title = initialData ? "Edit category" : "Create category";
-    const description = initialData ? "Edit a category" : "Add a new category";
     const actionLabel = initialData ? "Save changes" : "Create";
 
     return (
         <>
             <RemoveConfirmation />
             <div className="flex items-center justify-between">
-                <Heading title={title} description={description} />
+                <BreadcrumbHeader
+                    id={categoryId}
+                    storeId={storeId}
+                    name={initialData?.name || "New"}
+                    topic="categories"
+                />
                 {initialData && (
                     <Button
                         variant="destructive"

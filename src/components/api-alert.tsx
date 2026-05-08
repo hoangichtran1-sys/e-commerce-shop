@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useMountedState } from "react-use";
 
 interface ApiAlertProps {
     title: string;
@@ -31,15 +31,12 @@ export const ApiAlert = ({
     description,
     variant = "public",
 }: ApiAlertProps) => {
-    
-    const [mounted, setMounted] = useState(false);
+    const isMounted = useMountedState();
 
-    useEffect(() => {
-      setMounted(true);
-    }, []);
+    if (!isMounted) {
+        return null;
+    }
 
-    if (!mounted) return null;
-    
     const onCopy = (description: string) => {
         navigator.clipboard.writeText(description);
         toast.success("API Route copied to the clipboard.");

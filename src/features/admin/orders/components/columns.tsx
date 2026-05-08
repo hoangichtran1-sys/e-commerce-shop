@@ -13,8 +13,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { formatPrice } from "@/lib/utils";
-import { SupportIcon } from "@/components/support-icon";
+import { capitalizeFirst, formatPrice } from "@/lib/utils";
 
 export const columns: ColumnDef<OrderGetMany[number]>[] = [
     {
@@ -45,18 +44,25 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
         accessorKey: "products",
         header: "Products",
         cell: ({ row }) => {
-            const products = row.original.orderItems.map(
+            const productsName = row.original.orderItems.map(
                 (orderItem) => orderItem.product.name,
             );
-            if (products.length === 0) {
-                return <p className="line-clamp-1">N/A</p>;
+
+            if (productsName.length === 0) {
+                return (
+                    <p className="text-muted-foreground text-xs italic">N/A</p>
+                );
             }
 
-            if (products.length < 3) {
+            if (productsName.length < 3) {
                 return (
-                    <div className="flex items-center gap-x-2">
-                        {products.map((name, index) => (
-                            <Badge key={index} variant="secondary">
+                    <div className="flex flex-wrap gap-1">
+                        {productsName.map((name, index) => (
+                            <Badge
+                                key={index}
+                                variant="outline"
+                                className="whitespace-nowrap"
+                            >
                                 {name}
                             </Badge>
                         ))}
@@ -64,31 +70,42 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
                 );
             }
 
-            const productsDisplay = products.slice(0, 1);
-            const productsHidden = products.slice(2, products.length - 1);
+            const firstProduct = productsName[0];
+            const secondProduct = productsName[1];
+            const remainingProductsName = productsName.slice(2);
 
             return (
                 <div className="flex items-center gap-x-2">
-                    {productsDisplay.map((name, index) => (
-                        <Badge key={index} variant="secondary">
-                            {name}
-                        </Badge>
-                    ))}
+                    <Badge variant="outline" className="whitespace-nowrap">
+                        {firstProduct}
+                    </Badge>
+                    <Badge variant="outline" className="whitespace-nowrap">
+                        {secondProduct}
+                    </Badge>
                     <Popover>
-                        <PopoverTrigger>
-                            <Badge variant="outline">
-                                +{productsHidden.length}
+                        <PopoverTrigger asChild>
+                            <Badge
+                                variant="secondary"
+                                className="cursor-pointer hover:bg-accent transition-colors"
+                            >
+                                +{remainingProductsName.length} more
                             </Badge>
                         </PopoverTrigger>
-                        <PopoverContent>
-                            <div className="space-y-2">
-                                {productsHidden.map((name, index) => (
-                                    <p
-                                        key={index}
-                                        className="text-sm font-medium"
+                        <PopoverContent
+                            className="w-fit min-w-37.5 p-3"
+                            align="start"
+                        >
+                            <div className="flex flex-col gap-y-2">
+                                <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
+                                    Other Categories
+                                </p>
+                                {remainingProductsName.map((name) => (
+                                    <div
+                                        key={name}
+                                        className="text-sm font-medium border-b border-border pb-1 last:border-none"
                                     >
                                         {name}
-                                    </p>
+                                    </div>
                                 ))}
                             </div>
                         </PopoverContent>
@@ -170,7 +187,7 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
         },
     },
     {
-        accessorKey: "isPaid",
+        accessorKey: "status",
         header: ({ column }) => {
             return (
                 <Button
@@ -179,15 +196,22 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
                         column.toggleSorting(column.getIsSorted() === "asc")
                     }
                 >
-                    Paid
+                    Status
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
             );
         },
         cell: ({ row }) => {
-            const isPaid = row.original.isPaid;
+            const status = row.original.status;
 
-            return <SupportIcon supported={isPaid} />;
+            return (
+                <Badge variant={status}>
+                    {capitalizeFirst(status as string)}
+                </Badge>
+            );
+        },
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id));
         },
     },
     {

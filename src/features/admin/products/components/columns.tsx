@@ -2,16 +2,14 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import {
-    ArrowUpDownIcon,
-    MoreVerticalIcon,
-} from "lucide-react";
+import { ArrowUpDownIcon, MoreVerticalIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { ProductGetMany } from "../types";
-import { formatPrice } from "@/lib/utils";
+import { capitalizeFirst, formatPrice } from "@/lib/utils";
 import { ProductActions } from "./product-actions";
 import { SupportIcon } from "@/components/support-icon";
+import { ToggleInStock } from "./toggle-in-stock";
 
 export const columns: ColumnDef<ProductGetMany[number]>[] = [
     {
@@ -22,9 +20,7 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
                     table.getIsAllPageRowsSelected() ||
                     (table.getIsSomePageRowsSelected() && "indeterminate")
                 }
-                onCheckedChange={(value) =>
-                    table.toggleAllPageRowsSelected(!!value)
-                }
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                 aria-label="Select all"
             />
         ),
@@ -44,9 +40,7 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Name
                     <ArrowUpDownIcon className="h-4 w-4" />
@@ -60,57 +54,12 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         },
     },
     {
-        accessorKey: "isArchived",
+        accessorKey: "price",
         header: ({ column }) => {
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Archived
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
-            );
-        },
-        cell: ({ row }) => {
-            const isArchived = row.original.isArchived;
-
-            return <SupportIcon supported={isArchived} />;
-        },
-    },
-    {
-        accessorKey: "isFeatured",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
-                    Featured
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
-            );
-        },
-
-        cell: ({ row }) => {
-            const isFeatured = row.original.isFeatured;
-
-            return <SupportIcon supported={isFeatured} />;
-        },
-    },
-    {
-        accessorKey: "Price",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Price
                     <ArrowUpDownIcon className="h-4 w-4" />
@@ -159,14 +108,71 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         },
     },
     {
+        accessorKey: "status",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Status
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => {
+            const status = row.original.status;
+
+            const statusOption = {
+                label: capitalizeFirst(status as string),
+                color: "bg-orange-500",
+            };
+
+            if (status === "PUBLISHED") {
+                statusOption.color = "bg-green-500";
+            }
+            if (status === "ARCHIVED") {
+                statusOption.color = "bg-blue-500";
+            }
+
+            return (
+                <div className="flex items-center gap-x-2">
+                    <div className={`h-2 w-2 rounded-full ${statusOption.color}`} />
+                    <span className="text-xs font-medium">{statusOption.label}</span>
+                </div>
+            );
+        },
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id));
+        },
+    },
+    {
+        accessorKey: "isFeatured",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Featured
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+
+        cell: ({ row }) => {
+            const isFeatured = row.original.isFeatured;
+
+            return <SupportIcon supported={isFeatured} />;
+        },
+    },
+    {
         accessorKey: "createdAt",
         header: ({ column }) => {
             return (
                 <Button
                     variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Created At
                     <ArrowUpDownIcon className="h-4 w-4" />
@@ -174,12 +180,20 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
             );
         },
         cell: ({ row }) => {
-            const createdAtFormatted = format(
-                row.original.createdAt,
-                "MMMM do, yyyy",
-            );
+            const createdAtFormatted = format(row.original.createdAt, "MMMM do, yyyy");
 
             return <p className="line-clamp-1">{createdAtFormatted}</p>;
+        },
+    },
+    {
+        accessorKey: "inStock",
+        header: "In Stock",
+        cell: ({ row }) => {
+            const id = row.original.id;
+            const storeId = row.original.storeId;
+            const inStock = row.original.inStock;
+
+            return <ToggleInStock isChecked={inStock} id={id} storeId={storeId} />;
         },
     },
     {

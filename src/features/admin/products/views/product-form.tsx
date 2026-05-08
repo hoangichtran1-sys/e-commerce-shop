@@ -1,16 +1,10 @@
 /* eslint-disable react/no-children-prop */
 "use client";
 
-import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
-import {
-    useMutation,
-    useQuery,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { TrashIcon, PlusCircleIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useForm, useStore } from "@tanstack/react-form";
 import {
@@ -38,17 +32,35 @@ import { Hint } from "@/components/hint";
 import { createProductSchema } from "../schemas";
 import { ImageUploadProduct } from "@/components/image-upload-product";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-} from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { BreadcrumbHeader } from "@/components/breadcrumb-header";
+import { ProductStatus } from "@/generated/prisma/enums";
+import { Switch } from "@/components/ui/switch";
 
 interface ProductFormProps {
     productId: string;
     storeId: string;
 }
+
+const statusOptions = [
+    {
+        label: "Draft",
+        value: ProductStatus.DRAFT,
+        color: "bg-orange-500",
+    },
+    {
+        label: "Published",
+        value: ProductStatus.PUBLISHED,
+        color: "bg-green-500",
+    },
+    {
+        label: "Archived",
+        value: ProductStatus.ARCHIVED,
+        color: "bg-blue-500",
+    },
+];
 
 export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
     const router = useRouter();
@@ -70,9 +82,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
     }));
 
     const [previews, setPreviews] = useState<string[]>(() => {
-        const initialImagePreview = (initialData?.images || []).map(
-            (image) => image.url,
-        );
+        const initialImagePreview = (initialData?.images || []).map((image) => image.url);
 
         return initialImagePreview;
     });
@@ -152,9 +162,11 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
             colorId: initialData?.colorId || "",
             name: initialData?.name || "",
             price: initialData?.price ? initialData.price : 0.01,
+            status: initialData?.status || ProductStatus.DRAFT,
             isFeatured: !!initialData?.isFeatured,
-            isArchived: !!initialData?.isArchived,
+            inStock: !!initialData?.inStock,
             images: previews || [],
+            description: initialData?.description || null,
         },
         validators: {
             onSubmit: createProductSchema.omit({ storeId: true }),
@@ -207,8 +219,6 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
         "The following action will permanently remove this product",
     );
 
-    const title = initialData ? "Edit product" : "Create product";
-    const description = initialData ? "Edit a product" : "Add a new product";
     const actionLabel = initialData ? "Save changes" : "Create";
 
     const categoryId = useStore(form.store, (state) => state.values.categoryId);
@@ -255,7 +265,12 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
         <>
             <RemoveConfirmation />
             <div className="flex items-center justify-between">
-                <Heading title={title} description={description} />
+                <BreadcrumbHeader
+                    id={productId}
+                    storeId={storeId}
+                    name={initialData?.name || "New"}
+                    topic="products"
+                />
                 {initialData && (
                     <Button
                         variant="destructive"
@@ -276,439 +291,460 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                 className="space-y-8 w-full"
             >
                 <div className="grid md:grid-cols-3 grid-cols-1 md:gap-8 gap-4">
-                    <FieldGroup className="min-w-50 md:col-span-3">
-                        <form.Field
-                            name="images"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
+                    <FieldGroup className="col-span-3">
+                        <div className="w-full">
+                            <form.Field
+                                name="images"
+                                children={(field) => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched && !field.state.meta.isValid;
 
-                                return (
-                                    <>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Product Image
-                                        </FieldLabel>
+                                    return (
+                                        <>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Product Image
+                                            </FieldLabel>
 
-                                        <div className="flex item-center justify-start gap-4">
-                                            <ImageUploadProduct
-                                                previews={previews}
-                                                setPreviews={setPreviews}
-                                                onUpload={handleFilesUpload}
-                                                isUploading={upload.isPending}
-                                            />
-                                        </div>
-
-                                        <Field data-invalid={isInvalid}>
-                                            <Input
-                                                disabled
-                                                className="hidden"
-                                                type="text"
-                                                id={field.name}
-                                                name={field.name}
-                                                value={field.state.value}
-                                            />
-                                            {isInvalid && (
-                                                <FieldError
-                                                    errors={
-                                                        field.state.meta.errors
-                                                    }
+                                            <div className="flex item-center justify-start gap-4 mt-2">
+                                                <ImageUploadProduct
+                                                    previews={previews}
+                                                    setPreviews={setPreviews}
+                                                    onUpload={handleFilesUpload}
+                                                    isUploading={upload.isPending}
                                                 />
-                                            )}
-                                        </Field>
-                                    </>
-                                );
-                            }}
-                        />
+                                            </div>
+
+                                            <Field data-invalid={isInvalid}>
+                                                <Input
+                                                    disabled
+                                                    className="hidden"
+                                                    type="text"
+                                                    id={field.name}
+                                                    name={field.name}
+                                                    value={field.state.value}
+                                                />
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </Field>
+                                        </>
+                                    );
+                                }}
+                            />
+                        </div>
                     </FieldGroup>
-                    <FieldGroup className="min-w-50">
-                        <form.Field
-                            name="name"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Name
-                                        </FieldLabel>
-                                        <Input
-                                            className="max-w-60"
-                                            type="text"
-                                            placeholder="Product name"
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={(e) =>
-                                                field.handleChange(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            aria-invalid={isInvalid}
-                                            autoComplete="off"
-                                        />
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
-                                            />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
-                        <form.Field
-                            name="categoryId"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Category
-                                        </FieldLabel>
-                                        <div className="flex items-center justify-start gap-2">
-                                            <Select
-                                                name={field.name}
-                                                value={field.state.value}
-                                                onValueChange={
-                                                    field.handleChange
-                                                }
-                                            >
-                                                <SelectTrigger
-                                                    id="select-category"
+                    <FieldGroup className="col-span-3">
+                        <div className="w-full flex items-center justify-between gap-x-6">
+                            <div className="flex-1 max-w-60">
+                                <form.Field
+                                    name="name"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Product name"
+                                                    id={field.name}
+                                                    name={field.name}
+                                                    value={field.state.value}
+                                                    onBlur={field.handleBlur}
+                                                    onChange={(e) =>
+                                                        field.handleChange(e.target.value)
+                                                    }
                                                     aria-invalid={isInvalid}
-                                                    className="min-w-60"
-                                                >
-                                                    <SelectValue placeholder="Select category" />
-                                                </SelectTrigger>
-                                                <SelectContent position="popper">
-                                                    {categoriesFormatted.map(
-                                                        (item) => (
-                                                            <SelectItem
-                                                                key={item.value}
-                                                                value={
-                                                                    item.value
-                                                                }
-                                                            >
-                                                                {item.label}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            {categoriesFormatted.length ===
-                                                0 && (
-                                                <Hint text="New category">
-                                                    <Button
-                                                        size="icon-sm"
-                                                        type="button"
-                                                        variant="outline"
-                                                        onClick={() =>
-                                                            router.push(
-                                                                `/admin/${storeId}/categories/new`,
+                                                    autoComplete="off"
+                                                />
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1 max-w-60">
+                                <form.Field
+                                    name="price"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Price</FieldLabel>
+                                                <InputGroup className="bg-background">
+                                                    <InputGroupAddon>
+                                                        <Label htmlFor="price">$</Label>
+                                                    </InputGroupAddon>
+                                                    <InputGroupInput
+                                                        type="number"
+                                                        min={0.01}
+                                                        step="0.01"
+                                                        placeholder="0.00"
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        onChange={(e) =>
+                                                            field.handleChange(
+                                                                Number(e.target.value),
                                                             )
                                                         }
-                                                    >
-                                                        <PlusCircleIcon className="size-4" />
-                                                    </Button>
-                                                </Hint>
-                                            )}
-                                        </div>
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
-                                            />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
-                    </FieldGroup>
-                    <FieldGroup className="min-w-50 max-w-60">
-                        <form.Field
-                            name="price"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Price
-                                        </FieldLabel>
-                                        <InputGroup className="bg-background">
-                                            <InputGroupAddon>
-                                                <Label htmlFor="price">$</Label>
-                                            </InputGroupAddon>
-                                            <InputGroupInput
-                                                className="max-w-60"
-                                                type="number"
-                                                min={0.01}
-                                                step="0.01"
-                                                placeholder="0.00"
-                                                id={field.name}
-                                                name={field.name}
-                                                value={field.state.value}
-                                                onBlur={field.handleBlur}
-                                                onChange={(e) =>
-                                                    field.handleChange(
-                                                        Number(e.target.value),
-                                                    )
-                                                }
-                                                aria-invalid={isInvalid}
-                                                autoComplete="off"
-                                            />
-                                        </InputGroup>
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
-                                            />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
-                        <form.Field
-                            name="sizeId"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Size
-                                        </FieldLabel>
-                                        <div className="flex items-center justify-start gap-2">
-                                            <Select
-                                                name={field.name}
-                                                value={field.state.value}
-                                                onValueChange={
-                                                    field.handleChange
-                                                }
-                                                disabled={categoryId === ""}
-                                            >
-                                                <SelectTrigger
-                                                    id="select-size"
-                                                    aria-invalid={isInvalid}
-                                                    className="min-w-60"
-                                                >
-                                                    <SelectValue placeholder="Select size" />
-                                                </SelectTrigger>
-                                                <SelectContent position="popper">
-                                                    {sizesFormatted.map(
-                                                        (item) => (
-                                                            <SelectItem
-                                                                key={item.value}
-                                                                value={
-                                                                    item.value
-                                                                }
-                                                            >
-                                                                {item.label}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
-                                            />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
-                    </FieldGroup>
-                    <FieldGroup className="min-w-50">
-                        <div className="w-full max-w-sm space-y-2">
-                            <Label htmlFor="quantity">Quantity</Label>
-                            <div className="flex gap-2">
-                                <Button
-                                    onClick={() =>
-                                        setValue(Math.max(1, value - 1))
-                                    }
-                                    size="icon"
-                                    type="button"
-                                    variant="outline"
-                                >
-                                    <MinusIcon className="h-4 w-4" />
-                                </Button>
-                                <Input
-                                    className="bg-background text-center max-w-40"
-                                    id="quantity"
-                                    min="1"
-                                    onChange={(e) =>
-                                        setValue(Number(e.target.value))
-                                    }
-                                    type="number"
-                                    value={value}
+                                                        aria-invalid={isInvalid}
+                                                        autoComplete="off"
+                                                    />
+                                                </InputGroup>
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </Field>
+                                        );
+                                    }}
                                 />
-                                <Button
-                                    onClick={() => setValue(value + 1)}
-                                    size="icon"
-                                    type="button"
-                                    variant="outline"
-                                >
-                                    <PlusIcon className="h-4 w-4" />
-                                </Button>
+                            </div>
+                            <div className="flex-1 max-w-60">
+                                <Label htmlFor="quantity">Quantity</Label>
+                                <div className="flex gap-2 mt-3">
+                                    <Button
+                                        onClick={() => setValue(Math.max(1, value - 1))}
+                                        size="icon"
+                                        type="button"
+                                        variant="outline"
+                                    >
+                                        <MinusIcon className="h-4 w-4" />
+                                    </Button>
+                                    <Input
+                                        className="bg-background text-center max-w-40"
+                                        id="quantity"
+                                        min="1"
+                                        onChange={(e) => setValue(Number(e.target.value))}
+                                        type="number"
+                                        value={value}
+                                    />
+                                    <Button
+                                        onClick={() => setValue(value + 1)}
+                                        size="icon"
+                                        type="button"
+                                        variant="outline"
+                                    >
+                                        <PlusIcon className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                        <form.Field
-                            name="colorId"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Color
-                                        </FieldLabel>
-                                        <div className="flex items-center justify-start gap-2">
-                                            <Select
-                                                name={field.name}
-                                                value={field.state.value}
-                                                onValueChange={
-                                                    field.handleChange
-                                                }
-                                                disabled={categoryId === ""}
-                                            >
-                                                <SelectTrigger
-                                                    id="select-color"
-                                                    aria-invalid={isInvalid}
-                                                    className="min-w-60"
-                                                >
-                                                    <SelectValue placeholder="Select color" />
-                                                </SelectTrigger>
-                                                <SelectContent position="popper">
-                                                    {colorsFormatted.map(
-                                                        (item) => (
-                                                            <SelectItem
-                                                                key={item.value}
-                                                                value={
-                                                                    item.value
+                    </FieldGroup>
+                    <FieldGroup className="col-span-3">
+                        <div className="w-full flex md:flex-row flex-col items-start md:items-center justify-between gap-6">
+                            <div className="flex-1 max-w-60">
+                                <form.Field
+                                    name="categoryId"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Category
+                                                </FieldLabel>
+                                                <div className="flex items-center justify-start gap-2">
+                                                    <Select
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onValueChange={field.handleChange}
+                                                    >
+                                                        <SelectTrigger
+                                                            id="select-category"
+                                                            aria-invalid={isInvalid}
+                                                            className="min-w-60"
+                                                        >
+                                                            <SelectValue placeholder="Select category" />
+                                                        </SelectTrigger>
+                                                        <SelectContent position="popper">
+                                                            {categoriesFormatted.map((item) => (
+                                                                <SelectItem
+                                                                    key={item.value}
+                                                                    value={item.value}
+                                                                >
+                                                                    {item.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {categoriesFormatted.length === 0 && (
+                                                        <Hint text="New category">
+                                                            <Button
+                                                                size="icon-sm"
+                                                                type="button"
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    router.push(
+                                                                        `/admin/${storeId}/categories/new`,
+                                                                    )
                                                                 }
                                                             >
-                                                                <div className="flex items-center gap-x-2">
-                                                                    <div
-                                                                        className="h-4 w-4 rounded-full border"
-                                                                        style={{
-                                                                            backgroundColor:
-                                                                                item.label,
-                                                                        }}
-                                                                    />
-                                                                    {item.label}
-                                                                </div>
-                                                            </SelectItem>
-                                                        ),
+                                                                <PlusCircleIcon className="size-4" />
+                                                            </Button>
+                                                        </Hint>
                                                     )}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
-                                            />
-                                        )}
-                                    </Field>
-                                );
-                            }}
-                        />
+                                                </div>
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1 max-w-60">
+                                <form.Field
+                                    name="sizeId"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Size</FieldLabel>
+                                                <div className="flex items-center justify-start gap-2">
+                                                    <Select
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onValueChange={field.handleChange}
+                                                        disabled={categoryId === ""}
+                                                    >
+                                                        <SelectTrigger
+                                                            id="select-size"
+                                                            aria-invalid={isInvalid}
+                                                            className="min-w-60"
+                                                        >
+                                                            <SelectValue placeholder="Select size" />
+                                                        </SelectTrigger>
+                                                        <SelectContent position="popper">
+                                                            {sizesFormatted.map((item) => (
+                                                                <SelectItem
+                                                                    key={item.value}
+                                                                    value={item.value}
+                                                                >
+                                                                    {item.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1 max-w-60">
+                                <form.Field
+                                    name="colorId"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Color</FieldLabel>
+                                                <div className="flex items-center justify-start gap-2">
+                                                    <Select
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onValueChange={field.handleChange}
+                                                        disabled={categoryId === ""}
+                                                    >
+                                                        <SelectTrigger
+                                                            id="select-color"
+                                                            aria-invalid={isInvalid}
+                                                            className="min-w-60"
+                                                        >
+                                                            <SelectValue placeholder="Select color" />
+                                                        </SelectTrigger>
+                                                        <SelectContent position="popper">
+                                                            {colorsFormatted.map((item) => (
+                                                                <SelectItem
+                                                                    key={item.value}
+                                                                    value={item.value}
+                                                                >
+                                                                    <div className="flex items-center gap-x-2">
+                                                                        <div
+                                                                            className="h-4 w-4 rounded-full border"
+                                                                            style={{
+                                                                                backgroundColor:
+                                                                                    item.label,
+                                                                            }}
+                                                                        />
+                                                                        {item.label}
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                        </div>
                     </FieldGroup>
-                    <FieldGroup className="min-w-50">
-                        <form.Field
-                            name="isFeatured"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <FieldLabel>
-                                        <Field
-                                            orientation="horizontal"
-                                            data-invalid={isInvalid}
-                                        >
-                                            <Checkbox
+                    <FieldGroup className="col-span-3">
+                        <div className="w-full md:max-w-[50%]">
+                            <form.Field
+                                name="description"
+                                children={(field) => {
+                                    const isInvalid =
+                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    return (
+                                        <Field data-invalid={isInvalid}>
+                                            <FieldLabel htmlFor={field.name}>
+                                                Description
+                                                <span className="text-neutral-600">(optional)</span>
+                                            </FieldLabel>
+                                            <Textarea
                                                 id={field.name}
                                                 name={field.name}
+                                                value={field.state.value || ""}
+                                                onBlur={field.handleBlur}
+                                                onChange={(e) => field.handleChange(e.target.value)}
                                                 aria-invalid={isInvalid}
-                                                checked={field.state.value}
-                                                onCheckedChange={(checked) =>
-                                                    field.handleChange(
-                                                        checked === true,
-                                                    )
-                                                }
+                                                placeholder="Detailed product information description..."
+                                                className="min-h-30"
                                             />
-                                            <FieldContent>
-                                                <FieldTitle>
-                                                    Featured
-                                                </FieldTitle>
-                                                <FieldDescription>
-                                                    This product will appear on
-                                                    the home page.
-                                                </FieldDescription>
-                                            </FieldContent>
+                                            {isInvalid && (
+                                                <FieldError errors={field.state.meta.errors} />
+                                            )}
                                         </Field>
-
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
-                                            />
-                                        )}
-                                    </FieldLabel>
-                                );
-                            }}
-                        />
+                                    );
+                                }}
+                            />
+                        </div>
                     </FieldGroup>
-                    <FieldGroup className="min-w-50">
-                        <form.Field
-                            name="isArchived"
-                            children={(field) => {
-                                const isInvalid =
-                                    field.state.meta.isTouched &&
-                                    !field.state.meta.isValid;
-                                return (
-                                    <FieldLabel>
-                                        <Field
-                                            orientation="horizontal"
-                                            data-invalid={isInvalid}
-                                        >
-                                            <Checkbox
-                                                id={field.name}
-                                                name={field.name}
-                                                aria-invalid={isInvalid}
-                                                checked={field.state.value}
-                                                onCheckedChange={(checked) =>
-                                                    field.handleChange(
-                                                        checked === true,
-                                                    )
-                                                }
-                                            />
-                                            <FieldContent>
-                                                <FieldTitle>
-                                                    Archived
-                                                </FieldTitle>
-                                                <FieldDescription>
-                                                    This product will not appear
-                                                    anywhere in the store.
-                                                </FieldDescription>
-                                            </FieldContent>
-                                        </Field>
+                    <FieldGroup className="col-span-3">
+                        <div className="w-full flex items-center justify-between gap-x-6">
+                            <div className="flex-1 max-w-[50%]">
+                                <form.Field
+                                    name="isFeatured"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <FieldLabel>
+                                                <Field
+                                                    orientation="horizontal"
+                                                    data-invalid={isInvalid}
+                                                >
+                                                    <Checkbox
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        aria-invalid={isInvalid}
+                                                        checked={field.state.value}
+                                                        onCheckedChange={(checked) =>
+                                                            field.handleChange(checked === true)
+                                                        }
+                                                    />
+                                                    <FieldContent>
+                                                        <FieldTitle>Featured</FieldTitle>
+                                                        <FieldDescription>
+                                                            This product will appear on the home
+                                                            page.
+                                                        </FieldDescription>
+                                                    </FieldContent>
+                                                </Field>
 
-                                        {isInvalid && (
-                                            <FieldError
-                                                errors={field.state.meta.errors}
-                                            />
-                                        )}
-                                    </FieldLabel>
-                                );
-                            }}
-                        />
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </FieldLabel>
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1 max-w-60">
+                                <form.Field
+                                    name="status"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Status</FieldLabel>
+                                                <div className="flex items-center justify-start gap-2">
+                                                    <Select
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onValueChange={(val) =>
+                                                            field.handleChange(val as ProductStatus)
+                                                        }
+                                                    >
+                                                        <SelectTrigger
+                                                            id="select-status"
+                                                            aria-invalid={isInvalid}
+                                                        >
+                                                            <SelectValue
+                                                                defaultValue={ProductStatus.DRAFT}
+                                                            />
+                                                        </SelectTrigger>
+                                                        <SelectContent position="item-aligned">
+                                                            {statusOptions.map((item) => (
+                                                                <SelectItem
+                                                                    key={item.value}
+                                                                    value={item.value}
+                                                                >
+                                                                    <div className="flex items-center gap-x-2">
+                                                                        <div
+                                                                            className={`h-2 w-2 rounded-full ${item.color}`}
+                                                                        />
+                                                                        <span className="text-xs font-medium">
+                                                                            {item.label}
+                                                                        </span>
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                {isInvalid && (
+                                                    <FieldError errors={field.state.meta.errors} />
+                                                )}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1 max-w-40">
+                                <form.Field
+                                    name="inStock"
+                                    children={(field) => {
+                                        const isInvalid =
+                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field
+                                                orientation="horizontal"
+                                                data-invalid={isInvalid}
+                                            >
+                                                <Switch
+                                                    id={field.name}
+                                                    name={field.name}
+                                                    checked={field.state.value}
+                                                    onCheckedChange={field.handleChange}
+                                                    aria-invalid={isInvalid}
+                                                />
+                                                <FieldLabel htmlFor={field.name}>
+                                                    In Stock
+                                                </FieldLabel>
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                        </div>
                     </FieldGroup>
                 </div>
                 <form.Subscribe
@@ -722,11 +758,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
 
                         return (
                             <Button
-                                disabled={
-                                    isDisabled ||
-                                    remove.isPending ||
-                                    upload.isPending
-                                }
+                                disabled={isDisabled || remove.isPending || upload.isPending}
                                 type="submit"
                                 className="ml-auto w-full md:w-auto"
                             >

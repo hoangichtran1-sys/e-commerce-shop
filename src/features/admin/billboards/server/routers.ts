@@ -11,14 +11,8 @@ export const billboardsRouter = base.router({
             z.object({
                 file: z
                     .instanceof(File)
-                    .refine(
-                        (file) => file.size <= 5 * 1024 * 1024,
-                        "Max file size 5MB",
-                    )
-                    .refine(
-                        (file) => file.type.startsWith("image/"),
-                        "Type image is required",
-                    ),
+                    .refine((file) => file.size <= 5 * 1024 * 1024, "Max file size 5MB")
+                    .refine((file) => file.type.startsWith("image/"), "Type image is required"),
             }),
         )
         .handler(async ({ input }) => {
@@ -27,24 +21,21 @@ export const billboardsRouter = base.router({
             const arrayBuffer = await file.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
-            const uploadResult = await new Promise<UploadApiResponse>(
-                (resolve, reject) => {
-                    cloudinary.uploader
-                        .upload_stream(
-                            { folder: "billboards" },
-                            (
-                                error: UploadApiErrorResponse | undefined,
-                                result: UploadApiResponse | undefined,
-                            ) => {
-                                if (error) reject(error);
-                                if (!result)
-                                    return reject(new ORPCError("BAD_REQUEST"));
-                                resolve(result);
-                            },
-                        )
-                        .end(buffer);
-                },
-            );
+            const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+                cloudinary.uploader
+                    .upload_stream(
+                        { folder: "billboards" },
+                        (
+                            error: UploadApiErrorResponse | undefined,
+                            result: UploadApiResponse | undefined,
+                        ) => {
+                            if (error) reject(error);
+                            if (!result) return reject(new ORPCError("BAD_REQUEST"));
+                            resolve(result);
+                        },
+                    )
+                    .end(buffer);
+            });
 
             const newUpload = await prisma.upload.create({
                 data: {
@@ -68,6 +59,7 @@ export const billboardsRouter = base.router({
                 label: z.string().min(1),
                 imageUrl: z.string().min(1),
                 storeId: z.string().min(1),
+                isActive: z.boolean(),
             }),
         )
         .handler(async ({ input }) => {
@@ -76,6 +68,7 @@ export const billboardsRouter = base.router({
                     label: input.label,
                     imageUrl: input.imageUrl,
                     storeId: input.storeId,
+                    isActive: input.isActive,
                 },
             });
 
@@ -99,6 +92,7 @@ export const billboardsRouter = base.router({
                 label: z.string().min(1),
                 newImageUrl: z.string().min(1),
                 storeId: z.string().min(1),
+                isActive: z.boolean(),
             }),
         )
         .handler(async ({ input }) => {
@@ -122,6 +116,7 @@ export const billboardsRouter = base.router({
                 data: {
                     label: input.label,
                     imageUrl: input.newImageUrl,
+                    isActive: input.isActive,
                 },
             });
 
@@ -230,6 +225,33 @@ export const billboardsRouter = base.router({
                 count: billboardsDeleted.length,
             };
         }),
+    toggleActive: admin
+        .input(
+            z.object({
+                id: z.string().min(1),
+                storeId: z.string().min(1),
+            }),
+        )
+        .handler(async ({ input }) => {
+            const billboard = await prisma.billboard.findUnique({
+                where: {
+                    id: input.id,
+                    storeId: input.storeId,
+                },
+            });
+            if (!billboard) {
+                throw new ORPCError("NOT_FOUND");
+            }
+
+            const toggleActiveBillboard = await prisma.billboard.update({
+                where: { id: input.id },
+                data: {
+                    isActive: !billboard.isActive,
+                },
+            });
+
+            return toggleActiveBillboard;
+        }),
     getOne: admin
         .input(
             z.object({
@@ -247,18 +269,34 @@ export const billboardsRouter = base.router({
 
             return billboard;
         }),
-    getMany: admin
-        .input(z.object({ storeId: z.string().min(1) }))
+    getOneWithActive: admin
+        .input(
+            z.object({
+                id: z.string().min(1),
+                storeId: z.string().min(1),
+            }),
+        )
         .handler(async ({ input }) => {
-            const billboards = await prisma.billboard.findMany({
+            const billboard = await prisma.billboard.findUnique({
                 where: {
+                    id: input.id,
                     storeId: input.storeId,
-                },
-                orderBy: {
-                    createdAt: "desc",
+                    isActive: true,
                 },
             });
 
-            return billboards;
+            return billboard;
         }),
+    getMany: admin.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
+        const billboards = await prisma.billboard.findMany({
+            where: {
+                storeId: input.storeId,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+
+        return billboards;
+    }),
 });

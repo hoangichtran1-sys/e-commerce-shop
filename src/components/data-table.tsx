@@ -24,8 +24,12 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { TrashIcon } from "lucide-react";
+import { SearchIcon, TrashIcon } from "lucide-react";
+import {
+    DataTableFacetedFilter,
+    FilterOption,
+} from "./data-table-faceted-filter";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -33,6 +37,7 @@ interface DataTableProps<TData, TValue> {
     data: TData[];
     onDelete?: (rows: Row<TData>[]) => void;
     disabled?: boolean;
+    statusOption?: FilterOption[];
 }
 
 export function DataTable<TData, TValue>({
@@ -41,6 +46,7 @@ export function DataTable<TData, TValue>({
     searchKey,
     onDelete,
     disabled,
+    statusOption,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -66,23 +72,39 @@ export function DataTable<TData, TValue>({
         },
     });
 
+    const hasStatusColumn = table.getAllColumns().some(col => col.id === "status");
+
     return (
         <div className="w-full">
             <div className="flex items-center justify-between py-4">
-                <Input
-                    placeholder="Filter billboards..."
-                    value={
-                        (table
-                            .getColumn(searchKey)
-                            ?.getFilterValue() as string) ?? ""
-                    }
-                    onChange={(event) =>
-                        table
-                            .getColumn(searchKey)
-                            ?.setFilterValue(event.target.value)
-                    }
-                    className="h-8 text-sm max-w-xs mr-2"
-                />
+                <div className="flex items-center gap-x-4">
+                    <InputGroup>
+                        <InputGroupInput
+                            placeholder="Filter billboards..."
+                            value={
+                                (table
+                                    .getColumn(searchKey)
+                                    ?.getFilterValue() as string) ?? ""
+                            }
+                            onChange={(event) =>
+                                table
+                                    .getColumn(searchKey)
+                                    ?.setFilterValue(event.target.value)
+                            }
+                            className="h-8 text-sm max-w-xs"
+                        />
+                        <InputGroupAddon>
+                            <SearchIcon />
+                        </InputGroupAddon>
+                    </InputGroup>
+                    {hasStatusColumn && (
+                        <DataTableFacetedFilter
+                            column={table.getColumn("status")}
+                            title="Status"
+                            options={statusOption ?? []}
+                        />
+                    )}
+                </div>
                 {table.getFilteredSelectedRowModel().rows.length > 0 &&
                     onDelete && (
                         <Button

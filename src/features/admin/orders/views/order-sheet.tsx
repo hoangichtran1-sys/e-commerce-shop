@@ -12,9 +12,11 @@ import {
 } from "@/components/ui/sheet";
 import { OrderGetMany } from "../types";
 import { format } from "date-fns";
-import { formatPrice } from "@/lib/utils";
+import { capitalizeFirst, formatPrice } from "@/lib/utils";
 import { useMemo } from "react";
 import { DEFAULT_DISCOUNT } from "@/constants";
+import { TbCreditCardRefund } from "react-icons/tb";
+import { FiPrinter } from "react-icons/fi";
 
 interface OrderSheetProps {
     open: boolean;
@@ -47,10 +49,8 @@ export const OrderSheet = ({ open, onOpenChange, data }: OrderSheetProps) => {
                 <div className="flex flex-col gap-4 p-4">
                     <div className="flex items-center justify-between">
                         <span className="font-medium text-sm">Status</span>
-                        <Badge
-                            variant={data.isPaid ? "default" : "destructive"}
-                        >
-                            {data.isPaid ? "Paid" : "Not paid"}
+                        <Badge variant={data.status}>
+                            {capitalizeFirst(data.status as string)}
                         </Badge>
                     </div>
                     <Separator />
@@ -97,8 +97,17 @@ export const OrderSheet = ({ open, onOpenChange, data }: OrderSheetProps) => {
                             </span>
                         </div>
                     </div>
-                    <Button className="w-full" variant="outline">
-                        Track Shipment
+                    <Button className="w-full">
+                        <TbCreditCardRefund className="size-4" />
+                        Refund
+                    </Button>
+                    <Button
+                        onClick={() => window.print()}
+                        className="w-full"
+                        variant="outline"
+                    >
+                        <FiPrinter className="size-4" />
+                        Print
                     </Button>
                 </div>
             </SheetContent>

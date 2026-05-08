@@ -148,4 +148,31 @@ export const categoriesRouter = base.router({
 
             return categories;
         }),
+    getManyWithPromotion: admin
+        .input(z.object({ storeId: z.string().min(1) }))
+        .handler(async ({ input }) => {
+            const categories = await prisma.category.findMany({
+                where: {
+                    storeId: input.storeId,
+                },
+                include: {
+                    billboard: true,
+                    promotions: true,
+                },
+                orderBy: {
+                    createdAt: "desc",
+                },
+            });
+
+            return categories.map((category) => ({
+                ...category,
+                promotions: category.promotions.map((promotion) => ({
+                    ...promotion,
+                    minOrderValue: promotion.minOrderValue.toNumber(),
+                    maxDiscountValue: promotion.maxDiscountValue
+                        ? promotion.maxDiscountValue.toNumber()
+                        : null,
+                })),
+            }));
+        }),
 });
