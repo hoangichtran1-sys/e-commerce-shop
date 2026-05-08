@@ -25,7 +25,7 @@ export const CategoriesView = ({ storeId }: CategoriesViewProps) => {
     const queryClient = useQueryClient();
 
     const { data: categories } = useSuspenseQuery(
-        orpc.categories.getMany.queryOptions({ input: { storeId } }),
+        orpc.categories.getManyWithPromotion.queryOptions({ input: { storeId } }),
     );
 
     const bulkDelete = useMutation(
@@ -33,7 +33,7 @@ export const CategoriesView = ({ storeId }: CategoriesViewProps) => {
             onSuccess: (data) => {
                 toast.success(`${data.count} categories deleted`);
                 queryClient.invalidateQueries(
-                    orpc.categories.getMany.queryOptions({
+                    orpc.categories.getManyWithPromotion.queryOptions({
                         input: { storeId },
                     }),
                 );

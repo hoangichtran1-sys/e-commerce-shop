@@ -61,7 +61,7 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
             onSuccess: () => {
                 toast.success("Category created");
                 queryClient.invalidateQueries(
-                    orpc.categories.getMany.queryOptions({
+                    orpc.categories.getManyWithPromotion.queryOptions({
                         input: { storeId },
                     }),
                 );
@@ -78,7 +78,7 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
             onSuccess: (data) => {
                 toast.success("Category updated");
                 queryClient.invalidateQueries(
-                    orpc.categories.getMany.queryOptions({
+                    orpc.categories.getManyWithPromotion.queryOptions({
                         input: { storeId },
                     }),
                 );
@@ -99,7 +99,7 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
             onSuccess: () => {
                 toast.success("Category deleted");
                 queryClient.invalidateQueries(
-                    orpc.categories.getMany.queryOptions({
+                    orpc.categories.getManyWithPromotion.queryOptions({
                         input: { storeId },
                     }),
                 );

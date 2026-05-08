@@ -1,3 +1,3 @@
 import { Outputs } from "@/orpc/routers/_app";
 
-export type CategoriesGetMany = Outputs["categories"]["getMany"];
+export type CategoriesGetManyWithPromotion = Outputs["categories"]["getManyWithPromotion"];

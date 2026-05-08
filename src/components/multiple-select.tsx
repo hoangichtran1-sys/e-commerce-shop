@@ -67,7 +67,8 @@ export const MultipleSelect = ({
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="h-auto min-h-8 w-full justify-between hover:bg-transparent"
+
+                        className="h-auto min-h-8 w-[100%] justify-between hover:bg-transparent"
                     >
                         <div className="flex flex-wrap items-center gap-1 pr-2.5">
                             {selectedValues.length > 0 ? (
@@ -128,7 +129,7 @@ export const MultipleSelect = ({
                         />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="min-w-(--anchor-width) w-auto p-0">
+                <PopoverContent className="max-w-full p-0">
                     <Command>
                         <CommandInput placeholder={`Search ${topic}...`} />
                         <CommandList>
@@ -142,17 +143,19 @@ export const MultipleSelect = ({
                                             toggleSelection(option.value)
                                         }
                                     >
-                                        <span className="truncate">
-                                            {option.label}
-                                        </span>
-                                        {selectedValues.includes(
-                                            option.value,
-                                        ) && (
-                                            <CheckIcon
-                                                size={16}
-                                                className="ml-auto"
-                                            />
-                                        )}
+                                        <div className="flex w-full items-center justify-between">
+                                            <span className="truncate">
+                                               {option.label}
+                                            </span>
+                                            {selectedValues.includes(
+                                                option.value,
+                                            ) && (
+                                                <CheckIcon
+                                                    size={16}
+                                                    className="-mr-2"
+                                                />
+                                            )}
+                                        </div>
                                     </CommandItem>
                                 ))}
                             </CommandGroup>

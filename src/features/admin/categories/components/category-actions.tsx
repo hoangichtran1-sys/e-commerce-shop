@@ -35,7 +35,7 @@ export const CategoryActions = ({
             onSuccess: () => {
                 toast.success("Category deleted");
                 queryClient.invalidateQueries(
-                    orpc.categories.getMany.queryOptions({
+                    orpc.categories.getManyWithPromotion.queryOptions({
                         input: { storeId },
                     }),
                 );

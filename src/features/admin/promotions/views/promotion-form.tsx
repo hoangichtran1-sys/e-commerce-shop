@@ -585,10 +585,10 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                     </div>
                                                     <div
                                                         className={cn(
-                                                            "transition-all",
+                                                            "duration-300 transition-all",
                                                             toggleDisplayDiscount
-                                                                ? "block"
-                                                                : "hidden",
+                                                                ? "opacity-100"
+                                                                : "opacity-0",
                                                         )}
                                                     >
                                                         <InputGroup className="bg-background">
@@ -635,9 +635,9 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                         </div>
                     </FieldGroup>
                     <FieldGroup className="col-span-3">
-                        <div className="flex w-full max-w-[60%] items-center justify-between gap-6">
+                        <div className="flex w-full max-w-[60%] flex-col md:flex-row md:items-center items-start justify-between gap-6">
                             {mode === "CATEGORY_CAMPAIGN" && (
-                                <div className="flex-1">
+                                <div className="flex-1 w-full">
                                     <form.Field
                                         name="categoryIds"
                                         children={(field) => {
@@ -666,7 +666,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                     />
                                 </div>
                             )}
-                            <div className="flex-1 max-w-[50%]">
+                            <div className="flex-1 w-full">
                                 <Field>
                                     <FieldLabel>Duration</FieldLabel>
                                     <DatePicker date={dateRange} setDate={handleChangeDuration} />

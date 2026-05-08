@@ -13,7 +13,7 @@ const Page = async ({ params }: PageProps) => {
     const { storeId } = await params;
 
     await prefetch(
-        orpc.categories.getMany.queryOptions({ input: { storeId } }),
+        orpc.categories.getManyWithPromotion.queryOptions({ input: { storeId } }),
     );
 
     return (

@@ -114,6 +114,36 @@ export const categoriesRouter = base.router({
                 count: categoriesDeleted.length,
             };
         }),
+    disconnect: admin
+        .input(
+            z.object({
+                categoryId: z.string(),
+                promotionId: z.string(),
+                storeId: z.string(),
+            }),
+        )
+        .handler(async ({ input }) => {
+            const category = await prisma.category.findUnique({
+                where: { id: input.categoryId, storeId: input.storeId },
+            });
+
+            if (!category) {
+                throw new ORPCError("NOT_FOUND");
+            }
+
+            await prisma.category.update({
+                where: { id: input.categoryId },
+                data: {
+                    promotions: {
+                        disconnect: { id: input.promotionId },
+                    },
+                },
+            });
+
+            return {
+                message: "Campaign cancelled",
+            };
+        }),
     getOne: admin
         .input(
             z.object({
@@ -131,23 +161,21 @@ export const categoriesRouter = base.router({
 
             return category;
         }),
-    getMany: admin
-        .input(z.object({ storeId: z.string().min(1) }))
-        .handler(async ({ input }) => {
-            const categories = await prisma.category.findMany({
-                where: {
-                    storeId: input.storeId,
-                },
-                include: {
-                    billboard: true,
-                },
-                orderBy: {
-                    createdAt: "desc",
-                },
-            });
+    getMany: admin.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
+        const categories = await prisma.category.findMany({
+            where: {
+                storeId: input.storeId,
+            },
+            include: {
+                billboard: true,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
 
-            return categories;
-        }),
+        return categories;
+    }),
     getManyWithPromotion: admin
         .input(z.object({ storeId: z.string().min(1) }))
         .handler(async ({ input }) => {

@@ -24,9 +24,9 @@ const badgeVariants = cva(
                 [PromotionType.FIXED]:
                     "bg-sky-600/10 text-sky-600 focus-visible:ring-sky-600/20 dark:bg-sky-600/20 dark:focus-visible:ring-sky-600/40 [a]:hover:bg-sky-600/20",
                 [PromotionMode.COUPON]:
-                    "bg-primary/10 text-primary focus-visible:ring-primary/20 dark:bg-primary/20 dark:focus-visible:ring-primary/40 [a]:hover:bg-primary/20",
+                    "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
                 [PromotionMode.CATEGORY_CAMPAIGN]:
-                    "bg-neutral-600/10 text-neutral-600 focus-visible:ring-neutral-600/20 dark:bg-neutral-600/20 dark:focus-visible:ring-neutral-600/40 [a]:hover:bg-neutral-600/20",
+                    "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
                 [OrderStatus.PAID]:
                     "border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5",
                 [OrderStatus.FAILED]:
