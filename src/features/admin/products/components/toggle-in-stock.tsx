@@ -17,7 +17,7 @@ export const ToggleInStock = ({ id, storeId, isChecked }: ToggleInStockProps) =>
     const toggle = useMutation(
         orpc.products.toggleInStock.mutationOptions({
             onSuccess: () => {
-                toast.error("Toggle successfully");
+                toast.success("Toggle successfully");
                 queryClient.invalidateQueries(
                     orpc.products.getMany.queryOptions({
                         input: { storeId },
@@ -40,6 +40,7 @@ export const ToggleInStock = ({ id, storeId, isChecked }: ToggleInStockProps) =>
             checked={isChecked}
             onCheckedChange={() => toggle.mutate({ id, storeId })}
             size="sm"
+            aria-label={`Toggle in stock product ${id}`}
         />
     );
 };

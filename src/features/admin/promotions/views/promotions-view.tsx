@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { CalendarIcon, PlayIcon, PlusIcon, StopCircleIcon } from "lucide-react";
+import { CalendarIcon, PlayIcon, PlusIcon, StopCircleIcon, WifiOffIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { columns } from "../components/columns";
 
@@ -22,6 +22,7 @@ export const PromotionsView = ({ storeId }: PromotionsViewProps) => {
     );
 
     const statusOption = [
+        { label: "Inactive", value: "inactive", icon: WifiOffIcon },
         { label: "Running", value: "running", icon: PlayIcon },
         { label: "Upcoming", value: "upcoming", icon: CalendarIcon },
         { label: "Expired", value: "expired", icon: StopCircleIcon },
@@ -34,11 +35,7 @@ export const PromotionsView = ({ storeId }: PromotionsViewProps) => {
                     title={`Promotions (${promotions.length})`}
                     description="Manage promotions for your store"
                 />
-                <Button
-                    onClick={() =>
-                        router.push(`/admin/${storeId}/promotions/new`)
-                    }
-                >
+                <Button onClick={() => router.push(`/admin/${storeId}/promotions/new`)}>
                     <PlusIcon className="size-4" />
                     Add New
                 </Button>

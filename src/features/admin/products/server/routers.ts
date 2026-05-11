@@ -144,7 +144,6 @@ export const productsRouter = base.router({
             const productUpdated = await tx.product.update({
                 where: { id },
                 data: {
-                    storeId,
                     categoryId,
                     sizeId,
                     colorId,

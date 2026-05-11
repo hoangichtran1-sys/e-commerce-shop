@@ -65,7 +65,6 @@ export const sizesRouter = base.router({
                     name: input.name,
                     value: input.value,
                     categoryId: input.categoryId,
-                    storeId: input.storeId,
                 },
             });
 

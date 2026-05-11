@@ -17,7 +17,7 @@ export const ToggleActive = ({ id, storeId, isChecked }: ToggleActiveProps) => {
     const toggle = useMutation(
         orpc.promotions.toggleActive.mutationOptions({
             onSuccess: () => {
-                toast.error("Toggle successfully");
+                toast.success("Toggle successfully");
                 queryClient.invalidateQueries(
                     orpc.promotions.getManyByStore.queryOptions({
                         input: { storeId },
@@ -40,6 +40,7 @@ export const ToggleActive = ({ id, storeId, isChecked }: ToggleActiveProps) => {
             checked={isChecked}
             onCheckedChange={() => toggle.mutate({ id, storeId })}
             size="sm"
+            aria-label={`Toggle active promotion ${id}`}
         />
     );
 };

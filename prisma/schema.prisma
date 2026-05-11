@@ -29,9 +29,11 @@ enum ProductStatus {
 }
 
 enum OrderStatus {
+  PENDING
   PAID
-  REFUND
+  CANCELLED
   FAILED
+  REFUND
 }
 
 enum PromotionType {
@@ -64,6 +66,9 @@ model User {
   accounts      Account[]
   stores        Store[]
   reviews       Review[]
+  orders        Order[]
+
+  stripeCustomer StripeCustomer?
 
   @@unique([email])
   @@map("user")
@@ -274,20 +279,35 @@ model ProductImage {
 }
 
 model Order {
-  id         String @id @default(uuid())
-  storeId    String
-  status     OrderStatus
-  phone      String @default("")
-  address    String @default("")
+  id            String @id @default(uuid())
+  storeId       String
+  couponId      String?
+  userId        String
+  status        OrderStatus
+  phone         String @default("")
+  address       String @default("")
 
-  orderItems OrderItem[]
+  country       String?
+  email         String?
+  name          String?
 
-  store      Store @relation("StoreToOrder", fields: [storeId], references: [id])
+  transactionId String? @unique
+  receiptUrl    String?
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  currency      String  @default("usd")
+  amountPaid    Decimal?
+
+  orderItems    OrderItem[]
+
+  coupon        Coupon? @relation(fields: [couponId], references: [id])
+  store         Store @relation("StoreToOrder", fields: [storeId], references: [id])
+  user          User @relation(fields: [userId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([storeId, status])
+  @@index([couponId, userId])
 }
 
 model OrderItem {
@@ -311,12 +331,12 @@ model Promotion {
   type       PromotionType
   mode       PromotionMode
   value      Float
-  startAt    DateTime?
-  endAt      DateTime?
-  isActive   Boolean  @default(false)
+  startAt    DateTime
+  endAt      DateTime
+  isActive   Boolean @default(false)
 
-  minOrderValue    Decimal  @default(0)
-  maxDiscountValue Decimal?
+  minOrderValue    Float  @default(0)
+  maxDiscountValue Float?
 
   coupons    Coupon[]
   categories Category[] @relation("CategoryToPromotion")
@@ -326,25 +346,27 @@ model Promotion {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([storeId, startAt, endAt])
-  @@index([storeId, isActive])
+  @@index([storeId, isActive, startAt, endAt])
   @@index([storeId, mode])
 }
 
 model Coupon {
-  id          String @id @default(uuid())
-  storeId     String
-  promotionId String
-  code        String @unique
+  id           String @id @default(uuid())
+  storeId      String
+  promotionId  String
+  code         String @unique
 
-  usageLimit  Int
-  usedCount   Int @default(0)
+  usageLimit   Int? @default(1)
+  usedCount    Int  @default(0)
+  perUserLimit Int? @default(1)
 
-  promotion   Promotion @relation(fields: [promotionId], references: [id])
-  store       Store     @relation("StoreToCoupon", fields: [storeId], references: [id])
+  orders       Order[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  promotion    Promotion @relation(fields: [promotionId], references: [id])
+  store        Store     @relation("StoreToCoupon", fields: [storeId], references: [id])
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([storeId, code])
   @@index([promotionId])
@@ -356,7 +378,7 @@ model Review {
   userId      String
   productId   String
   autoReplyId String?
-  rating      Int     @db.SmallInt 
+  rating      Int     @db.SmallInt @default(0)
   comment     String? @db.Text
 
   store       Store     @relation("StoreToReview", fields: [storeId], references: [id], onDelete: Cascade)
@@ -387,4 +409,15 @@ model AutoReply {
   updatedAt DateTime @updatedAt
 
   @@index([storeId, isActive, type])
+}
+
+model StripeCustomer {
+  id               String @id @default(uuid())
+  userId           String @unique
+  stripeCustomerId String @unique
+
+  user             User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

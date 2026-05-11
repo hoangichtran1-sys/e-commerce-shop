@@ -10,17 +10,7 @@ import { orpc } from "@/orpc/orpc-rq.client";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { TrashIcon } from "lucide-react";
 import { useForm, useStore } from "@tanstack/react-form";
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSet,
-    FieldTitle,
-} from "@/components/ui/field";
+import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
@@ -30,12 +20,13 @@ import { PromotionMode, PromotionType } from "@/generated/prisma/enums";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
-import { cn, formatPrice } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { DatePicker } from "@/components/date-picker";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { MultipleSelect } from "@/components/multiple-select";
 import { BreadcrumbHeader } from "@/components/breadcrumb-header";
+import { add } from "date-fns";
 
 interface PromotionFormProps {
     promotionId: string;
@@ -52,9 +43,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
         }),
     );
 
-    const { data: categories } = useSuspenseQuery(
-        orpc.categories.getMany.queryOptions({ input: { storeId } }),
-    );
+    const { data: categories } = useSuspenseQuery(orpc.categories.getMany.queryOptions({ input: { storeId } }));
 
     const categoriesFormatted = categories.map((category) => ({
         label: category.name,
@@ -63,16 +52,12 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
         const initialDate =
-            initialData && initialData.startAt && initialData.endAt
-                ? { from: initialData.startAt, to: initialData.endAt }
-                : undefined;
+            initialData && initialData.startAt && initialData.endAt ? { from: initialData.startAt, to: initialData.endAt } : undefined;
 
         return initialDate;
     });
 
-    const [toggleDisplayDiscount, setToggleDisplayDiscount] = useState(
-        !!initialData?.maxDiscountValue,
-    );
+    const [toggleDisplayDiscount, setToggleDisplayDiscount] = useState(!!initialData?.maxDiscountValue);
 
     const create = useMutation(
         orpc.promotions.create.mutationOptions({
@@ -136,8 +121,12 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
             type: initialData?.type || PromotionType.FIXED,
             mode: initialData?.mode || PromotionMode.COUPON,
             categoryIds: (initialData?.categories ?? []).map((category) => category.id),
-            startAt: initialData?.startAt || null,
-            endAt: initialData?.endAt || null,
+            startAt: initialData?.startAt || new Date(),
+            endAt:
+                initialData?.endAt ||
+                add(new Date(), {
+                    days: 7,
+                }),
             minOrderValue: initialData?.minOrderValue || 0,
             maxDiscountValue: initialData?.maxDiscountValue || null,
             isActive: !!initialData?.isActive,
@@ -169,16 +158,19 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
         await remove.mutateAsync({ id: promotionId, storeId });
     };
 
-    const [RemoveConfirmation, confirmRemove] = useConfirm(
-        "Are you sure?",
-        "The following action will permanently remove this promotion",
-    );
+    const [RemoveConfirmation, confirmRemove] = useConfirm("Are you sure?", "The following action will permanently remove this promotion");
 
     const handleChangeDuration = useCallback(
         (dateRange: DateRange | undefined) => {
             setDateRange(dateRange);
-            form.setFieldValue("startAt", dateRange?.from ?? null);
-            form.setFieldValue("endAt", dateRange?.to ?? null);
+            form.setFieldValue("startAt", dateRange?.from ?? new Date());
+            form.setFieldValue(
+                "endAt",
+                dateRange?.to ??
+                    add(new Date(), {
+                        days: 7,
+                    }),
+            );
         },
         [form],
     );
@@ -200,9 +192,11 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
         if (!toggleDisplayDiscount) {
             form.setFieldValue("maxDiscountValue", null);
         } else {
-            const currentValue = form.getFieldValue("maxDiscountValue");
+            const currentValue = initialData?.maxDiscountValue || form.getFieldValue("maxDiscountValue");
             if (!currentValue) {
                 form.setFieldValue("maxDiscountValue", 0.01);
+            } else {
+                form.setFieldValue("maxDiscountValue", currentValue);
             }
         }
     }, [toggleDisplayDiscount]);
@@ -211,19 +205,9 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
         <>
             <RemoveConfirmation />
             <div className="flex items-center justify-between">
-                <BreadcrumbHeader
-                    id={promotionId}
-                    storeId={storeId}
-                    name={initialData?.name || "New"}
-                    topic="promotions"
-                />
+                <BreadcrumbHeader id={promotionId} storeId={storeId} name={initialData?.name || "New"} topic="promotions" />
                 {initialData && (
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={edit.isPending || remove.isPending}
-                        onClick={handleRemove}
-                    >
+                    <Button variant="destructive" size="sm" disabled={edit.isPending || remove.isPending} onClick={handleRemove}>
                         <TrashIcon className="size-4" />
                     </Button>
                 )}
@@ -243,65 +227,47 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                 <form.Field
                                     name="mode"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <FieldSet>
                                                 <FieldLegend>Mode</FieldLegend>
                                                 <RadioGroup
                                                     name={field.name}
                                                     value={field.state.value}
-                                                    onValueChange={(value) =>
-                                                        field.handleChange(value as PromotionMode)
-                                                    }
+                                                    onValueChange={(value) => {
+                                                        const nextMode = value as PromotionMode;
+                                                        field.handleChange(nextMode);
+                                                        if (nextMode === "CATEGORY_CAMPAIGN") {
+                                                            form.setFieldValue("type", "PERCENT");
+                                                        }
+                                                    }}
                                                 >
                                                     <FieldLabel htmlFor="coupon">
-                                                        <Field
-                                                            orientation="horizontal"
-                                                            data-invalid={isInvalid}
-                                                        >
+                                                        <Field orientation="horizontal" data-invalid={isInvalid}>
                                                             <FieldContent>
                                                                 <FieldTitle>Coupon</FieldTitle>
-                                                                <FieldDescription>
-                                                                    Applies to all eligible products
-                                                                    with coupon
-                                                                </FieldDescription>
+                                                                <FieldDescription>Applies to all eligible products with coupon</FieldDescription>
                                                             </FieldContent>
-                                                            <RadioGroupItem
-                                                                value={PromotionMode.COUPON}
-                                                                id="coupon"
-                                                                aria-invalid={isInvalid}
-                                                            />
+                                                            <RadioGroupItem value={PromotionMode.COUPON} id="coupon" aria-invalid={isInvalid} />
                                                         </Field>
                                                     </FieldLabel>
                                                     <FieldLabel htmlFor="category_campaign">
-                                                        <Field
-                                                            orientation="horizontal"
-                                                            data-invalid={isInvalid}
-                                                        >
+                                                        <Field orientation="horizontal" data-invalid={isInvalid}>
                                                             <FieldContent>
-                                                                <FieldTitle>
-                                                                    Specific categories
-                                                                </FieldTitle>
+                                                                <FieldTitle>Specific categories</FieldTitle>
                                                                 <FieldDescription>
-                                                                    Applicable to advertising
-                                                                    campaigns for specific category
-                                                                    groups
+                                                                    Applicable to advertising campaigns for specific category groups
                                                                 </FieldDescription>
                                                             </FieldContent>
                                                             <RadioGroupItem
-                                                                value={
-                                                                    PromotionMode.CATEGORY_CAMPAIGN
-                                                                }
+                                                                value={PromotionMode.CATEGORY_CAMPAIGN}
                                                                 id="category_campaign"
                                                                 aria-invalid={isInvalid}
                                                             />
                                                         </Field>
                                                     </FieldLabel>
                                                 </RadioGroup>
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </FieldSet>
                                         );
                                     }}
@@ -311,11 +277,15 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                 <form.Field
                                     name="type"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <FieldSet>
-                                                <FieldLegend>Type</FieldLegend>
+                                                <FieldLegend>
+                                                    Type{" "}
+                                                    {mode === "CATEGORY_CAMPAIGN" && (
+                                                        <span className="text-neutral-600 text-xs">(Required use type PERCENTAGE)</span>
+                                                    )}
+                                                </FieldLegend>
                                                 <RadioGroup
                                                     name={field.name}
                                                     value={field.state.value}
@@ -324,10 +294,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                         if (value === "FIXED") {
                                                             form.setFieldValue("value", 0.01);
                                                             form.setFieldValue("minOrderValue", 0);
-                                                            form.setFieldValue(
-                                                                "maxDiscountValue",
-                                                                null,
-                                                            );
+                                                            form.setFieldValue("maxDiscountValue", null);
                                                         } else if (value === "PERCENT") {
                                                             form.setFieldValue("value", 1);
                                                             form.setFieldValue("minOrderValue", 0);
@@ -335,50 +302,34 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                     }}
                                                 >
                                                     <FieldLabel htmlFor="percentage">
-                                                        <Field
-                                                            orientation="horizontal"
-                                                            data-invalid={isInvalid}
-                                                        >
+                                                        <Field orientation="horizontal" data-invalid={isInvalid}>
                                                             <FieldContent>
-                                                                <FieldTitle>
-                                                                    Percentage discount
-                                                                </FieldTitle>
-                                                                <FieldDescription>
-                                                                    e.g. 10% off (can set max
-                                                                    discount)
-                                                                </FieldDescription>
+                                                                <FieldTitle>Percentage discount</FieldTitle>
+                                                                <FieldDescription>e.g. 10% off (can set max discount)</FieldDescription>
                                                             </FieldContent>
-                                                            <RadioGroupItem
-                                                                value={PromotionType.PERCENT}
-                                                                id="percentage"
-                                                                aria-invalid={isInvalid}
-                                                            />
+                                                            <RadioGroupItem value={PromotionType.PERCENT} id="percentage" aria-invalid={isInvalid} />
                                                         </Field>
                                                     </FieldLabel>
                                                     <FieldLabel htmlFor="fixed">
                                                         <Field
                                                             orientation="horizontal"
                                                             data-invalid={isInvalid}
+                                                            data-disabled={mode === "CATEGORY_CAMPAIGN"}
                                                         >
                                                             <FieldContent>
-                                                                <FieldTitle>
-                                                                    Fixed amount
-                                                                </FieldTitle>
-                                                                <FieldDescription>
-                                                                    e.g. $50 off
-                                                                </FieldDescription>
+                                                                <FieldTitle>Fixed amount</FieldTitle>
+                                                                <FieldDescription>e.g. $50 off</FieldDescription>
                                                             </FieldContent>
                                                             <RadioGroupItem
                                                                 value={PromotionType.FIXED}
                                                                 id="fixed"
                                                                 aria-invalid={isInvalid}
+                                                                disabled={mode === "CATEGORY_CAMPAIGN"}
                                                             />
                                                         </Field>
                                                     </FieldLabel>
                                                 </RadioGroup>
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </FieldSet>
                                         );
                                     }}
@@ -392,8 +343,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                 <form.Field
                                     name="name"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>Name</FieldLabel>
@@ -404,15 +354,11 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                     name={field.name}
                                                     value={field.state.value}
                                                     onBlur={field.handleBlur}
-                                                    onChange={(e) =>
-                                                        field.handleChange(e.target.value)
-                                                    }
+                                                    onChange={(e) => field.handleChange(e.target.value)}
                                                     aria-invalid={isInvalid}
                                                     autoComplete="off"
                                                 />
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -422,19 +368,14 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                 <form.Field
                                     name="value"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>Value</FieldLabel>
                                                 <InputGroup className="bg-background">
                                                     <InputGroupAddon>
-                                                        {type === "FIXED" && (
-                                                            <Label htmlFor="fixed">$</Label>
-                                                        )}
-                                                        {type === "PERCENT" && (
-                                                            <Label htmlFor="fixed">%</Label>
-                                                        )}
+                                                        {type === "FIXED" && <Label htmlFor="fixed">$</Label>}
+                                                        {type === "PERCENT" && <Label htmlFor="fixed">%</Label>}
                                                     </InputGroupAddon>
                                                     {type === "FIXED" && (
                                                         <InputGroupInput
@@ -446,11 +387,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                             name={field.name}
                                                             value={field.state.value}
                                                             onBlur={field.handleBlur}
-                                                            onChange={(e) =>
-                                                                field.handleChange(
-                                                                    Number(e.target.value),
-                                                                )
-                                                            }
+                                                            onChange={(e) => field.handleChange(Number(e.target.value))}
                                                             aria-invalid={isInvalid}
                                                             autoComplete="off"
                                                         />
@@ -466,19 +403,13 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                             name={field.name}
                                                             value={field.state.value}
                                                             onBlur={field.handleBlur}
-                                                            onChange={(e) =>
-                                                                field.handleChange(
-                                                                    Number(e.target.value),
-                                                                )
-                                                            }
+                                                            onChange={(e) => field.handleChange(Number(e.target.value))}
                                                             aria-invalid={isInvalid}
                                                             autoComplete="off"
                                                         />
                                                     )}
                                                 </InputGroup>
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -492,14 +423,12 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                 <form.Field
                                     name="minOrderValue"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>
                                                     Min Order Value
-                                                    {mode === "CATEGORY_CAMPAIGN" &&
-                                                        "(Only available for coupon promotions)"}
+                                                    {mode === "CATEGORY_CAMPAIGN" && "(Only available for coupon promotions)"}
                                                 </FieldLabel>
                                                 <InputGroup className="bg-background">
                                                     <InputGroupAddon>
@@ -514,11 +443,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                         name={field.name}
                                                         value={field.state.value}
                                                         onBlur={field.handleBlur}
-                                                        onChange={(e) =>
-                                                            field.handleChange(
-                                                                Number(e.target.value),
-                                                            )
-                                                        }
+                                                        onChange={(e) => field.handleChange(Number(e.target.value))}
                                                         aria-invalid={isInvalid}
                                                         autoComplete="off"
                                                         disabled={mode === "CATEGORY_CAMPAIGN"}
@@ -527,24 +452,18 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                 <FieldDescription>
                                                     {type === "FIXED" && value > 0 && (
                                                         <span>
-                                                            It&apos;s recommended to set a minimum
-                                                            order value of{" "}
-                                                            {formatPrice(value * 1.5)} -{" "}
-                                                            {formatPrice(value * 2)} (1.5 - 2 times
-                                                            the discount value).
+                                                            It&apos;s recommended to set a minimum order value of {formatPrice(value * 1.5)} -{" "}
+                                                            {formatPrice(value * 2)} (1.5 - 2 times the discount value).
                                                         </span>
                                                     )}
                                                     {type === "PERCENT" && (
                                                         <span>
-                                                            Set the price higher than thes cheapest
-                                                            product to avoid excessive discounts on
-                                                            small orders.
+                                                            Set the price higher than thes cheapest product to avoid excessive discounts on small
+                                                            orders.
                                                         </span>
                                                     )}
                                                 </FieldDescription>
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -555,77 +474,60 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                     <form.Field
                                         name="maxDiscountValue"
                                         children={(field) => {
-                                            const isInvalid =
-                                                field.state.meta.isTouched &&
-                                                !field.state.meta.isValid;
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                             return (
                                                 <Field data-invalid={isInvalid}>
                                                     <div className="flex items-center justify-between gap-x-2">
                                                         <FieldLabel htmlFor={field.name}>
                                                             Max Discount Value{" "}
-                                                            <Badge
-                                                                variant={
-                                                                    toggleDisplayDiscount
-                                                                        ? "default"
-                                                                        : "secondary"
-                                                                }
-                                                            >
-                                                                {toggleDisplayDiscount
-                                                                    ? "On"
-                                                                    : "Off"}
+                                                            <Badge variant={toggleDisplayDiscount ? "default" : "secondary"}>
+                                                                {toggleDisplayDiscount ? "On" : "Off"}
                                                             </Badge>
                                                         </FieldLabel>
                                                         <Switch
                                                             size="sm"
                                                             checked={toggleDisplayDiscount}
-                                                            onCheckedChange={
-                                                                setToggleDisplayDiscount
-                                                            }
+                                                            onCheckedChange={setToggleDisplayDiscount}
                                                         />
                                                     </div>
-                                                    <div
-                                                        className={cn(
-                                                            "duration-300 transition-all",
-                                                            toggleDisplayDiscount
-                                                                ? "opacity-100"
-                                                                : "opacity-0",
-                                                        )}
-                                                    >
-                                                        <InputGroup className="bg-background">
-                                                            <InputGroupAddon>
-                                                                <Label htmlFor={field.name}>
-                                                                    $
-                                                                </Label>
-                                                            </InputGroupAddon>
-                                                            <InputGroupInput
-                                                                type="number"
-                                                                min={0.01}
-                                                                step={0.01}
-                                                                placeholder="50"
+                                                    {toggleDisplayDiscount ? (
+                                                        <div>
+                                                            <InputGroup className="bg-background">
+                                                                <InputGroupAddon>
+                                                                    <Label htmlFor={field.name}>$</Label>
+                                                                </InputGroupAddon>
+                                                                <InputGroupInput
+                                                                    type="number"
+                                                                    min={0.01}
+                                                                    step={0.01}
+                                                                    placeholder="50"
+                                                                    id={field.name}
+                                                                    name={field.name}
+                                                                    value={field.state.value || 0.01}
+                                                                    onBlur={field.handleBlur}
+                                                                    onChange={(e) => field.handleChange(Number(e.target.value))}
+                                                                    aria-invalid={isInvalid}
+                                                                    autoComplete="off"
+                                                                />
+                                                            </InputGroup>
+                                                            <FieldDescription>
+                                                                A maximum discount amount should be set to avoid budget risks when customers make
+                                                                extremely large orders.
+                                                            </FieldDescription>
+                                                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mb-6">
+                                                            <Input
                                                                 id={field.name}
                                                                 name={field.name}
-                                                                value={field.state.value || 0.01}
-                                                                onBlur={field.handleBlur}
-                                                                onChange={(e) =>
-                                                                    field.handleChange(
-                                                                        Number(e.target.value),
-                                                                    )
-                                                                }
-                                                                aria-invalid={isInvalid}
-                                                                autoComplete="off"
+                                                                className="h-auto"
+                                                                disabled
+                                                                placeholder="Unlimited"
                                                             />
-                                                        </InputGroup>
-                                                        <FieldDescription>
-                                                            A maximum discount amount should be set
-                                                            to avoid budget risks when customers
-                                                            make extremely large orders.
-                                                        </FieldDescription>
-                                                        {isInvalid && (
-                                                            <FieldError
-                                                                errors={field.state.meta.errors}
-                                                            />
-                                                        )}
-                                                    </div>
+                                                            <FieldDescription>No limit on the maximum discount value.</FieldDescription>
+                                                        </div>
+                                                    )}
                                                 </Field>
                                             );
                                         }}
@@ -641,25 +543,17 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                     <form.Field
                                         name="categoryIds"
                                         children={(field) => {
-                                            const isInvalid =
-                                                field.state.meta.isTouched &&
-                                                !field.state.meta.isValid;
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                             return (
                                                 <Field data-invalid={isInvalid}>
-                                                    <FieldLabel htmlFor={field.name}>
-                                                        Categories
-                                                    </FieldLabel>
+                                                    <FieldLabel htmlFor={field.name}>Categories</FieldLabel>
                                                     <MultipleSelect
                                                         options={categoriesFormatted}
                                                         topic="category"
                                                         selectedValues={field.state.value}
                                                         setSelectedValues={field.handleChange}
                                                     />
-                                                    {isInvalid && (
-                                                        <FieldError
-                                                            errors={field.state.meta.errors}
-                                                        />
-                                                    )}
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                                 </Field>
                                             );
                                         }}
@@ -679,25 +573,14 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                             <form.Field
                                 name="isActive"
                                 children={(field) => {
-                                    const isInvalid =
-                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <FieldLabel htmlFor={field.name}>
-                                            <Field
-                                                orientation="horizontal"
-                                                data-invalid={isInvalid}
-                                            >
+                                            <Field orientation="horizontal" data-invalid={isInvalid}>
                                                 <FieldContent>
                                                     <FieldTitle>Active</FieldTitle>
-                                                    <FieldDescription>
-                                                        Turn off to disable this promotion without
-                                                        deleting it.
-                                                    </FieldDescription>
-                                                    {isInvalid && (
-                                                        <FieldError
-                                                            errors={field.state.meta.errors}
-                                                        />
-                                                    )}
+                                                    <FieldDescription>Turn off to disable this promotion without deleting it.</FieldDescription>
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                                 </FieldContent>
                                                 <Switch
                                                     id={field.name}
@@ -717,16 +600,10 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                 <form.Subscribe
                     selector={(state) => [state.isDirty]}
                     children={([isDirty]) => {
-                        const isDisabled = initialData
-                            ? !isDirty || edit.isPending
-                            : create.isPending;
+                        const isDisabled = initialData ? !isDirty || edit.isPending : create.isPending;
 
                         return (
-                            <Button
-                                disabled={isDisabled || remove.isPending}
-                                type="submit"
-                                className="ml-auto w-full md:w-auto"
-                            >
+                            <Button disabled={isDisabled || remove.isPending} type="submit" className="ml-auto w-full md:w-auto">
                                 {actionLabel}
                             </Button>
                         );

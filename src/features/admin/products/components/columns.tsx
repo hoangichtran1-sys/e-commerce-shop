@@ -16,20 +16,13 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         id: "select",
         header: ({ table }) => (
             <Checkbox
-                checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
+                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
                 onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                 aria-label="Select all"
             />
         ),
         cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-            />
+            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
         ),
         enableSorting: false,
         enableHiding: false,
@@ -38,10 +31,7 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         accessorKey: "name",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Name
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -57,10 +47,7 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         accessorKey: "price",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Price
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -71,14 +58,43 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
 
             return <p className="line-clamp-1">{formatPrice(price)}</p>;
         },
+        filterFn: (row, id, value) => {
+            const price = row.getValue(id) as number;
+
+            return value.some((range: string) => {
+                switch (range) {
+                    case "under_50":
+                        return price < 50;
+                    case "50_100":
+                        return price >= 50 && price <= 100;
+                    case "100_200":
+                        return price >= 100 && price <= 200;
+                    case "above_200":
+                        return price > 200;
+                    default:
+                        return false;
+                }
+            });
+        },
     },
     {
-        accessorKey: "category",
-        header: "Category",
+        id: "category",
+        accessorFn: (row) => row.category.name,
+        header: ({ column }) => {
+            return (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Category
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
         cell: ({ row }) => {
             const categoryName = row.original.category.name;
 
             return <p className="line-clamp-1">{categoryName}</p>;
+        },
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id));
         },
     },
     {
@@ -99,27 +115,14 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
             return (
                 <div className="flex items-center gap-x-2">
                     {colorValue}
-                    <div
-                        className="h-6 w-6 rounded-full border"
-                        style={{ backgroundColor: colorValue }}
-                    />
+                    <div className="h-6 w-6 rounded-full border" style={{ backgroundColor: colorValue }} />
                 </div>
             );
         },
     },
     {
         accessorKey: "status",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Status
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
-            );
-        },
+        header: "Status",
         cell: ({ row }) => {
             const status = row.original.status;
 
@@ -148,32 +151,23 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
     },
     {
         accessorKey: "isFeatured",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Featured
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
-            );
-        },
-
+        header: () => <div className="text-center w-[50%]">Featured</div>,
         cell: ({ row }) => {
             const isFeatured = row.original.isFeatured;
 
-            return <SupportIcon supported={isFeatured} />;
+            return (
+                <div className="w-[50%]">
+                    <span className="sr-only">{isFeatured ? "Featured" : "Not featured"}</span>
+                    <SupportIcon supported={isFeatured} />
+                </div>
+            );
         },
     },
     {
         accessorKey: "createdAt",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Created At
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -204,7 +198,7 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
 
             return (
                 <ProductActions id={id} storeId={storeId}>
-                    <Button className="size-8 p-0" variant="ghost">
+                    <Button className="size-8 p-0" variant="ghost" aria-label={`Open actions for product ${id}`}>
                         <MoreVerticalIcon className="size-4" />
                     </Button>
                 </ProductActions>

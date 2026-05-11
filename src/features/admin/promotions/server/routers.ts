@@ -3,7 +3,6 @@ import { base, admin } from "@/orpc/init";
 import { ORPCError } from "@orpc/client";
 import { z } from "zod";
 import { insertPromotionSchema } from "../schemas";
-import { Prisma } from "@/generated/prisma/client";
 
 export const promotionsRouter = base.router({
     create: admin.input(insertPromotionSchema).handler(async ({ input }) => {
@@ -31,23 +30,15 @@ export const promotionsRouter = base.router({
                 endAt,
                 mode,
                 isActive,
-                minOrderValue: Prisma.Decimal(minOrderValue),
-                maxDiscountValue: maxDiscountValue
-                    ? Prisma.Decimal(maxDiscountValue)
-                    : undefined,
+                minOrderValue,
+                maxDiscountValue,
                 categories: {
                     connect: categoryIds.map((id) => ({ id })),
                 },
             },
         });
 
-        return {
-            ...promotionCreated,
-            minOrderValue: promotionCreated.minOrderValue.toNumber(),
-            maxDiscountValue: promotionCreated.maxDiscountValue
-                ? promotionCreated.maxDiscountValue.toNumber()
-                : null,
-        };
+        return promotionCreated;
     }),
     update: admin
         .input(
@@ -88,30 +79,21 @@ export const promotionsRouter = base.router({
                 },
                 data: {
                     name,
-                    storeId,
                     type,
                     value,
                     startAt,
                     endAt,
                     mode,
                     isActive,
-                    minOrderValue: Prisma.Decimal(minOrderValue),
-                    maxDiscountValue: maxDiscountValue
-                        ? Prisma.Decimal(maxDiscountValue)
-                        : undefined,
+                    minOrderValue,
+                    maxDiscountValue,
                     categories: {
                         set: categoryIds.map((id) => ({ id })),
                     },
                 },
             });
 
-            return {
-                ...promotionUpdated,
-                minOrderValue: promotionUpdated.minOrderValue.toNumber(),
-                maxDiscountValue: promotionUpdated.maxDiscountValue
-                    ? promotionUpdated.maxDiscountValue.toNumber()
-                    : null,
-            };
+            return promotionUpdated;
         }),
     delete: admin
         .input(
@@ -138,13 +120,7 @@ export const promotionsRouter = base.router({
                 },
             });
 
-            return {
-                ...promotionDeleted,
-                minOrderValue: promotionDeleted.minOrderValue.toNumber(),
-                maxDiscountValue: promotionDeleted.maxDiscountValue
-                    ? promotionDeleted.maxDiscountValue.toNumber()
-                    : null,
-            };
+            return promotionDeleted;
         }),
     toggleActive: admin
         .input(
@@ -196,13 +172,7 @@ export const promotionsRouter = base.router({
                 return null;
             }
 
-            return {
-                ...promotion,
-                minOrderValue: promotion.minOrderValue.toNumber(),
-                maxDiscountValue: promotion.maxDiscountValue
-                    ? promotion.maxDiscountValue.toNumber()
-                    : null,
-            };
+            return promotion;
         }),
     getManyByStore: admin
         .input(z.object({ storeId: z.string().min(1) }))
@@ -220,13 +190,7 @@ export const promotionsRouter = base.router({
                 },
             });
 
-            return promotions.map((promotion) => ({
-                ...promotion,
-                minOrderValue: promotion.minOrderValue.toNumber(),
-                maxDiscountValue: promotion.maxDiscountValue
-                    ? promotion.maxDiscountValue.toNumber()
-                    : null,
-            }));
+            return promotions;
         }),
     getManyWithCouponMode: admin
         .input(
@@ -235,19 +199,13 @@ export const promotionsRouter = base.router({
             }),
         )
         .handler(async ({ input }) => {
-            const promotionsCoupon = await prisma.promotion.findMany({
+            const promotionsWithCoupon = await prisma.promotion.findMany({
                 where: {
                     storeId: input.storeId,
                     mode: "COUPON",
                 },
             });
 
-            return promotionsCoupon.map((promotion) => ({
-                ...promotion,
-                minOrderValue: promotion.minOrderValue.toNumber(),
-                maxDiscountValue: promotion.maxDiscountValue
-                    ? promotion.maxDiscountValue.toNumber()
-                    : null,
-            }));
+            return promotionsWithCoupon;
         }),
 });

@@ -7,27 +7,13 @@ import { orpc } from "@/orpc/orpc-rq.client";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { TrashIcon, PlusCircleIcon, MinusIcon, PlusIcon } from "lucide-react";
 import { useForm, useStore } from "@tanstack/react-form";
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-    FieldTitle,
-} from "@/components/ui/field";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Hint } from "@/components/hint";
 import { createProductSchema } from "../schemas";
 import { ImageUploadProduct } from "@/components/image-upload-product";
@@ -72,9 +58,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
         }),
     );
 
-    const { data: categories } = useSuspenseQuery(
-        orpc.categories.getMany.queryOptions({ input: { storeId } }),
-    );
+    const { data: categories } = useSuspenseQuery(orpc.categories.getMany.queryOptions({ input: { storeId } }));
 
     const categoriesFormatted = categories.map((category) => ({
         label: category.name,
@@ -214,16 +198,11 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
         [upload],
     );
 
-    const [RemoveConfirmation, confirmRemove] = useConfirm(
-        "Are you sure?",
-        "The following action will permanently remove this product",
-    );
+    const [RemoveConfirmation, confirmRemove] = useConfirm("Are you sure?", "The following action will permanently remove this product");
 
     const actionLabel = initialData ? "Save changes" : "Create";
 
     const categoryId = useStore(form.store, (state) => state.values.categoryId);
-
-    const isFirstRender = useRef(true);
 
     const { data: sizes } = useQuery({
         ...orpc.sizes.getManyByStoreAndCategory.queryOptions({
@@ -248,36 +227,15 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
         value: color.id,
     }));
 
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-            return;
-        }
-
-        form.setFieldValue("sizeId", "");
-        form.setFieldValue("colorId", "");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoryId]);
-
     const [value, setValue] = useState(1);
 
     return (
         <>
             <RemoveConfirmation />
             <div className="flex items-center justify-between">
-                <BreadcrumbHeader
-                    id={productId}
-                    storeId={storeId}
-                    name={initialData?.name || "New"}
-                    topic="products"
-                />
+                <BreadcrumbHeader id={productId} storeId={storeId} name={initialData?.name || "New"} topic="products" />
                 {initialData && (
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={edit.isPending || remove.isPending}
-                        onClick={handleRemove}
-                    >
+                    <Button variant="destructive" size="sm" disabled={edit.isPending || remove.isPending} onClick={handleRemove}>
                         <TrashIcon className="size-4" />
                     </Button>
                 )}
@@ -296,14 +254,11 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                             <form.Field
                                 name="images"
                                 children={(field) => {
-                                    const isInvalid =
-                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
                                     return (
                                         <>
-                                            <FieldLabel htmlFor={field.name}>
-                                                Product Image
-                                            </FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>Product Image</FieldLabel>
 
                                             <div className="flex item-center justify-start gap-4 mt-2">
                                                 <ImageUploadProduct
@@ -323,9 +278,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                     name={field.name}
                                                     value={field.state.value}
                                                 />
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         </>
                                     );
@@ -339,8 +292,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                 <form.Field
                                     name="name"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>Name</FieldLabel>
@@ -351,15 +303,11 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                     name={field.name}
                                                     value={field.state.value}
                                                     onBlur={field.handleBlur}
-                                                    onChange={(e) =>
-                                                        field.handleChange(e.target.value)
-                                                    }
+                                                    onChange={(e) => field.handleChange(e.target.value)}
                                                     aria-invalid={isInvalid}
                                                     autoComplete="off"
                                                 />
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -369,8 +317,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                 <form.Field
                                     name="price"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>Price</FieldLabel>
@@ -387,18 +334,12 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                         name={field.name}
                                                         value={field.state.value}
                                                         onBlur={field.handleBlur}
-                                                        onChange={(e) =>
-                                                            field.handleChange(
-                                                                Number(e.target.value),
-                                                            )
-                                                        }
+                                                        onChange={(e) => field.handleChange(Number(e.target.value))}
                                                         aria-invalid={isInvalid}
                                                         autoComplete="off"
                                                     />
                                                 </InputGroup>
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -412,23 +353,19 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                         size="icon"
                                         type="button"
                                         variant="outline"
+                                        disabled={value === 1}
                                     >
                                         <MinusIcon className="h-4 w-4" />
                                     </Button>
                                     <Input
-                                        className="bg-background text-center max-w-40"
+                                        className="bg-background text-center max-w-40 [appearance:textfield]"
                                         id="quantity"
                                         min="1"
                                         onChange={(e) => setValue(Number(e.target.value))}
                                         type="number"
                                         value={value}
                                     />
-                                    <Button
-                                        onClick={() => setValue(value + 1)}
-                                        size="icon"
-                                        type="button"
-                                        variant="outline"
-                                    >
+                                    <Button onClick={() => setValue(value + 1)} size="icon" type="button" variant="outline">
                                         <PlusIcon className="h-4 w-4" />
                                     </Button>
                                 </div>
@@ -441,32 +378,22 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                 <form.Field
                                     name="categoryId"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
-                                                <FieldLabel htmlFor={field.name}>
-                                                    Category
-                                                </FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>Category</FieldLabel>
                                                 <div className="flex items-center justify-start gap-2">
-                                                    <Select
-                                                        name={field.name}
-                                                        value={field.state.value}
-                                                        onValueChange={field.handleChange}
-                                                    >
-                                                        <SelectTrigger
-                                                            id="select-category"
-                                                            aria-invalid={isInvalid}
-                                                            className="min-w-60"
-                                                        >
+                                                    <Select name={field.name} value={field.state.value} onValueChange={(val) => {
+                                                        field.handleChange(val)
+                                                        form.setFieldValue("colorId", "");
+                                                        form.setFieldValue("sizeId", "")
+                                                    }}>
+                                                        <SelectTrigger id="select-category" aria-invalid={isInvalid} className="min-w-60">
                                                             <SelectValue placeholder="Select category" />
                                                         </SelectTrigger>
                                                         <SelectContent position="popper">
                                                             {categoriesFormatted.map((item) => (
-                                                                <SelectItem
-                                                                    key={item.value}
-                                                                    value={item.value}
-                                                                >
+                                                                <SelectItem key={item.value} value={item.value}>
                                                                     {item.label}
                                                                 </SelectItem>
                                                             ))}
@@ -478,20 +405,14 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                                 size="icon-sm"
                                                                 type="button"
                                                                 variant="outline"
-                                                                onClick={() =>
-                                                                    router.push(
-                                                                        `/admin/${storeId}/categories/new`,
-                                                                    )
-                                                                }
+                                                                onClick={() => router.push(`/admin/${storeId}/categories/new`)}
                                                             >
                                                                 <PlusCircleIcon className="size-4" />
                                                             </Button>
                                                         </Hint>
                                                     )}
                                                 </div>
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -501,8 +422,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                 <form.Field
                                     name="sizeId"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>Size</FieldLabel>
@@ -513,28 +433,19 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                         onValueChange={field.handleChange}
                                                         disabled={categoryId === ""}
                                                     >
-                                                        <SelectTrigger
-                                                            id="select-size"
-                                                            aria-invalid={isInvalid}
-                                                            className="min-w-60"
-                                                        >
+                                                        <SelectTrigger id="select-size" aria-invalid={isInvalid} className="min-w-60">
                                                             <SelectValue placeholder="Select size" />
                                                         </SelectTrigger>
                                                         <SelectContent position="popper">
                                                             {sizesFormatted.map((item) => (
-                                                                <SelectItem
-                                                                    key={item.value}
-                                                                    value={item.value}
-                                                                >
+                                                                <SelectItem key={item.value} value={item.value}>
                                                                     {item.label}
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -544,8 +455,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                 <form.Field
                                     name="colorId"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>Color</FieldLabel>
@@ -556,25 +466,17 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                         onValueChange={field.handleChange}
                                                         disabled={categoryId === ""}
                                                     >
-                                                        <SelectTrigger
-                                                            id="select-color"
-                                                            aria-invalid={isInvalid}
-                                                            className="min-w-60"
-                                                        >
+                                                        <SelectTrigger id="select-color" aria-invalid={isInvalid} className="min-w-60">
                                                             <SelectValue placeholder="Select color" />
                                                         </SelectTrigger>
                                                         <SelectContent position="popper">
                                                             {colorsFormatted.map((item) => (
-                                                                <SelectItem
-                                                                    key={item.value}
-                                                                    value={item.value}
-                                                                >
+                                                                <SelectItem key={item.value} value={item.value}>
                                                                     <div className="flex items-center gap-x-2">
                                                                         <div
                                                                             className="h-4 w-4 rounded-full border"
                                                                             style={{
-                                                                                backgroundColor:
-                                                                                    item.label,
+                                                                                backgroundColor: item.label,
                                                                             }}
                                                                         />
                                                                         {item.label}
@@ -584,9 +486,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -599,8 +499,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                             <form.Field
                                 name="description"
                                 children={(field) => {
-                                    const isInvalid =
-                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
                                             <FieldLabel htmlFor={field.name}>
@@ -617,9 +516,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                 placeholder="Detailed product information description..."
                                                 className="min-h-30"
                                             />
-                                            {isInvalid && (
-                                                <FieldError errors={field.state.meta.errors} />
-                                            )}
+                                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                         </Field>
                                     );
                                 }}
@@ -632,35 +529,24 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                 <form.Field
                                     name="isFeatured"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <FieldLabel>
-                                                <Field
-                                                    orientation="horizontal"
-                                                    data-invalid={isInvalid}
-                                                >
+                                                <Field orientation="horizontal" data-invalid={isInvalid}>
                                                     <Checkbox
                                                         id={field.name}
                                                         name={field.name}
                                                         aria-invalid={isInvalid}
                                                         checked={field.state.value}
-                                                        onCheckedChange={(checked) =>
-                                                            field.handleChange(checked === true)
-                                                        }
+                                                        onCheckedChange={(checked) => field.handleChange(checked === true)}
                                                     />
                                                     <FieldContent>
                                                         <FieldTitle>Featured</FieldTitle>
-                                                        <FieldDescription>
-                                                            This product will appear on the home
-                                                            page.
-                                                        </FieldDescription>
+                                                        <FieldDescription>This product will appear on the home page.</FieldDescription>
                                                     </FieldContent>
                                                 </Field>
 
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </FieldLabel>
                                         );
                                     }}
@@ -670,8 +556,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                 <form.Field
                                     name="status"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>Status</FieldLabel>
@@ -679,40 +564,24 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                     <Select
                                                         name={field.name}
                                                         value={field.state.value}
-                                                        onValueChange={(val) =>
-                                                            field.handleChange(val as ProductStatus)
-                                                        }
+                                                        onValueChange={(val) => field.handleChange(val as ProductStatus)}
                                                     >
-                                                        <SelectTrigger
-                                                            id="select-status"
-                                                            aria-invalid={isInvalid}
-                                                        >
-                                                            <SelectValue
-                                                                defaultValue={ProductStatus.DRAFT}
-                                                            />
+                                                        <SelectTrigger id="select-status" aria-invalid={isInvalid}>
+                                                            <SelectValue defaultValue={ProductStatus.DRAFT} />
                                                         </SelectTrigger>
                                                         <SelectContent position="item-aligned">
                                                             {statusOptions.map((item) => (
-                                                                <SelectItem
-                                                                    key={item.value}
-                                                                    value={item.value}
-                                                                >
+                                                                <SelectItem key={item.value} value={item.value}>
                                                                     <div className="flex items-center gap-x-2">
-                                                                        <div
-                                                                            className={`h-2 w-2 rounded-full ${item.color}`}
-                                                                        />
-                                                                        <span className="text-xs font-medium">
-                                                                            {item.label}
-                                                                        </span>
+                                                                        <div className={`h-2 w-2 rounded-full ${item.color}`} />
+                                                                        <span className="text-xs font-medium">{item.label}</span>
                                                                     </div>
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -722,13 +591,9 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                 <form.Field
                                     name="inStock"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched && !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
-                                            <Field
-                                                orientation="horizontal"
-                                                data-invalid={isInvalid}
-                                            >
+                                            <Field orientation="horizontal" data-invalid={isInvalid}>
                                                 <Switch
                                                     id={field.name}
                                                     name={field.name}
@@ -736,9 +601,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                     onCheckedChange={field.handleChange}
                                                     aria-invalid={isInvalid}
                                                 />
-                                                <FieldLabel htmlFor={field.name}>
-                                                    In Stock
-                                                </FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>In Stock</FieldLabel>
                                             </Field>
                                         );
                                     }}
@@ -750,18 +613,12 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                 <form.Subscribe
                     selector={(state) => [state.isDirty, state.errors]}
                     children={([isDirty, errors]) => {
-                        const isDisabled = initialData
-                            ? !isDirty || edit.isPending
-                            : create.isPending;
+                        const isDisabled = initialData ? !isDirty || edit.isPending : create.isPending;
 
                         console.log(errors);
 
                         return (
-                            <Button
-                                disabled={isDisabled || remove.isPending || upload.isPending}
-                                type="submit"
-                                className="ml-auto w-full md:w-auto"
-                            >
+                            <Button disabled={isDisabled || remove.isPending || upload.isPending} type="submit" className="ml-auto w-full md:w-auto">
                                 {actionLabel}
                             </Button>
                         );

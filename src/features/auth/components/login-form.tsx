@@ -19,6 +19,7 @@ import {
     FieldError,
     FieldGroup,
     FieldLabel,
+    FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
@@ -113,6 +114,9 @@ export function LoginForm() {
                                     Continue with Facebook
                                 </Button>
                             </div>
+                            <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
+                                Or continue with
+                            </FieldSeparator>
                             <div className="grid gap-6">
                                 <FieldGroup>
                                     <form.Field

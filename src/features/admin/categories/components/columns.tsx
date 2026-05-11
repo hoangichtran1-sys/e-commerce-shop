@@ -9,6 +9,7 @@ import { CategoriesGetManyWithPromotion } from "../types";
 import { CategoryActions } from "./category-actions";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PromotionItem } from "./promotion-item";
+import { Label } from "@/components/ui/label";
 
 export const columns: ColumnDef<CategoriesGetManyWithPromotion[number]>[] = [
     {
@@ -87,6 +88,9 @@ export const columns: ColumnDef<CategoriesGetManyWithPromotion[number]>[] = [
 
             return (
                 <div className="w-full max-w-sm rounded-lg border bg-card">
+                    <Label htmlFor={`${id}-campaigns`} className="sr-only">
+                        Campaigns
+                    </Label>
                     <Collapsible>
                         <CollapsibleTrigger className="flex w-full items-center justify-between p-3 text-sm font-medium hover:bg-muted">
                             <span className="font-semibold">{promotions.length} promotion</span>
@@ -140,7 +144,7 @@ export const columns: ColumnDef<CategoriesGetManyWithPromotion[number]>[] = [
 
             return (
                 <CategoryActions id={id} storeId={storeId}>
-                    <Button className="size-8 p-0" variant="ghost">
+                    <Button className="size-8 p-0" variant="ghost" aria-label={`Open actions for category ${id}`}>
                         <MoreVerticalIcon className="size-4" />
                     </Button>
                 </CategoryActions>

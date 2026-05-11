@@ -7,7 +7,7 @@ import { orpc } from "@/orpc/orpc-rq.client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { columns } from "../components/columns";
 import { OrderStatus } from "@/generated/prisma/enums";
-import { BanIcon, CheckCircleIcon } from "lucide-react";
+import { BanIcon, CheckCircle2Icon, LoaderIcon, XCircleIcon } from "lucide-react";
 import { TbCreditCardRefund } from "react-icons/tb";
 
 interface OrdersViewProps {
@@ -15,13 +15,17 @@ interface OrdersViewProps {
 }
 
 export const OrdersView = ({ storeId }: OrdersViewProps) => {
-    const { data: orders } = useSuspenseQuery(
-        orpc.orders.getMany.queryOptions({ input: { storeId } }),
-    );
+    const { data: orders } = useSuspenseQuery(orpc.orders.getMany.queryOptions({ input: { storeId } }));
 
     const statusOption = [
-        { label: "Paid", value: OrderStatus.PAID, icon: CheckCircleIcon },
-        { label: "Failed", value: OrderStatus.FAILED, icon: BanIcon },
+        {
+            label: "Pending",
+            value: OrderStatus.PENDING,
+            icon: LoaderIcon,
+        },
+        { label: "Cancelled", value: OrderStatus.CANCELLED, icon: BanIcon },
+        { label: "Paid", value: OrderStatus.PAID, icon: CheckCircle2Icon },
+        { label: "Failed", value: OrderStatus.FAILED, icon: XCircleIcon },
         {
             label: "Refund",
             value: OrderStatus.REFUND,
@@ -29,19 +33,19 @@ export const OrdersView = ({ storeId }: OrdersViewProps) => {
         },
     ];
 
+    const priceOptions = [
+        { label: "Under $500", value: "under_500" },
+        { label: "$500 - $1500", value: "500_1500" },
+        { label: "$1500 - $3000", value: "1500_3000" },
+        { label: "$3000 - $5000", value: "3000_5000" },
+        { label: "Above $5000", value: "above_5000" },
+    ];
+
     return (
         <>
-            <Heading
-                title={`Orders (${orders.length})`}
-                description="Manage orders for your store"
-            />
+            <Heading title={`Orders (${orders.length})`} description="Manage orders for your store" />
             <Separator />
-            <DataTable
-                data={orders}
-                columns={columns}
-                searchKey="products"
-                statusOption={statusOption}
-            />
+            <DataTable priceOption={priceOptions} data={orders} columns={columns} searchKey="products" statusOption={statusOption} />
         </>
     );
 };

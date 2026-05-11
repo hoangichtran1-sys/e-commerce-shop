@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 
-import { CheckIcon, ChevronsUpDownIcon, XIcon } from "lucide-react";
+import { CheckIcon, InboxIcon, ChevronsUpDownIcon, XIcon, PlusIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,14 @@ import {
     CommandList,
 } from "@/components/ui/command";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from "@/components/ui/empty";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface MultipleSelectProps {
     options: { label: string; value: string }[];
@@ -53,9 +57,7 @@ export const MultipleSelect = ({
 
     // Define maxShownItems before using visibleItems
     const maxShownItems = 2;
-    const visibleItems = expanded
-        ? selectedValues
-        : selectedValues.slice(0, maxShownItems);
+    const visibleItems = expanded ? selectedValues : selectedValues.slice(0, maxShownItems);
     const hiddenCount = selectedValues.length - visibleItems.length;
 
     return (
@@ -67,16 +69,13 @@ export const MultipleSelect = ({
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-
                         className="h-auto min-h-8 w-[100%] justify-between hover:bg-transparent"
                     >
                         <div className="flex flex-wrap items-center gap-1 pr-2.5">
                             {selectedValues.length > 0 ? (
                                 <>
                                     {visibleItems.map((val) => {
-                                        const option = options.find(
-                                            (c) => c.value === val,
-                                        );
+                                        const option = options.find((c) => c.value === val);
 
                                         return option ? (
                                             <Badge
@@ -111,16 +110,12 @@ export const MultipleSelect = ({
                                             }}
                                             className="rounded-sm"
                                         >
-                                            {expanded
-                                                ? "Show Less"
-                                                : `+${hiddenCount} more`}
+                                            {expanded ? "Show Less" : `+${hiddenCount} more`}
                                         </Badge>
                                     ) : null}
                                 </>
                             ) : (
-                                <span className="text-muted-foreground">
-                                    Select {topic}
-                                </span>
+                                <span className="text-muted-foreground">Select {topic}</span>
                             )}
                         </div>
                         <ChevronsUpDownIcon
@@ -133,27 +128,36 @@ export const MultipleSelect = ({
                     <Command>
                         <CommandInput placeholder={`Search ${topic}...`} />
                         <CommandList>
-                            <CommandEmpty>No {topic} found.</CommandEmpty>
+                            <CommandEmpty>
+                                <Empty>
+                                    <EmptyHeader>
+                                        <EmptyMedia variant="icon">
+                                            <InboxIcon />
+                                        </EmptyMedia>
+                                        <EmptyTitle>No {topic} found</EmptyTitle>
+                                        <EmptyDescription>
+                                            Get started by creating your first item.
+                                        </EmptyDescription>
+                                    </EmptyHeader>
+                                    <EmptyContent>
+                                        <Button size="xs" onClick={() => {}}>
+                                            <PlusIcon />
+                                            Add {topic}
+                                        </Button>
+                                    </EmptyContent>
+                                </Empty>
+                            </CommandEmpty>
                             <CommandGroup>
                                 {options.map((option) => (
                                     <CommandItem
                                         key={option.value}
                                         value={option.value}
-                                        onSelect={() =>
-                                            toggleSelection(option.value)
-                                        }
+                                        onSelect={() => toggleSelection(option.value)}
                                     >
                                         <div className="flex w-full items-center justify-between">
-                                            <span className="truncate">
-                                               {option.label}
-                                            </span>
-                                            {selectedValues.includes(
-                                                option.value,
-                                            ) && (
-                                                <CheckIcon
-                                                    size={16}
-                                                    className="-mr-2"
-                                                />
+                                            <span className="truncate">{option.label}</span>
+                                            {selectedValues.includes(option.value) && (
+                                                <CheckIcon size={16} className="-mr-2" />
                                             )}
                                         </div>
                                     </CommandItem>

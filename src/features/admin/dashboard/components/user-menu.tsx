@@ -1,15 +1,9 @@
 "use client";
 
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { User } from "@/lib/auth";
 import { authClient } from "@/lib/auth-client";
-import { LogOutIcon } from "lucide-react";
+import { ImageUpIcon, LogOutIcon } from "lucide-react";
 import { CgProfile } from "react-icons/cg";
 import { IoSettingsSharp } from "react-icons/io5";
 import { toast } from "sonner";
@@ -44,15 +38,19 @@ export const UserMenu = ({ currentUser }: UserMenuProps) => {
                             <AvatarImage src={currentUser.image} />
                         </Avatar>
                     ) : (
-                        <GeneratedAvatar
-                            seed={currentUser.name || currentUser.email}
-                        />
+                        <GeneratedAvatar seed={currentUser.name || currentUser.email} />
                     )}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     sideOffset={10}
                     className="w-48 md:w-36 rounded-xl shadow-md bg-white overflow-hidden right-1 top-12 text-sm font-semibold"
                 >
+                    {currentUser.role === "admin" && (
+                        <DropdownMenuItem className="mt-2" onClick={() => {}}>
+                            <ImageUpIcon className="size-5" />
+                            Upload manage
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem className="mt-2" onClick={() => {}}>
                         <CgProfile className="size-5" />
                         My profile

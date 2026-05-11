@@ -18,7 +18,7 @@ const badgeVariants = cva(
                     "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
                 ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
                 link: "text-primary underline-offset-4 hover:underline",
-                tertiary: "bg-purple-400 text-primary-foreground [a]:hover:bg-purple-400/80",
+                tertiary: "bg-purple-500 text-primary-foreground [a]:hover:bg-purple-500/80",
                 [PromotionType.PERCENT]:
                     "bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 dark:bg-amber-600/20 dark:focus-visible:ring-amber-600/40 [a]:hover:bg-amber-600/20",
                 [PromotionType.FIXED]:
@@ -27,12 +27,16 @@ const badgeVariants = cva(
                     "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
                 [PromotionMode.CATEGORY_CAMPAIGN]:
                     "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+                [OrderStatus.PENDING]:
+                    "border-none bg-yellow-600/10 text-yellow-600 focus-visible:ring-yellow-600/20 focus-visible:outline-none dark:bg-yellow-400/10 dark:text-yellow-400 dark:focus-visible:ring-yellow-400/40 [a&]:hover:bg-yellow-600/5 dark:[a&]:hover:bg-yellow-400/5",
+                [OrderStatus.CANCELLED]:
+                    "border-none bg-gray-600/10 text-gray-600 focus-visible:ring-gray-600/20 focus-visible:outline-none dark:bg-gray-400/10 dark:text-gray-400 dark:focus-visible:ring-gray-400/40 [a&]:hover:bg-gray-600/5 dark:[a&]:hover:bg-gray-400/5",
                 [OrderStatus.PAID]:
                     "border-none bg-green-600/10 text-green-600 focus-visible:ring-green-600/20 focus-visible:outline-none dark:bg-green-400/10 dark:text-green-400 dark:focus-visible:ring-green-400/40 [a&]:hover:bg-green-600/5 dark:[a&]:hover:bg-green-400/5",
                 [OrderStatus.FAILED]:
                     "bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none",
                 [OrderStatus.REFUND]:
-                    "border-none bg-amber-600/10 text-amber-600 focus-visible:ring-amber-600/20 focus-visible:outline-none dark:bg-amber-400/10 dark:text-amber-400 dark:focus-visible:ring-amber-400/40 [a&]:hover:bg-amber-600/5 dark:[a&]:hover:bg-amber-400/5",
+                    "border-none bg-orange-600/10 text-orange-600 focus-visible:ring-orange-600/20 focus-visible:outline-none dark:bg-orange-400/10 dark:text-orange-400 dark:focus-visible:ring-orange-400/40 [a&]:hover:bg-orange-600/5 dark:[a&]:hover:bg-orange-400/5",
             },
         },
         defaultVariants: {

@@ -17,7 +17,7 @@ export const ToggleActive = ({ id, storeId, isChecked }: ToggleActiveProps) => {
     const toggle = useMutation(
         orpc.billboards.toggleActive.mutationOptions({
             onSuccess: () => {
-                toast.error("Toggle successfully");
+                toast.success("Toggle successfully");
                 queryClient.invalidateQueries(
                     orpc.billboards.getMany.queryOptions({
                         input: { storeId },
@@ -40,6 +40,7 @@ export const ToggleActive = ({ id, storeId, isChecked }: ToggleActiveProps) => {
             checked={isChecked}
             onCheckedChange={() => toggle.mutate({ id, storeId })}
             size="sm"
+            aria-label={`Toggle active billboard ${id}`}
         />
     );
 };

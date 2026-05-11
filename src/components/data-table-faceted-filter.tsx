@@ -19,7 +19,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { CheckIcon, FunnelIcon } from "lucide-react";
+import { CheckIcon, PlusCircleIcon } from "lucide-react";
 
 export type FilterOption = {
     label: string;
@@ -49,7 +49,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                     size="sm"
                     className="h-8 border-dashed"
                 >
-                    <FunnelIcon className="mr-2 h-4 w-4" />
+                    <PlusCircleIcon className="mr-2 h-4 w-4" />
                     {title}
                     {selectedValues?.size > 0 && (
                         <>

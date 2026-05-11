@@ -8,33 +8,20 @@ export const formPromotionSchema = z
         type: z.enum(PromotionType),
         mode: z.enum(PromotionMode),
         value: z.number(),
-        startAt: z.date().nullable(),
-        endAt: z.date().nullable(),
+        startAt: z.date(),
+        endAt: z.date(),
         isActive: z.boolean(),
         minOrderValue: z.number().min(0),
         maxDiscountValue: z.number().nullable(),
     })
-    .refine(
-        (data) => {
-            if (data.startAt && data.endAt) {
-                return data.endAt > data.startAt;
-            }
-
-            return true;
-        },
-        {
-            message: "The end date must be after the start date",
-            path: ["endAt"],
-        },
-    )
+    .refine((data) => data.endAt > data.startAt, {
+        message: "The end date must be after the start date",
+        path: ["endAt"],
+    })
     .refine(
         (data) => {
             if (data.type === "PERCENT") {
-                return (
-                    Number.isInteger(data.value) &&
-                    data.value >= 1 &&
-                    data.value <= 100
-                );
+                return Number.isInteger(data.value) && data.value >= 1 && data.value <= 100;
             }
 
             return true;
@@ -77,8 +64,7 @@ export const formPromotionSchema = z
             return true;
         },
         {
-            message:
-                "The discount value should not exceed the minimum order value",
+            message: "The discount value should not exceed the minimum order value",
             path: ["minOrderValue"],
         },
     );
@@ -90,8 +76,8 @@ export const insertPromotionSchema = z.object({
     type: z.enum(PromotionType),
     mode: z.enum(PromotionMode),
     value: z.number(),
-    startAt: z.date().nullable(),
-    endAt: z.date().nullable(),
+    startAt: z.date(),
+    endAt: z.date(),
     isActive: z.boolean(),
     minOrderValue: z.number().min(0),
     maxDiscountValue: z.number().nullable(),

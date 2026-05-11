@@ -9,6 +9,7 @@ import { colorsRouter } from "@/features/admin/colors/server/routers";
 import { productsRouter } from "@/features/admin/products/server/routers";
 import { ordersRouter } from "@/features/admin/orders/server/routers";
 import { promotionsRouter } from "@/features/admin/promotions/server/routers";
+import { couponsRouter } from "@/features/admin/coupon/server/routers";
 
 export const router = base.router({
     stores: storesRouter,
@@ -19,6 +20,7 @@ export const router = base.router({
     products: productsRouter,
     orders: ordersRouter,
     promotions: promotionsRouter,
+    coupons: couponsRouter,
 });
 
 export type Router = typeof router;

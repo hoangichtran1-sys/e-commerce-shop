@@ -19,29 +19,23 @@ export const OrderActions = ({ data, children }: OrderActionProps) => {
     const [openOrderSheet, setOpenOrderSheet] = useState(false);
 
     const onCopy = () => {
-        navigator.clipboard.writeText(data.id);
-        toast.success("Order ID copied to the clipboard");
+        if (data.transactionId) {
+            navigator.clipboard.writeText(data.transactionId);
+            toast.success("Order transaction ID copied to the clipboard");
+        }
+        toast.error("Transaction not found");
     };
 
     return (
         <>
-            <OrderSheet
-                open={openOrderSheet}
-                onOpenChange={setOpenOrderSheet}
-                data={data}
-            />
+            <OrderSheet open={openOrderSheet} onOpenChange={setOpenOrderSheet} data={data} />
             <div className="flex justify-end">
                 <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                        {children}
-                    </DropdownMenuTrigger>
+                    <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem
-                            onClick={onCopy}
-                            className="font-medium p-2.5"
-                        >
+                        <DropdownMenuItem onClick={onCopy} className="font-medium p-2.5">
                             <CopyIcon className="size-4 stroke-2" />
-                            Copy ID
+                            Copy transaction ID
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => setOpenOrderSheet(true)}

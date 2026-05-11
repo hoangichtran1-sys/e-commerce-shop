@@ -85,7 +85,7 @@ export const PromotionItem = ({ categoryId, item, storeId }: PromotionItemProps)
                     <PopoverTrigger asChild>
                         <Button
                             size="icon-sm"
-                            variant="outline"
+                            variant="ghost"
                             className="rounded-full"
                             aria-label="Disconnect"
                         >
@@ -109,7 +109,7 @@ export const PromotionItem = ({ categoryId, item, storeId }: PromotionItemProps)
                                 </Button>
                                 <Button
                                     disabled={disconnect.isPending}
-                                    variant="default"
+                                    variant="destructive"
                                     size="sm"
                                     onClick={handleDisconnect}
                                 >

@@ -89,7 +89,11 @@ export const columns: ColumnDef<BillboardGetMany[number]>[] = [
 
             return (
                 <BillboardActions id={id} storeId={storeId}>
-                    <Button className="size-8 p-0" variant="ghost">
+                    <Button
+                        className="size-8 p-0"
+                        variant="ghost"
+                        aria-label={`Open actions for billboard ${id}`}
+                    >
                         <MoreVerticalIcon className="size-4" />
                     </Button>
                 </BillboardActions>

@@ -66,6 +66,21 @@ export const MainNav = ({ className }: MainNavProps) => {
             active: pathname === `/admin/${params.storeId}/promotions`,
         },
         {
+            href: `/admin/${params.storeId}/coupons`,
+            label: "Coupons",
+            active: pathname === `/admin/${params.storeId}/coupons`,
+        },
+        {
+            href: `/admin/${params.storeId}/reviews`,
+            label: "Reviews",
+            active: pathname === `/admin/${params.storeId}/reviews`,
+        },
+        {
+            href: `/admin/${params.storeId}/replies`,
+            label: "Replies",
+            active: pathname === `/admin/${params.storeId}/replies`,
+        },
+        {
             href: `/admin/${params.storeId}/settings`,
             label: "Settings",
             active: pathname === `/admin/${params.storeId}/settings`,

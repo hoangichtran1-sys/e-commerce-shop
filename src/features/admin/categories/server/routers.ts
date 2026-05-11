@@ -192,15 +192,6 @@ export const categoriesRouter = base.router({
                 },
             });
 
-            return categories.map((category) => ({
-                ...category,
-                promotions: category.promotions.map((promotion) => ({
-                    ...promotion,
-                    minOrderValue: promotion.minOrderValue.toNumber(),
-                    maxDiscountValue: promotion.maxDiscountValue
-                        ? promotion.maxDiscountValue.toNumber()
-                        : null,
-                })),
-            }));
+            return categories;
         }),
 });

@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { base, admin } from "@/orpc/init";
-import { ORPCError } from "@orpc/client";
 import { z } from "zod";
 
 export const ordersRouter = base.router({
@@ -30,15 +29,24 @@ export const ordersRouter = base.router({
                             id: true,
                         },
                     },
+                    coupon: {
+                        select: {
+                            code: true,
+                            promotion: {
+                                select: { value: true, type: true },
+                            },
+                        },
+                    },
                 },
             });
 
             if (!order) {
-                throw new ORPCError("NOT_FOUND");
+                return null;
             }
 
             return {
                 ...order,
+                amountPaid: order.amountPaid ? order.amountPaid.toNumber() : null,
                 orderItems: order.orderItems.map((item) => ({
                     ...item,
                     product: {
@@ -48,12 +56,16 @@ export const ordersRouter = base.router({
                 })),
             };
         }),
-    getMany: admin
-        .input(z.object({ storeId: z.string().min(1) }))
+    getOneByTransaction: admin
+        .input(
+            z.object({
+                transactionId: z.string().min(1),
+            }),
+        )
         .handler(async ({ input }) => {
-            const orders = await prisma.order.findMany({
+            const order = await prisma.order.findUnique({
                 where: {
-                    storeId: input.storeId,
+                    transactionId: input.transactionId,
                 },
                 include: {
                     orderItems: {
@@ -68,14 +80,24 @@ export const ordersRouter = base.router({
                             id: true,
                         },
                     },
-                },
-                orderBy: {
-                    createdAt: "desc",
+                    coupon: {
+                        select: {
+                            code: true,
+                            promotion: {
+                                select: { value: true, type: true },
+                            },
+                        },
+                    },
                 },
             });
 
-            return orders.map((order) => ({
+            if (!order) {
+                return null;
+            }
+
+            return {
                 ...order,
+                amountPaid: order.amountPaid ? order.amountPaid.toNumber() : null,
                 orderItems: order.orderItems.map((item) => ({
                     ...item,
                     product: {
@@ -83,6 +105,50 @@ export const ordersRouter = base.router({
                         price: item.product.price.toNumber(),
                     },
                 })),
-            }));
+            };
         }),
+    getMany: admin.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
+        const orders = await prisma.order.findMany({
+            where: {
+                storeId: input.storeId,
+            },
+            include: {
+                orderItems: {
+                    select: {
+                        product: {
+                            select: {
+                                name: true,
+                                price: true,
+                                id: true,
+                            },
+                        },
+                        id: true,
+                    },
+                },
+                coupon: {
+                    select: {
+                        code: true,
+                        promotion: {
+                            select: { value: true, type: true },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+
+        return orders.map((order) => ({
+            ...order,
+            amountPaid: order.amountPaid ? order.amountPaid.toNumber() : null,
+            orderItems: order.orderItems.map((item) => ({
+                ...item,
+                product: {
+                    ...item.product,
+                    price: item.product.price.toNumber(),
+                },
+            })),
+        }));
+    }),
 });

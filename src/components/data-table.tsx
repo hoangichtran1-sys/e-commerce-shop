@@ -15,20 +15,10 @@ import {
     Row,
 } from "@tanstack/react-table";
 
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { SearchIcon, TrashIcon } from "lucide-react";
-import {
-    DataTableFacetedFilter,
-    FilterOption,
-} from "./data-table-faceted-filter";
+import { DataTableFacetedFilter, FilterOption } from "./data-table-faceted-filter";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
 
 interface DataTableProps<TData, TValue> {
@@ -38,6 +28,8 @@ interface DataTableProps<TData, TValue> {
     onDelete?: (rows: Row<TData>[]) => void;
     disabled?: boolean;
     statusOption?: FilterOption[];
+    categoryOption?: FilterOption[];
+    priceOption?: FilterOption[];
 }
 
 export function DataTable<TData, TValue>({
@@ -47,11 +39,12 @@ export function DataTable<TData, TValue>({
     onDelete,
     disabled,
     statusOption,
+    categoryOption,
+    priceOption,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
 
-    const [columnFilters, setColumnFilters] =
-        React.useState<ColumnFiltersState>([]);
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
     const [rowSelection, setRowSelection] = React.useState({});
 
@@ -72,7 +65,9 @@ export function DataTable<TData, TValue>({
         },
     });
 
-    const hasStatusColumn = table.getAllColumns().some(col => col.id === "status");
+    const hasStatusColumn = table.getAllColumns().some((col) => col.id === "status");
+    const hasCategoryColumn = table.getAllColumns().some((col) => col.id === "category");
+    const hasPriceColumn = table.getAllColumns().some((col) => col.id === "price");
 
     return (
         <div className="w-full">
@@ -81,49 +76,35 @@ export function DataTable<TData, TValue>({
                     <InputGroup>
                         <InputGroupInput
                             placeholder="Filter billboards..."
-                            value={
-                                (table
-                                    .getColumn(searchKey)
-                                    ?.getFilterValue() as string) ?? ""
-                            }
-                            onChange={(event) =>
-                                table
-                                    .getColumn(searchKey)
-                                    ?.setFilterValue(event.target.value)
-                            }
+                            value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
+                            onChange={(event) => table.getColumn(searchKey)?.setFilterValue(event.target.value)}
                             className="h-8 text-sm max-w-xs"
                         />
                         <InputGroupAddon>
                             <SearchIcon />
                         </InputGroupAddon>
                     </InputGroup>
-                    {hasStatusColumn && (
-                        <DataTableFacetedFilter
-                            column={table.getColumn("status")}
-                            title="Status"
-                            options={statusOption ?? []}
-                        />
+                    {hasStatusColumn && <DataTableFacetedFilter column={table.getColumn("status")} title="Status" options={statusOption ?? []} />}
+                    {hasCategoryColumn && (
+                        <DataTableFacetedFilter column={table.getColumn("category")} title="Category" options={categoryOption ?? []} />
                     )}
+                    {hasPriceColumn && <DataTableFacetedFilter column={table.getColumn("price")} title="Price" options={priceOption ?? []} />}
                 </div>
-                {table.getFilteredSelectedRowModel().rows.length > 0 &&
-                    onDelete && (
-                        <Button
-                            onClick={() => {
-                                onDelete(
-                                    table.getFilteredSelectedRowModel().rows,
-                                );
-                                table.resetRowSelection();
-                            }}
-                            disabled={disabled}
-                            size="sm"
-                            variant="outline"
-                            className="ml-auto font-normal text-xs"
-                        >
-                            <TrashIcon className="size-4" />
-                            <span className="hidden lg:block">Delete</span> (
-                            {table.getFilteredSelectedRowModel().rows.length})
-                        </Button>
-                    )}
+                {table.getFilteredSelectedRowModel().rows.length > 0 && onDelete && (
+                    <Button
+                        onClick={() => {
+                            onDelete(table.getFilteredSelectedRowModel().rows);
+                            table.resetRowSelection();
+                        }}
+                        disabled={disabled}
+                        size="sm"
+                        variant="outline"
+                        className="ml-auto font-normal text-xs"
+                    >
+                        <TrashIcon className="size-4" />
+                        <span className="hidden lg:block">Delete</span> ({table.getFilteredSelectedRowModel().rows.length})
+                    </Button>
+                )}
             </div>
             <div className="overflow-hidden rounded-md border">
                 <Table>
@@ -133,13 +114,7 @@ export function DataTable<TData, TValue>({
                                 {headerGroup.headers.map((header) => {
                                     return (
                                         <TableHead key={header.id}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext(),
-                                                  )}
+                                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                         </TableHead>
                                     );
                                 })}
@@ -149,28 +124,15 @@ export function DataTable<TData, TValue>({
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={
-                                        row.getIsSelected() && "selected"
-                                    }
-                                >
+                                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext(),
-                                            )}
-                                        </TableCell>
+                                        <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
                                     ))}
                                 </TableRow>
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell
-                                    colSpan={columns.length}
-                                    className="h-24 text-center"
-                                >
+                                <TableCell colSpan={columns.length} className="h-24 text-center">
                                     No results.
                                 </TableCell>
                             </TableRow>
@@ -179,20 +141,10 @@ export function DataTable<TData, TValue>({
                 </Table>
             </div>
             <div className="flex items-center justify-end space-x-2 py-4">
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                >
+                <Button variant="secondary" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
                     Previous
                 </Button>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                >
+                <Button variant="secondary" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
                     Next
                 </Button>
             </div>

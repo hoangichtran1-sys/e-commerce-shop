@@ -13,22 +13,13 @@ export const columns: ColumnDef<SizesGetManyByStore[number]>[] = [
         id: "select",
         header: ({ table }) => (
             <Checkbox
-                checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
-                onCheckedChange={(value) =>
-                    table.toggleAllPageRowsSelected(!!value)
-                }
+                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                 aria-label="Select all"
             />
         ),
         cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-            />
+            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
         ),
         enableSorting: false,
         enableHiding: false,
@@ -37,12 +28,7 @@ export const columns: ColumnDef<SizesGetManyByStore[number]>[] = [
         accessorKey: "name",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Name
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -58,12 +44,7 @@ export const columns: ColumnDef<SizesGetManyByStore[number]>[] = [
         accessorKey: "value",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Value
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -76,34 +57,30 @@ export const columns: ColumnDef<SizesGetManyByStore[number]>[] = [
         },
     },
     {
-        accessorKey: "category",
+        id: "category",
+        accessorFn: (row) => row.category.name,
         header: "Category",
         cell: ({ row }) => {
             const categoryName = row.original.category.name;
 
             return <p className="line-clamp-1">{categoryName}</p>;
         },
+        filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id));
+        },
     },
     {
         accessorKey: "createdAt",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() =>
-                        column.toggleSorting(column.getIsSorted() === "asc")
-                    }
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Created At
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
             );
         },
         cell: ({ row }) => {
-            const createdAtFormatted = format(
-                row.original.createdAt,
-                "MMMM do, yyyy",
-            );
+            const createdAtFormatted = format(row.original.createdAt, "MMMM do, yyyy");
 
             return <p className="line-clamp-1">{createdAtFormatted}</p>;
         },
