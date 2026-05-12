@@ -37,7 +37,7 @@ export const ColorsView = ({ storeId }: ColorsViewProps) => {
                 </Button>
             </div>
             <Separator />
-            <DataTable categoryOption={categoryOption} data={colors} columns={columns} searchKey="name" />
+            <DataTable categoryOption={categoryOption} topic="color" data={colors} columns={columns} searchKey="name" />
         </>
     );
 };

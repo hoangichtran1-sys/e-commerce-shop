@@ -45,7 +45,7 @@ export const OrdersView = ({ storeId }: OrdersViewProps) => {
         <>
             <Heading title={`Orders (${orders.length})`} description="Manage orders for your store" />
             <Separator />
-            <DataTable priceOption={priceOptions} data={orders} columns={columns} searchKey="products" statusOption={statusOption} />
+            <DataTable topic="order" priceOption={priceOptions} data={orders} columns={columns} searchKey="products" statusOption={statusOption} />
         </>
     );
 };

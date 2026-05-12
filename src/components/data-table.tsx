@@ -17,13 +17,15 @@ import {
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { SearchIcon, TrashIcon } from "lucide-react";
+import { SearchIcon, TrashIcon, XIcon } from "lucide-react";
 import { DataTableFacetedFilter, FilterOption } from "./data-table-faceted-filter";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
+import { DataTableViewOptions } from "./data-table-view-options";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     searchKey: string;
+    topic?: string;
     data: TData[];
     onDelete?: (rows: Row<TData>[]) => void;
     disabled?: boolean;
@@ -36,6 +38,7 @@ export function DataTable<TData, TValue>({
     columns,
     data,
     searchKey,
+    topic = "data",
     onDelete,
     disabled,
     statusOption,
@@ -69,13 +72,15 @@ export function DataTable<TData, TValue>({
     const hasCategoryColumn = table.getAllColumns().some((col) => col.id === "category");
     const hasPriceColumn = table.getAllColumns().some((col) => col.id === "price");
 
+    const isFiltered = table.getState().columnFilters.length > 0;
+
     return (
         <div className="w-full">
             <div className="flex items-center justify-between py-4">
                 <div className="flex items-center gap-x-4">
                     <InputGroup>
                         <InputGroupInput
-                            placeholder="Filter billboards..."
+                            placeholder={`Filter ${topic}...`}
                             value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
                             onChange={(event) => table.getColumn(searchKey)?.setFilterValue(event.target.value)}
                             className="h-8 text-sm max-w-xs"
@@ -89,22 +94,31 @@ export function DataTable<TData, TValue>({
                         <DataTableFacetedFilter column={table.getColumn("category")} title="Category" options={categoryOption ?? []} />
                     )}
                     {hasPriceColumn && <DataTableFacetedFilter column={table.getColumn("price")} title="Price" options={priceOption ?? []} />}
+                    {isFiltered && (
+                        <Button variant="ghost" onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">
+                            Reset
+                            <XIcon className="ml-2 h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
-                {table.getFilteredSelectedRowModel().rows.length > 0 && onDelete && (
-                    <Button
-                        onClick={() => {
-                            onDelete(table.getFilteredSelectedRowModel().rows);
-                            table.resetRowSelection();
-                        }}
-                        disabled={disabled}
-                        size="sm"
-                        variant="outline"
-                        className="ml-auto font-normal text-xs"
-                    >
-                        <TrashIcon className="size-4" />
-                        <span className="hidden lg:block">Delete</span> ({table.getFilteredSelectedRowModel().rows.length})
-                    </Button>
-                )}
+                <div className="flex items-center gap-x-2">
+                    <DataTableViewOptions table={table} />
+                    {table.getFilteredSelectedRowModel().rows.length > 0 && onDelete && (
+                        <Button
+                            onClick={() => {
+                                onDelete(table.getFilteredSelectedRowModel().rows);
+                                table.resetRowSelection();
+                            }}
+                            disabled={disabled}
+                            size="sm"
+                            variant="outline"
+                            className="ml-auto font-normal text-xs"
+                        >
+                            <TrashIcon className="size-4" />
+                            <span className="hidden lg:block">Delete</span> ({table.getFilteredSelectedRowModel().rows.length})
+                        </Button>
+                    )}
+                </div>
             </div>
             <div className="overflow-hidden rounded-md border">
                 <Table>

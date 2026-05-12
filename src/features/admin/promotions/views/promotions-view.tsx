@@ -45,6 +45,7 @@ export const PromotionsView = ({ storeId }: PromotionsViewProps) => {
                 data={promotions}
                 columns={columns}
                 searchKey="name"
+                topic="promotion"
                 statusOption={statusOption}
             />
         </>

@@ -34,7 +34,7 @@ export const CouponsView = ({ storeId }: CouponsViewProps) => {
                 </Button>
             </div>
             <Separator />
-            <DataTable data={coupons} columns={columns} searchKey="code" />
+            <DataTable topic="coupon" data={coupons} columns={columns} searchKey="code" />
         </>
     );
 };

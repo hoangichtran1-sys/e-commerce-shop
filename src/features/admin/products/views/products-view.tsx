@@ -58,6 +58,7 @@ export const ProductsView = ({ storeId }: ProductsViewProps) => {
                 data={products}
                 columns={columns}
                 searchKey="name"
+                topic="product"
             />
         </>
     );

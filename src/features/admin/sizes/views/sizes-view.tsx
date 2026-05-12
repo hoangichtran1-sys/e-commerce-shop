@@ -37,7 +37,7 @@ export const SizesView = ({ storeId }: SizesViewProps) => {
                 </Button>
             </div>
             <Separator />
-            <DataTable categoryOption={categoryOption} data={sizes} columns={columns} searchKey="name" />
+            <DataTable topic="size" categoryOption={categoryOption} data={sizes} columns={columns} searchKey="name" />
         </>
     );
 };

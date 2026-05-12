@@ -71,6 +71,7 @@ export const BillboardView = ({ storeId }: BillboardViewProps) => {
                 data={billboards}
                 columns={columns}
                 searchKey="label"
+                topic="billboard"
                 disabled={bulkDelete.isPending}
                 onDelete={async (rows) => {
                     const ok = await confirmRemove();

@@ -71,6 +71,7 @@ export const CategoriesView = ({ storeId }: CategoriesViewProps) => {
                 data={categories}
                 columns={columns}
                 searchKey="name"
+                topic="category"
                 disabled={bulkDelete.isPending}
                 onDelete={async (rows) => {
                     const ok = await confirmRemove();
