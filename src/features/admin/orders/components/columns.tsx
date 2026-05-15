@@ -131,8 +131,21 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
         },
     },
     {
-        id: "totalPrice",
-        accessorKey: "totalPrice",
+        id: "price",
+        accessorFn: (row) => {
+            let totalPrice = row.orderItems.reduce((total, item) => total + item.product.price, 0);
+            const coupon = row.coupon;
+
+            if (coupon) {
+                if (coupon.promotion.type === "FIXED") {
+                    totalPrice = totalPrice - coupon.promotion.value;
+                } else if (coupon.promotion.type === "PERCENT") {
+                    totalPrice = totalPrice - totalPrice * coupon.promotion.value;
+                }
+            }
+
+            return totalPrice;
+        },
         header: ({ column }) => {
             return (
                 <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>

@@ -56,7 +56,7 @@ export function ResponsiveModal({
     }
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent>
+            <DialogContent className="p-6">
                 <DialogHeader>
                     <DialogTitle className="text-center">{title}</DialogTitle>
                     {description && (

@@ -11,9 +11,10 @@ import {
     useSuspenseQuery,
 } from "@tanstack/react-query";
 import { TrashIcon } from "lucide-react";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import {
     Field,
+    FieldDescription,
     FieldError,
     FieldGroup,
     FieldLabel,
@@ -26,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { ApiAlert } from "@/components/api-alert";
 import { useOrigin } from "@/hooks/use-origin";
 import { Textarea } from "@/components/ui/textarea";
+import slug from "slug";
 
 interface StoreSettingsFormProps {
     storeId: string;
@@ -106,6 +108,8 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
         "The following action will permanently remove this store",
     );
 
+    const name = useStore(form.store, (state) => state.values.name);
+
     return (
         <>
             <RemoveConfirmation />
@@ -160,6 +164,9 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
                                                 aria-invalid={isInvalid}
                                                 autoComplete="off"
                                             />
+                                            <FieldDescription>
+                                                Store slug: {slug(name)}
+                                            </FieldDescription>
                                             {isInvalid && (
                                                 <FieldError
                                                     errors={

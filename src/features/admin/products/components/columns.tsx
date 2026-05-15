@@ -3,30 +3,15 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDownIcon, MoreVerticalIcon } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { ProductGetMany } from "../types";
 import { capitalizeFirst, formatPrice } from "@/lib/utils";
 import { ProductActions } from "./product-actions";
 import { SupportIcon } from "@/components/support-icon";
 import { ToggleInStock } from "./toggle-in-stock";
+import { Hint } from "@/components/hint";
 
 export const columns: ColumnDef<ProductGetMany[number]>[] = [
-    {
-        id: "select",
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
     {
         accessorKey: "name",
         header: ({ column }) => {
@@ -39,8 +24,13 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         },
         cell: ({ row }) => {
             const name = row.original.name;
+            const sku = row.original.sku;
 
-            return <p className="line-clamp-1">{name}</p>;
+            return (
+                <Hint side="top" text={sku}>
+                    <p className="line-clamp-2">{name}</p>
+                </Hint>
+            );
         },
     },
     {
@@ -195,9 +185,10 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         cell: ({ row }) => {
             const id = row.original.id;
             const storeId = row.original.storeId;
+            const sku = row.original.sku;
 
             return (
-                <ProductActions id={id} storeId={storeId}>
+                <ProductActions id={id} storeId={storeId} sku={sku}>
                     <Button className="size-8 p-0" variant="ghost" aria-label={`Open actions for product ${id}`}>
                         <MoreVerticalIcon className="size-4" />
                     </Button>

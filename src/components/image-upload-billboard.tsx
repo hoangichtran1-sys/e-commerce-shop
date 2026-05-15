@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { ImageIcon, Loader2Icon, X, ZoomIn } from "lucide-react";
@@ -94,7 +95,6 @@ export const ImageUploadBillboard = ({
                                 <DialogTitle className="sr-only">
                                     {file.name}
                                 </DialogTitle>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
                                     src={URL.createObjectURL(file)}
                                     alt={file.name}

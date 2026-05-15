@@ -1,18 +1,20 @@
 /* eslint-disable @next/next/no-img-element */
-import { getStores } from "@/actions/queries";
 import { SetupView } from "@/features/admin/stores/views/setup-view";
 import { requireAdmin } from "@/lib/auth-utils";
+import { client } from "@/lib/orpc";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 
 const Page = async () => {
-    const session = await requireAdmin();
+    await requireAdmin();
 
-    const stores = await getStores(session.user.id);
+    const stores = await client.stores.getMany()
 
     if (stores.length === 0) {
         return (
             <div className="h-full w-full">
-                <img
+                <Image
+                    fill
                     src="/background.jpg"
                     alt="Background"
                     className="absolute inset-0 w-full h-full object-cover opacity-90 blur-sm"

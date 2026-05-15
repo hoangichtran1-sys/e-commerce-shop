@@ -7,15 +7,7 @@ import { orpc } from "@/orpc/orpc-rq.client";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { TrashIcon, RedoIcon, UndoIcon } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
-import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-    FieldTitle,
-} from "@/components/ui/field";
+import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -28,6 +20,8 @@ import { useCallback, useRef, useState } from "react";
 import { Hint } from "@/components/hint";
 import { BreadcrumbHeader } from "@/components/breadcrumb-header";
 import { Switch } from "@/components/ui/switch";
+import Image from "next/image";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface BillboardFormProps {
     billboardId: string;
@@ -38,6 +32,7 @@ const formSchema = z.object({
     label: z.string().min(1, "Label is required"),
     imageUrl: z.string().min(1),
     isActive: z.boolean(),
+    isGlobal: z.boolean(),
 });
 
 export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
@@ -126,6 +121,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
             label: initialData?.label || "",
             imageUrl: initialData?.imageUrl || "",
             isActive: !!initialData?.isActive,
+            isGlobal: !!initialData?.isGlobal,
         },
         validators: {
             onSubmit: formSchema,
@@ -138,6 +134,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                     label: value.label,
                     newImageUrl: value.imageUrl,
                     isActive: value.isActive,
+                    isGlobal: value.isGlobal,
                 });
             } else {
                 create.mutate({
@@ -145,6 +142,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                     label: value.label,
                     imageUrl: value.imageUrl,
                     isActive: value.isActive,
+                    isGlobal: value.isGlobal,
                 });
             }
         },
@@ -187,10 +185,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
         [files, upload],
     );
 
-    const [RemoveConfirmation, confirmRemove] = useConfirm(
-        "Are you sure?",
-        "The following action will permanently remove this billboard",
-    );
+    const [RemoveConfirmation, confirmRemove] = useConfirm("Are you sure?", "The following action will permanently remove this billboard");
 
     const actionLabel = initialData ? "Save changes" : "Create";
 
@@ -198,19 +193,9 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
         <>
             <RemoveConfirmation />
             <div className="flex items-center justify-between">
-                <BreadcrumbHeader
-                    id={billboardId}
-                    storeId={storeId}
-                    name={initialData?.label || "New"}
-                    topic="billboards"
-                />
+                <BreadcrumbHeader id={billboardId} storeId={storeId} name={initialData?.label || "New"} topic="billboards" />
                 {initialData && (
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={edit.isPending || remove.isPending}
-                        onClick={handleRemove}
-                    >
+                    <Button variant="destructive" size="sm" disabled={edit.isPending || remove.isPending} onClick={handleRemove}>
                         <TrashIcon className="size-4" />
                     </Button>
                 )}
@@ -229,13 +214,11 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                             <form.Field
                                 name="label"
                                 children={(field) => {
-                                    const isInvalid =
-                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
                                             <FieldLabel htmlFor={field.name}>Label</FieldLabel>
                                             <Input
-                                                className="max-w-50"
                                                 type="text"
                                                 placeholder="Billboard label"
                                                 id={field.name}
@@ -246,9 +229,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                                 aria-invalid={isInvalid}
                                                 autoComplete="off"
                                             />
-                                            {isInvalid && (
-                                                <FieldError errors={field.state.meta.errors} />
-                                            )}
+                                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                         </Field>
                                     );
                                 }}
@@ -260,29 +241,22 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                             <form.Field
                                 name="imageUrl"
                                 children={(field) => {
-                                    const isInvalid =
-                                        field.state.meta.isTouched && !field.state.meta.isValid;
+                                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 
                                     return (
                                         <>
-                                            <FieldLabel htmlFor={field.name}>
-                                                Background Image
-                                            </FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>Background Image</FieldLabel>
                                             {showImage && field.state.value ? (
                                                 <div className="flex item-center justify-start gap-4 aspect-3/1 mt-2">
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img
+                                                    <Image
+                                                        width={600}
+                                                        height={300}
                                                         src={field.state.value}
                                                         alt="Image"
                                                         className="md:h-[80%] md:w-[80%] h-full w-full object-cover"
                                                     />
                                                     <Hint text="Redo">
-                                                        <Button
-                                                            size="icon-xs"
-                                                            variant="destructive"
-                                                            onClick={handleRemoveImage}
-                                                            type="button"
-                                                        >
+                                                        <Button size="icon-xs" variant="destructive" onClick={handleRemoveImage} type="button">
                                                             <RedoIcon />
                                                         </Button>
                                                     </Hint>
@@ -301,10 +275,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                                                 variant="secondary"
                                                                 onClick={() => {
                                                                     setShowImage(true);
-                                                                    form.setFieldValue(
-                                                                        "imageUrl",
-                                                                        initialData.imageUrl,
-                                                                    );
+                                                                    form.setFieldValue("imageUrl", initialData.imageUrl);
                                                                 }}
                                                                 type="button"
                                                             >
@@ -323,9 +294,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                                     name={field.name}
                                                     value={field.state.value}
                                                 />
-                                                {isInvalid && (
-                                                    <FieldError errors={field.state.meta.errors} />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         </>
                                     );
@@ -334,62 +303,70 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                         </div>
                     </FieldGroup>
                     <FieldGroup className="col-span-3">
-                        <div className="max-w-full">
-                            <form.Field
-                                name="isActive"
-                                children={(field) => {
-                                    const isInvalid =
-                                        field.state.meta.isTouched && !field.state.meta.isValid;
-                                    return (
-                                        <FieldLabel htmlFor={field.name}>
-                                            <Field
-                                                orientation="horizontal"
-                                                data-invalid={isInvalid}
-                                            >
-                                                <FieldContent>
-                                                    <FieldTitle>Active</FieldTitle>
-                                                    <FieldDescription>
-                                                        Turn off to disable this billboard without
-                                                        deleting it.
-                                                    </FieldDescription>
-                                                    {isInvalid && (
-                                                        <FieldError
-                                                            errors={field.state.meta.errors}
-                                                        />
-                                                    )}
-                                                </FieldContent>
-                                                <Switch
-                                                    id={field.name}
-                                                    name={field.name}
-                                                    checked={field.state.value}
-                                                    onCheckedChange={field.handleChange}
-                                                    aria-invalid={isInvalid}
-                                                />
-                                            </Field>
-                                        </FieldLabel>
-                                    );
-                                }}
-                            />
+                        <div className="w-full flex items-center justify-between gap-x-6">
+                            <div className="flex-1 max-w-[50%]">
+                                <form.Field
+                                    name="isGlobal"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <FieldLabel>
+                                                <Field orientation="horizontal" data-invalid={isInvalid}>
+                                                    <Checkbox
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        aria-invalid={isInvalid}
+                                                        checked={field.state.value}
+                                                        onCheckedChange={(checked) => field.handleChange(checked === true)}
+                                                    />
+                                                    <FieldContent>
+                                                        <FieldTitle>Global</FieldTitle>
+                                                        <FieldDescription>This billboard will appear on the home page store.</FieldDescription>
+                                                    </FieldContent>
+                                                </Field>
+
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                            </FieldLabel>
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1 max-w-[50%]">
+                                <form.Field
+                                    name="isActive"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <FieldLabel htmlFor={field.name}>
+                                                <Field orientation="horizontal" data-invalid={isInvalid}>
+                                                    <FieldContent>
+                                                        <FieldTitle>Active</FieldTitle>
+                                                        <FieldDescription>Turn off to disable this billboard without deleting it.</FieldDescription>
+                                                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                                    </FieldContent>
+                                                    <Switch
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        checked={field.state.value}
+                                                        onCheckedChange={field.handleChange}
+                                                        aria-invalid={isInvalid}
+                                                    />
+                                                </Field>
+                                            </FieldLabel>
+                                        );
+                                    }}
+                                />
+                            </div>
                         </div>
                     </FieldGroup>
                 </div>
                 <form.Subscribe
-                    selector={(state) => [state.values]}
-                    children={([values]) => {
-                        const isDirty =
-                            values.label !== (initialData?.label || "") ||
-                            values.imageUrl !== (initialData?.imageUrl || "");
-
-                        const isDisabled = initialData
-                            ? !isDirty || edit.isPending
-                            : create.isPending;
+                    selector={(state) => [state.isDirty]}
+                    children={([isDirty]) => {
+                        const isDisabled = initialData ? !isDirty || edit.isPending : create.isPending;
 
                         return (
-                            <Button
-                                disabled={isDisabled || remove.isPending || upload.isPending}
-                                type="submit"
-                                className="ml-auto"
-                            >
+                            <Button disabled={isDisabled || remove.isPending || upload.isPending} type="submit" className="ml-auto">
                                 {actionLabel}
                             </Button>
                         );

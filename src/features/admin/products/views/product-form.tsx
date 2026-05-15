@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { TrashIcon, PlusCircleIcon, MinusIcon, PlusIcon } from "lucide-react";
+import { TrashIcon, PlusCircleIcon, MinusIcon, PlusIcon, RefreshCcwIcon } from "lucide-react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,12 +18,13 @@ import { Hint } from "@/components/hint";
 import { createProductSchema } from "../schemas";
 import { ImageUploadProduct } from "@/components/image-upload-product";
 import { Checkbox } from "@/components/ui/checkbox";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BreadcrumbHeader } from "@/components/breadcrumb-header";
 import { ProductStatus } from "@/generated/prisma/enums";
 import { Switch } from "@/components/ui/switch";
+import { generateSKU } from "@/lib/utils";
 
 interface ProductFormProps {
     productId: string;
@@ -145,6 +146,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
             sizeId: initialData?.sizeId || "",
             colorId: initialData?.colorId || "",
             name: initialData?.name || "",
+            sku: initialData?.sku || "",
             price: initialData?.price ? initialData.price : 0.01,
             status: initialData?.status || ProductStatus.DRAFT,
             isFeatured: !!initialData?.isFeatured,
@@ -203,6 +205,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
     const actionLabel = initialData ? "Save changes" : "Create";
 
     const categoryId = useStore(form.store, (state) => state.values.categoryId);
+    const name = useStore(form.store, (state) => state.values.name);
 
     const { data: sizes } = useQuery({
         ...orpc.sizes.getManyByStoreAndCategory.queryOptions({
@@ -228,6 +231,11 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
     }));
 
     const [value, setValue] = useState(1);
+
+    const handleGenerateSku = () => {
+        const sku = generateSKU(name);
+        form.setFieldValue("sku", sku);
+    };
 
     return (
         <>
@@ -303,7 +311,10 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                     name={field.name}
                                                     value={field.state.value}
                                                     onBlur={field.handleBlur}
-                                                    onChange={(e) => field.handleChange(e.target.value)}
+                                                    onChange={(e) => {
+                                                        field.handleChange(e.target.value);
+                                                        handleGenerateSku();
+                                                    }}
                                                     aria-invalid={isInvalid}
                                                     autoComplete="off"
                                                 />
@@ -383,11 +394,15 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>Category</FieldLabel>
                                                 <div className="flex items-center justify-start gap-2">
-                                                    <Select name={field.name} value={field.state.value} onValueChange={(val) => {
-                                                        field.handleChange(val)
-                                                        form.setFieldValue("colorId", "");
-                                                        form.setFieldValue("sizeId", "")
-                                                    }}>
+                                                    <Select
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onValueChange={(val) => {
+                                                            field.handleChange(val);
+                                                            form.setFieldValue("colorId", "");
+                                                            form.setFieldValue("sizeId", "");
+                                                        }}
+                                                    >
                                                         <SelectTrigger id="select-category" aria-invalid={isInvalid} className="min-w-60">
                                                             <SelectValue placeholder="Select category" />
                                                         </SelectTrigger>
@@ -495,7 +510,49 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                         </div>
                     </FieldGroup>
                     <FieldGroup className="col-span-3">
-                        <div className="w-full md:max-w-[50%]">
+                        {name && (
+                            <div className="w-full max-w-300">
+                                <form.Field
+                                    name="sku"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>SKU</FieldLabel>
+                                                <InputGroup>
+                                                    <InputGroupInput
+                                                        type="text"
+                                                        placeholder="SP-ABCDEF"
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
+                                                        aria-invalid={isInvalid}
+                                                        autoComplete="off"
+                                                        className="uppercase"
+                                                    />
+                                                    <InputGroupAddon align="inline-end">
+                                                        <InputGroupButton
+                                                            title="Revalidate SKU"
+                                                            aria-label="Revalidate Sku"
+                                                            onClick={handleGenerateSku}
+                                                            size="icon-xs"
+                                                        >
+                                                            <RefreshCcwIcon className="text-muted-foreground" />
+                                                        </InputGroupButton>
+                                                    </InputGroupAddon>
+                                                </InputGroup>
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </FieldGroup>
+                    <FieldGroup className="col-span-3">
+                        <div className="w-full max-w-[60%]">
                             <form.Field
                                 name="description"
                                 children={(field) => {

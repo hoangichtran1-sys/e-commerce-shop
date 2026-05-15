@@ -140,10 +140,14 @@ model Upload {
 model Store {
   id          String @id @default(uuid())
   name        String
+  slug        String @unique
+  thumbnail   String? 
   description String? @db.Text
+  isFeatured  Boolean @default(false)
   userId      String
 
   user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   billboards  Billboard[] @relation("StoreToBillboard")
   categories  Category[]  @relation("StoreToCategory")
   sizes       Size[]      @relation("StoreToSize")
@@ -166,6 +170,7 @@ model Billboard {
   storeId    String
   label      String
   imageUrl   String
+  isGlobal   Boolean @default(false)
   isActive   Boolean @default(false)
 
   store      Store @relation("StoreToBillboard", fields: [storeId], references: [id])
@@ -174,7 +179,7 @@ model Billboard {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([storeId, isActive])
+  @@index([storeId, isGlobal, isActive])
 }
 
 model Category {
@@ -243,6 +248,7 @@ model Product {
   sizeId      String
   colorId     String
   name        String
+  sku         String @unique @db.VarChar(50)
   description String? @db.Text
   price       Decimal
   status      ProductStatus
@@ -379,7 +385,7 @@ model Review {
   productId   String
   autoReplyId String?
   rating      Int     @db.SmallInt @default(0)
-  comment     String? @db.Text
+  feedback    String? @db.Text
 
   store       Store     @relation("StoreToReview", fields: [storeId], references: [id], onDelete: Cascade)
   user        User @relation(fields: [userId], references: [id], onDelete: Cascade)

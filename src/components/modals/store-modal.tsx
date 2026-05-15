@@ -4,18 +4,14 @@
 import { useStoreModal } from "@/hooks/use-store-modal";
 import { ResponsiveModal } from "../responsive-modal";
 import { z } from "zod";
-import { useForm } from "@tanstack/react-form";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { toast } from "sonner";
+import slug from "slug";
 
 const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -48,13 +44,10 @@ export const StoreModal = () => {
         },
     });
 
+    const name = useStore(form.store, (state) => state.values.name);
+
     return (
-        <ResponsiveModal
-            title="Create store"
-            description="Add a new store to manage products and categories"
-            isOpen={isOpen}
-            onClose={onClose}
-        >
+        <ResponsiveModal title="Create store" description="Add a new store to manage products and categories" isOpen={isOpen} onClose={onClose}>
             <div>
                 <div className="space-y-4 py-2 pb-4">
                     <form
@@ -67,14 +60,10 @@ export const StoreModal = () => {
                             <form.Field
                                 name="name"
                                 children={(field) => {
-                                    const isInvalid =
-                                        field.state.meta.isTouched &&
-                                        !field.state.meta.isValid;
+                                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>
-                                                Name
-                                            </FieldLabel>
+                                            <FieldLabel htmlFor={field.name}>Name</FieldLabel>
                                             <Input
                                                 type="text"
                                                 placeholder="E-Commerce Store"
@@ -82,32 +71,20 @@ export const StoreModal = () => {
                                                 name={field.name}
                                                 value={field.state.value}
                                                 onBlur={field.handleBlur}
-                                                onChange={(e) =>
-                                                    field.handleChange(
-                                                        e.target.value,
-                                                    )
-                                                }
+                                                onChange={(e) => field.handleChange(e.target.value)}
                                                 aria-invalid={isInvalid}
                                                 autoComplete="off"
                                             />
-                                            {isInvalid && (
-                                                <FieldError
-                                                    errors={
-                                                        field.state.meta.errors
-                                                    }
-                                                />
-                                            )}
+
+                                            <FieldDescription>Store slug: {slug(name)}</FieldDescription>
+                                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                         </Field>
                                     );
                                 }}
                             />
                         </FieldGroup>
                         <div className="pt-6 space-x-2 flex items-center justify-end w-full">
-                            <Button
-                                disabled={create.isPending}
-                                variant="outline"
-                                onClick={onClose}
-                            >
+                            <Button disabled={create.isPending} variant="outline" onClick={onClose}>
                                 Cancel
                             </Button>
                             <Button disabled={create.isPending} type="submit">

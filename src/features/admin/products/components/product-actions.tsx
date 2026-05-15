@@ -16,12 +16,14 @@ interface ProductActionProps {
     id: string;
     storeId: string;
     children: React.ReactNode;
+    sku: string;
 }
 
 export const ProductActions = ({
     id,
     storeId,
     children,
+    sku
 }: ProductActionProps) => {
     const router = useRouter();
     const queryClient = useQueryClient();
@@ -48,8 +50,8 @@ export const ProductActions = ({
     );
 
     const onCopy = () => {
-        navigator.clipboard.writeText(id);
-        toast.success("Product ID copied to the clipboard");
+        navigator.clipboard.writeText(sku);
+        toast.success("Product SKU copied to the clipboard");
     };
 
     return (
@@ -63,7 +65,7 @@ export const ProductActions = ({
                         className="font-medium p-2.5"
                     >
                         <CopyIcon className="size-4 stroke-2" />
-                        Copy ID
+                        Copy Product SKU
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={() =>

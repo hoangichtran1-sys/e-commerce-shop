@@ -9,11 +9,11 @@ interface LayoutProps {
 }
 
 const Layout = async ({ children }: LayoutProps) => {
-    const session = await requireAdmin();
+    await requireAdmin();
 
     return (
         <>
-            <Navbar currentUser={session.user} />
+            <Navbar />
             {children}
         </>
     );

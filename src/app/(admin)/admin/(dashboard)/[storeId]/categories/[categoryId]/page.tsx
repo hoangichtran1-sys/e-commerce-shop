@@ -22,7 +22,7 @@ const Page = async ({ params }: PageProps) => {
     }
 
     await prefetch(
-        orpc.billboards.getMany.queryOptions({
+        orpc.billboards.getManyWithScopeCategory.queryOptions({
             input: { storeId },
         }),
     );

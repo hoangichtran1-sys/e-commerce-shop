@@ -1,22 +1,24 @@
 "use client";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { User } from "@/lib/auth";
 import { authClient } from "@/lib/auth-client";
-import { ImageUpIcon, LogOutIcon } from "lucide-react";
+import { ImageUpIcon, LockIcon, LogOutIcon, PackageCheckIcon } from "lucide-react";
 import { CgProfile } from "react-icons/cg";
-import { IoSettingsSharp } from "react-icons/io5";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { GeneratedAvatar } from "@/components/generated-avatar";
 
-interface UserMenuProps {
-    currentUser: User;
-}
-
-export const UserMenu = ({ currentUser }: UserMenuProps) => {
+export const UserMenu = () => {
     const router = useRouter();
+
+    const session = authClient.useSession();
+
+    const currentUser = session?.data?.user;
+
+    if (!currentUser) {
+        return null;
+    }
 
     const onLogout = () => {
         authClient.signOut({
@@ -43,7 +45,7 @@ export const UserMenu = ({ currentUser }: UserMenuProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     sideOffset={10}
-                    className="w-48 md:w-36 rounded-xl shadow-md bg-white overflow-hidden right-1 top-12 text-sm font-semibold"
+                    className="w-64 md:w-48 rounded-xl shadow-md bg-white overflow-hidden right-1 top-12 text-sm font-semibold"
                 >
                     {currentUser.role === "admin" && (
                         <DropdownMenuItem className="mt-2" onClick={() => {}}>
@@ -51,13 +53,19 @@ export const UserMenu = ({ currentUser }: UserMenuProps) => {
                             Upload manage
                         </DropdownMenuItem>
                     )}
+                    {currentUser.role === "admin" && (
+                        <DropdownMenuItem className="mt-2" onClick={() => {}}>
+                            <LockIcon className="size-5" />
+                            Admin manage
+                        </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem className="mt-2" onClick={() => {}}>
+                        <PackageCheckIcon className="size-5" />
+                        My orders
+                    </DropdownMenuItem>
                     <DropdownMenuItem className="mt-2" onClick={() => {}}>
                         <CgProfile className="size-5" />
                         My profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="mt-2" onClick={() => {}}>
-                        <IoSettingsSharp className="size-5" />
-                        Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="mt-4" onClick={onLogout}>

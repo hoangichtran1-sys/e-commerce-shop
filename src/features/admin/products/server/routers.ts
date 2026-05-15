@@ -24,17 +24,11 @@ export const productsRouter = base.router({
 
             const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
                 cloudinary.uploader
-                    .upload_stream(
-                        { folder: "products" },
-                        (
-                            error: UploadApiErrorResponse | undefined,
-                            result: UploadApiResponse | undefined,
-                        ) => {
-                            if (error) reject(error);
-                            if (!result) return reject(new ORPCError("BAD_REQUEST"));
-                            resolve(result);
-                        },
-                    )
+                    .upload_stream({ folder: "products" }, (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+                        if (error) reject(error);
+                        if (!result) return reject(new ORPCError("BAD_REQUEST"));
+                        resolve(result);
+                    })
                     .end(buffer);
             });
             const uploadCreated = await prisma.upload.create({
@@ -54,19 +48,17 @@ export const productsRouter = base.router({
             };
         }),
     create: admin.input(createProductSchema).handler(async ({ input }) => {
-        const {
-            storeId,
-            categoryId,
-            sizeId,
-            colorId,
-            name,
-            price,
-            status,
-            inStock,
-            isFeatured,
-            images,
-            description,
-        } = input;
+        const { storeId, categoryId, sizeId, colorId, name, sku, price, status, inStock, isFeatured, images, description } = input;
+
+        const existingProduct = await prisma.product.findUnique({
+            where: {
+                sku: input.sku,
+            },
+        });
+
+        if (existingProduct) {
+            throw new ORPCError("CONFLICT");
+        }
 
         return await prisma.$transaction(async (tx) => {
             const productCreated = await tx.product.create({
@@ -76,6 +68,7 @@ export const productsRouter = base.router({
                     sizeId,
                     colorId,
                     name,
+                    sku,
                     price: Prisma.Decimal(price),
                     status,
                     inStock,
@@ -109,25 +102,12 @@ export const productsRouter = base.router({
         });
     }),
     update: admin.input(updateProductSchema).handler(async ({ input }) => {
-        const {
-            id,
-            storeId,
-            categoryId,
-            sizeId,
-            colorId,
-            name,
-            price,
-            status,
-            inStock,
-            isFeatured,
-            images,
-            description,
-        } = input;
+        const { id, storeId, categoryId, sizeId, colorId, name, sku, price, status, inStock, isFeatured, images, description } = input;
 
         const product = await prisma.product.findUnique({
             where: {
-                id: input.id,
-                storeId: input.storeId,
+                id,
+                storeId,
             },
         });
 
@@ -148,6 +128,7 @@ export const productsRouter = base.router({
                     sizeId,
                     colorId,
                     name,
+                    sku,
                     price: Prisma.Decimal(price),
                     status,
                     inStock,

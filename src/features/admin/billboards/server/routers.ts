@@ -59,6 +59,7 @@ export const billboardsRouter = base.router({
                 label: z.string().min(1),
                 imageUrl: z.string().min(1),
                 storeId: z.string().min(1),
+                isGlobal: z.boolean(),
                 isActive: z.boolean(),
             }),
         )
@@ -68,6 +69,7 @@ export const billboardsRouter = base.router({
                     label: input.label,
                     imageUrl: input.imageUrl,
                     storeId: input.storeId,
+                    isGlobal: input.isGlobal,
                     isActive: input.isActive,
                 },
             });
@@ -92,6 +94,7 @@ export const billboardsRouter = base.router({
                 label: z.string().min(1),
                 newImageUrl: z.string().min(1),
                 storeId: z.string().min(1),
+                isGlobal: z.boolean(),
                 isActive: z.boolean(),
             }),
         )
@@ -117,6 +120,7 @@ export const billboardsRouter = base.router({
                     label: input.label,
                     imageUrl: input.newImageUrl,
                     isActive: input.isActive,
+                    isGlobal: input.isGlobal,
                 },
             });
 
@@ -269,28 +273,23 @@ export const billboardsRouter = base.router({
 
             return billboard;
         }),
-    getOneWithActive: admin
-        .input(
-            z.object({
-                id: z.string().min(1),
-                storeId: z.string().min(1),
-            }),
-        )
-        .handler(async ({ input }) => {
-            const billboard = await prisma.billboard.findUnique({
-                where: {
-                    id: input.id,
-                    storeId: input.storeId,
-                    isActive: true,
-                },
-            });
-
-            return billboard;
-        }),
     getMany: admin.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
         const billboards = await prisma.billboard.findMany({
             where: {
                 storeId: input.storeId,
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        });
+
+        return billboards;
+    }),
+    getManyWithScopeCategory: admin.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
+        const billboards = await prisma.billboard.findMany({
+            where: {
+                storeId: input.storeId,
+                isGlobal: false
             },
             orderBy: {
                 createdAt: "desc",

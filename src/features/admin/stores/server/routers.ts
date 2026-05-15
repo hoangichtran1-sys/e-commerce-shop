@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { base, admin } from "@/orpc/init";
 import { ORPCError } from "@orpc/client";
 import { z } from "zod";
+import slug from "slug";
 
 export const storesRouter = base.router({
     create: admin
@@ -11,10 +12,22 @@ export const storesRouter = base.router({
             }),
         )
         .handler(async ({ input, context }) => {
+            const existingStore = await prisma.store.findFirst({
+                where: {
+                    slug: slug(input.name),
+                    userId: context.user.id,
+                },
+            });
+
+            if (existingStore) {
+                throw new ORPCError("CONFLICT");
+            }
+
             const storeCreated = await prisma.store.create({
                 data: {
                     name: input.name,
                     userId: context.user.id,
+                    slug: slug(input.name),
                 },
             });
 
@@ -44,6 +57,9 @@ export const storesRouter = base.router({
         const stores = await prisma.store.findMany({
             where: {
                 userId: context.user.id,
+            },
+            orderBy: {
+                createdAt: "desc",
             },
         });
 
@@ -76,6 +92,7 @@ export const storesRouter = base.router({
                 data: {
                     name: input.name,
                     description: input.description,
+                    slug: slug(input.name),
                 },
             });
 

@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+import slug from "slug";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -44,9 +45,7 @@ export function getCountryName(code?: string) {
 }
 
 export function getFlagEmoji(countryCode: string) {
-    return countryCode
-        .toUpperCase()
-        .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
+    return countryCode.toUpperCase().replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
 }
 
 export function generateRandomCode(length = 8) {
@@ -56,4 +55,31 @@ export function generateRandomCode(length = 8) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
+}
+
+export function generateSKU(name: string, color?: string, size?: string) {
+    const base = slug(`${name} ${color?.slice(1) || ""} ${size || ""}`, {
+        lower: true,
+    });
+
+    const suffix = generateRandomCode(6);
+
+    return `${base.toUpperCase()}-${suffix}`;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getErrorCode(error: any) {
+    return error?.code || error?.data?.code;
+}
+
+export function safeRedirect(url: string | null) {
+    if (!url) return "/";
+
+    if (url.startsWith("/")) return url;
+
+    return "/";
+}
+
+export function formatNumber(num: number): string {
+    return num >= 1000 ? `${(num / 1000).toFixed(1)}k` : num.toString();
 }

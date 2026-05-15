@@ -8,26 +8,20 @@ import { BillboardGetMany } from "../types";
 import { BillboardActions } from "./billboard-actions";
 import { format } from "date-fns";
 import { ToggleActive } from "./toggle-active";
+import { SupportIcon } from "@/components/support-icon";
 
 export const columns: ColumnDef<BillboardGetMany[number]>[] = [
     {
         id: "select",
         header: ({ table }) => (
             <Checkbox
-                checked={
-                    table.getIsAllPageRowsSelected() ||
-                    (table.getIsSomePageRowsSelected() && "indeterminate")
-                }
+                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
                 onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                 aria-label="Select all"
             />
         ),
         cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-            />
+            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
         ),
         enableSorting: false,
         enableHiding: false,
@@ -36,10 +30,7 @@ export const columns: ColumnDef<BillboardGetMany[number]>[] = [
         accessorKey: "label",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Label
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -52,13 +43,24 @@ export const columns: ColumnDef<BillboardGetMany[number]>[] = [
         },
     },
     {
+        accessorKey: "Global",
+        header: () => <div className="text-center w-[50%]">Global</div>,
+        cell: ({ row }) => {
+            const isGlobal = row.original.isGlobal;
+
+            return (
+                <div className="w-[50%]">
+                    <span className="sr-only">{isGlobal ? "Global" : "Category"}</span>
+                    <SupportIcon supported={isGlobal} />
+                </div>
+            );
+        },
+    },
+    {
         accessorKey: "createdAt",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Created At
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -89,11 +91,7 @@ export const columns: ColumnDef<BillboardGetMany[number]>[] = [
 
             return (
                 <BillboardActions id={id} storeId={storeId}>
-                    <Button
-                        className="size-8 p-0"
-                        variant="ghost"
-                        aria-label={`Open actions for billboard ${id}`}
-                    >
+                    <Button className="size-8 p-0" variant="ghost" aria-label={`Open actions for billboard ${id}`}>
                         <MoreVerticalIcon className="size-4" />
                     </Button>
                 </BillboardActions>

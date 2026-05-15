@@ -6,6 +6,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { FileUpload, FileUploadTrigger } from "@/components/ui/file-upload";
 import { toast } from "sonner";
+import Image from "next/image";
 
 interface ImageUploadProductProps {
     previews: string[];
@@ -14,12 +15,7 @@ interface ImageUploadProductProps {
     isUploading?: boolean;
 }
 
-export const ImageUploadProduct = ({
-    previews,
-    setPreviews,
-    onUpload,
-    isUploading,
-}: ImageUploadProductProps) => {
+export const ImageUploadProduct = ({ previews, setPreviews, onUpload, isUploading }: ImageUploadProductProps) => {
     const handleRemove = (index: number) => {
         setPreviews(previews.filter((_, i) => i !== index));
     };
@@ -43,12 +39,10 @@ export const ImageUploadProduct = ({
             >
                 <div className="grid grid-cols-3 gap-2">
                     {previews.map((url, index) => (
-                        <div
-                            key={index}
-                            className="group relative aspect-square"
-                        >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                        <div key={index} className="group relative aspect-square">
+                            <Image
+                                width={200}
+                                height={200}
                                 src={url}
                                 alt={`Product image ${index}`}
                                 className="h-full w-full rounded-lg object-cover"
@@ -73,16 +67,12 @@ export const ImageUploadProduct = ({
                                 {isUploading ? (
                                     <>
                                         <Loader2Icon className="size-6 text-muted-foreground animate-spin" />
-                                        <span className="text-xs text-muted-foreground">
-                                            Uploading
-                                        </span>
+                                        <span className="text-xs text-muted-foreground">Uploading</span>
                                     </>
                                 ) : (
                                     <>
                                         <ImagePlus className="size-6 text-muted-foreground" />
-                                        <span className="text-xs text-muted-foreground">
-                                            Add
-                                        </span>
+                                        <span className="text-xs text-muted-foreground">Add</span>
                                     </>
                                 )}
                             </button>
@@ -90,9 +80,7 @@ export const ImageUploadProduct = ({
                     )}
                 </div>
             </FileUpload>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-                {previews.length}/3 images
-            </p>
+            <p className="mt-2 text-center text-xs text-muted-foreground">{previews.length}/3 images</p>
         </div>
     );
 };

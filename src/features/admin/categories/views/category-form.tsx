@@ -4,21 +4,11 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { PlusCircleIcon, TrashIcon } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Hint } from "@/components/hint";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -26,6 +16,7 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { BreadcrumbHeader } from "@/components/breadcrumb-header";
+import { cn } from "@/lib/utils";
 
 interface CategoryFormProps {
     categoryId: string;
@@ -47,13 +38,12 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
         }),
     );
 
-    const { data: billboards } = useSuspenseQuery(
-        orpc.billboards.getMany.queryOptions({ input: { storeId } }),
-    );
+    const { data: billboards } = useSuspenseQuery(orpc.billboards.getManyWithScopeCategory.queryOptions({ input: { storeId } }));
 
     const billboardFormatted = billboards.map((billboard) => ({
         label: billboard.label,
         value: billboard.id,
+        active: billboard.isActive,
     }));
 
     const create = useMutation(
@@ -144,10 +134,7 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
         await remove.mutateAsync({ id: categoryId, storeId });
     };
 
-    const [RemoveConfirmation, confirmRemove] = useConfirm(
-        "Are you sure?",
-        "The following action will permanently remove this category",
-    );
+    const [RemoveConfirmation, confirmRemove] = useConfirm("Are you sure?", "The following action will permanently remove this category");
 
     const actionLabel = initialData ? "Save changes" : "Create";
 
@@ -155,19 +142,9 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
         <>
             <RemoveConfirmation />
             <div className="flex items-center justify-between">
-                <BreadcrumbHeader
-                    id={categoryId}
-                    storeId={storeId}
-                    name={initialData?.name || "New"}
-                    topic="categories"
-                />
+                <BreadcrumbHeader id={categoryId} storeId={storeId} name={initialData?.name || "New"} topic="categories" />
                 {initialData && (
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={edit.isPending || remove.isPending}
-                        onClick={handleRemove}
-                    >
+                    <Button variant="destructive" size="sm" disabled={edit.isPending || remove.isPending} onClick={handleRemove}>
                         <TrashIcon className="size-4" />
                     </Button>
                 )}
@@ -184,14 +161,10 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                     <form.Field
                         name="name"
                         children={(field) => {
-                            const isInvalid =
-                                field.state.meta.isTouched &&
-                                !field.state.meta.isValid;
+                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                             return (
                                 <Field data-invalid={isInvalid}>
-                                    <FieldLabel htmlFor={field.name}>
-                                        Name
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor={field.name}>Name</FieldLabel>
                                     <Input
                                         className="max-w-60"
                                         type="text"
@@ -200,17 +173,11 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                                         name={field.name}
                                         value={field.state.value}
                                         onBlur={field.handleBlur}
-                                        onChange={(e) =>
-                                            field.handleChange(e.target.value)
-                                        }
+                                        onChange={(e) => field.handleChange(e.target.value)}
                                         aria-invalid={isInvalid}
                                         autoComplete="off"
                                     />
-                                    {isInvalid && (
-                                        <FieldError
-                                            errors={field.state.meta.errors}
-                                        />
-                                    )}
+                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                 </Field>
                             );
                         }}
@@ -218,38 +185,26 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                     <form.Field
                         name="billboardId"
                         children={(field) => {
-                            const isInvalid =
-                                field.state.meta.isTouched &&
-                                !field.state.meta.isValid;
+                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                             return (
                                 <Field data-invalid={isInvalid}>
-                                    <FieldLabel htmlFor={field.name}>
-                                        Billboard
-                                    </FieldLabel>
+                                    <FieldLabel htmlFor={field.name}>Billboard</FieldLabel>
                                     <div className="flex items-center justify-start gap-2">
-                                        <Select
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onValueChange={field.handleChange}
-                                        >
-                                            <SelectTrigger
-                                                id="select-billboard"
-                                                aria-invalid={isInvalid}
-                                                className="min-w-60"
-                                            >
+                                        <Select name={field.name} value={field.state.value} onValueChange={field.handleChange}>
+                                            <SelectTrigger id="select-billboard" aria-invalid={isInvalid} className="min-w-60">
                                                 <SelectValue placeholder="Select billboard" />
                                             </SelectTrigger>
                                             <SelectContent position="popper">
-                                                {billboardFormatted.map(
-                                                    (item) => (
-                                                        <SelectItem
-                                                            key={item.value}
-                                                            value={item.value}
-                                                        >
+                                                {billboardFormatted.map((item) => (
+                                                    <SelectItem key={item.value} value={item.value}>
+                                                        <div className="flex items-center gap-x-2">
+                                                            <div
+                                                                className={cn("h-2 w-2 rounded-full", item.active ? "bg-emerald-500" : "bg-rose-500")}
+                                                            />
                                                             {item.label}
-                                                        </SelectItem>
-                                                    ),
-                                                )}
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                         {billboardFormatted.length === 0 && (
@@ -258,22 +213,14 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                                                     size="icon-sm"
                                                     type="button"
                                                     variant="outline"
-                                                    onClick={() =>
-                                                        router.push(
-                                                            `/admin/${storeId}/billboards/new`,
-                                                        )
-                                                    }
+                                                    onClick={() => router.push(`/admin/${storeId}/billboards/new`)}
                                                 >
                                                     <PlusCircleIcon className="size-4" />
                                                 </Button>
                                             </Hint>
                                         )}
                                     </div>
-                                    {isInvalid && (
-                                        <FieldError
-                                            errors={field.state.meta.errors}
-                                        />
-                                    )}
+                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                 </Field>
                             );
                         }}
@@ -282,21 +229,12 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                 <form.Subscribe
                     selector={(state) => [state.values]}
                     children={([values]) => {
-                        const isDirty =
-                            values.name !== (initialData?.name || "") ||
-                            values.billboardId !==
-                                (initialData?.billboardId || "");
+                        const isDirty = values.name !== (initialData?.name || "") || values.billboardId !== (initialData?.billboardId || "");
 
-                        const isDisabled = initialData
-                            ? !isDirty || edit.isPending
-                            : create.isPending;
+                        const isDisabled = initialData ? !isDirty || edit.isPending : create.isPending;
 
                         return (
-                            <Button
-                                disabled={isDisabled || remove.isPending}
-                                type="submit"
-                                className="ml-auto"
-                            >
+                            <Button disabled={isDisabled || remove.isPending} type="submit" className="ml-auto">
                                 {actionLabel}
                             </Button>
                         );

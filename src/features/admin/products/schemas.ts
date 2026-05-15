@@ -7,14 +7,20 @@ export const createProductSchema = z.object({
     sizeId: z.string().min(1),
     colorId: z.string().min(1),
     name: z.string().min(1),
+    sku: z
+        .string()
+        .min(3)
+        .max(20)
+        .regex(/^[A-Z0-9-]+$/, "SKU chỉ được chứa chữ hoa, số và dấu gạch ngang (-)")
+        .transform((val) => val.trim().toUpperCase()),
     price: z.number().min(0.01),
     status: z.enum(ProductStatus),
     isFeatured: z.boolean(),
     inStock: z.boolean(),
     images: z.array(z.string()).min(1).max(3),
-    description: z.string().nullable()
-})
+    description: z.string().nullable(),
+});
 
 export const updateProductSchema = createProductSchema.extend({
-    id: z.string().min(1)
-})
+    id: z.string().min(1),
+});
