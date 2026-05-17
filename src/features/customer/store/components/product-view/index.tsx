@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
-    FlameIcon,
     Star,
     PlusCircleIcon,
     ShoppingCartIcon,
@@ -13,6 +12,11 @@ import {
     ThumbsDownIcon,
     Heart,
     Edit2Icon,
+    SparklesIcon,
+    TruckIcon,
+    RotateCcwIcon,
+    MinusIcon,
+    PlusIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,17 +34,21 @@ import { NoResults } from "@/components/no-results";
 import { ReviewModal } from "@/components/modals/review-modal";
 import { authClient } from "@/lib/auth-client";
 import { Hint } from "@/components/hint";
+import { Separator } from "@/components/ui/separator";
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { ProductsRelated } from "../products-related";
+
+interface ProductDetailProps {
+    storeId: string;
+    productId: string;
+    shippingFee: number;
+}
 
 const PRODUCT_FEATURES = {
     features: ["Industry-leading noise cancellation", "30-hour battery life", "Touch sensor controls", "Speak-to-chat technology"],
 };
 
-interface ProductDetailProps {
-    storeId: string;
-    productId: string;
-}
-
-export const ProductView = ({ storeId, productId }: ProductDetailProps) => {
+export const ProductView = ({ storeId, productId, shippingFee }: ProductDetailProps) => {
     const [mainApi, setMainApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(0);
     const [openReviewModal, setOpenReviewModal] = useState(false);
@@ -48,6 +56,7 @@ export const ProductView = ({ storeId, productId }: ProductDetailProps) => {
     const [isWishlisted, setIsWishlisted] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [isDisliked, setIsDisliked] = useState(false);
+    const [quantity, setQuantity] = useState(1);
 
     const session = authClient.useSession();
     const currentUser = session?.data?.user;
@@ -99,6 +108,10 @@ export const ProductView = ({ storeId, productId }: ProductDetailProps) => {
         return product.reviews;
     }, [currentUser, product.reviews]);
 
+    const updateQuantity = (increment: boolean) => {
+        setQuantity((current) => Math.max(1, current + (increment ? 1 : -1)));
+    };
+
     return (
         <>
             <ReviewModal
@@ -133,8 +146,8 @@ export const ProductView = ({ storeId, productId }: ProductDetailProps) => {
                         <Carousel setApi={setMainApi} className="w-full relative">
                             {product.isFeatured && (
                                 <Badge className="absolute left-3 top-3 backdrop-blur z-10">
-                                    <FlameIcon className="size-4" />
-                                    Trending
+                                    <SparklesIcon className="size-4" />
+                                    Featured
                                 </Badge>
                             )}
                             <CarouselContent>
@@ -183,14 +196,42 @@ export const ProductView = ({ storeId, productId }: ProductDetailProps) => {
                                     <h2 className="font-bold tracking-tighter text-4xl mb-2">{formatPrice(product.price)}</h2>
                                 </div>
                                 <div>
-                                    <Badge className={cn("p-4", product.inStock ? "bg-emerald-200/30" : "bg-rose-200/30")}>
-                                        <div className="flex items-center gap-x-2">
-                                            <div className={cn("h-2 w-2 rounded-full", product.inStock ? "bg-green-500" : "bg-red-500")} />
-                                            <span className={cn(product.inStock ? "text-green-700" : "text-red-700")}>
-                                                {product.inStock ? "In Stock" : "Out of Stock"}
-                                            </span>
-                                        </div>
-                                    </Badge>
+                                    <div className="flex items-center justify-between w-full max-w-[50%]">
+                                        <h3 className="font-bold mb-2">Select Quantity</h3>
+                                        {product.inStock && product.quantity > 0 ? (
+                                            <Badge variant="secondary">Only {product.quantity} Items Left!</Badge>
+                                        ) : (
+                                            <Badge variant="destructive">Out of Stock!</Badge>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="size-8 cursor-pointer"
+                                            onClick={() => updateQuantity(false)}
+                                            disabled={quantity <= 1 || !product.inStock || product.quantity === 0}
+                                        >
+                                            <MinusIcon />
+                                        </Button>
+                                        <span
+                                            className={cn(
+                                                "w-8 text-center text-sm font-medium",
+                                                (!product.inStock || product.quantity === 0) && "text-muted-foreground",
+                                            )}
+                                        >
+                                            {quantity}
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="size-8 cursor-pointer"
+                                            onClick={() => updateQuantity(true)}
+                                            disabled={quantity >= product.quantity || !product.inStock || product.quantity === 0}
+                                        >
+                                            <PlusIcon />
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div>
                                     <h3 className="font-bold mb-2">Key Features:</h3>
@@ -222,7 +263,7 @@ export const ProductView = ({ storeId, productId }: ProductDetailProps) => {
                                     >
                                         <Heart className={cn("size-5", isWishlisted && "fill-rose-500 text-rose-500")} />
                                     </Button>
-                                    <Button disabled={!product.inStock} onClick={() => {}}>
+                                    <Button disabled={!product.inStock || product.quantity === 0} onClick={() => {}}>
                                         <ShoppingCartIcon />
                                         Add to Card
                                     </Button>
@@ -230,6 +271,27 @@ export const ProductView = ({ storeId, productId }: ProductDetailProps) => {
                                         <Share2Icon />
                                         Share
                                     </Button>
+                                </div>
+                                <Separator />
+                                <div className="grid md:grid-cols-2 grid-cols-1 gap-2">
+                                    <Item variant="outline">
+                                        <ItemMedia variant="icon">
+                                            <TruckIcon />
+                                        </ItemMedia>
+                                        <ItemContent>
+                                            <ItemTitle>Free Delivery</ItemTitle>
+                                            <ItemDescription>Free delivery on orders over {formatPrice(shippingFee)}.</ItemDescription>
+                                        </ItemContent>
+                                    </Item>
+                                    <Item variant="outline">
+                                        <ItemMedia variant="icon">
+                                            <RotateCcwIcon />
+                                        </ItemMedia>
+                                        <ItemContent>
+                                            <ItemTitle>Return Delivery</ItemTitle>
+                                            <ItemDescription>Free 30Days Delivery Returns.</ItemDescription>
+                                        </ItemContent>
+                                    </Item>
                                 </div>
                             </CardContent>
                         </Card>
@@ -375,6 +437,7 @@ export const ProductView = ({ storeId, productId }: ProductDetailProps) => {
                     </div>
                 </div>
             </div>
+            <ProductsRelated />
         </>
     );
 };

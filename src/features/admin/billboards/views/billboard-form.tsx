@@ -5,16 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { TrashIcon, RedoIcon, UndoIcon } from "lucide-react";
-import { useForm } from "@tanstack/react-form";
+import { TrashIcon, RedoIcon, UndoIcon, MinusIcon, PlusIcon } from "lucide-react";
+import { useForm, useStore } from "@tanstack/react-form";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { useConfirm } from "@/hooks/use-confirm";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-// import { ApiAlert } from "@/components/api-alert";
-// import { useOrigin } from "@/hooks/use-origin";
 import { ImageUploadBillboard } from "@/components/image-upload-billboard";
 import { useCallback, useRef, useState } from "react";
 import { Hint } from "@/components/hint";
@@ -22,6 +20,7 @@ import { BreadcrumbHeader } from "@/components/breadcrumb-header";
 import { Switch } from "@/components/ui/switch";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ButtonGroup } from "@/components/ui/button-group";
 
 interface BillboardFormProps {
     billboardId: string;
@@ -33,6 +32,7 @@ const formSchema = z.object({
     imageUrl: z.string().min(1),
     isActive: z.boolean(),
     isGlobal: z.boolean(),
+    priority: z.number().int().min(0).max(100),
 });
 
 export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
@@ -46,8 +46,6 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
             input: { id: billboardId, storeId },
         }),
     );
-
-    const [showImage, setShowImage] = useState(!!initialData?.imageUrl);
 
     const create = useMutation(
         orpc.billboards.create.mutationOptions({
@@ -122,6 +120,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
             imageUrl: initialData?.imageUrl || "",
             isActive: !!initialData?.isActive,
             isGlobal: !!initialData?.isGlobal,
+            priority: initialData?.priority || 0,
         },
         validators: {
             onSubmit: formSchema,
@@ -135,6 +134,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                     newImageUrl: value.imageUrl,
                     isActive: value.isActive,
                     isGlobal: value.isGlobal,
+                    priority: value.priority,
                 });
             } else {
                 create.mutate({
@@ -143,6 +143,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                     imageUrl: value.imageUrl,
                     isActive: value.isActive,
                     isGlobal: value.isGlobal,
+                    priority: value.priority,
                 });
             }
         },
@@ -156,7 +157,6 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
     };
 
     const handleRemoveImage = () => {
-        setShowImage(false);
         form.setFieldValue("imageUrl", "");
         setFiles([]);
     };
@@ -189,6 +189,8 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
 
     const actionLabel = initialData ? "Save changes" : "Create";
 
+    const isGlobal = useStore(form.store, (state) => state.values.isGlobal);
+
     return (
         <>
             <RemoveConfirmation />
@@ -210,30 +212,90 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
             >
                 <div className="grid grid-cols-3 gap-8">
                     <FieldGroup className="col-span-3">
-                        <div className="w-full max-w-60">
-                            <form.Field
-                                name="label"
-                                children={(field) => {
-                                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-                                    return (
-                                        <Field data-invalid={isInvalid}>
-                                            <FieldLabel htmlFor={field.name}>Label</FieldLabel>
-                                            <Input
-                                                type="text"
-                                                placeholder="Billboard label"
-                                                id={field.name}
-                                                name={field.name}
-                                                value={field.state.value}
-                                                onBlur={field.handleBlur}
-                                                onChange={(e) => field.handleChange(e.target.value)}
-                                                aria-invalid={isInvalid}
-                                                autoComplete="off"
-                                            />
-                                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                                        </Field>
-                                    );
-                                }}
-                            />
+                        <div className="flex w-full md:max-w-[60%] items-center justify-between gap-6">
+                            <div className="flex-1 max-w-70">
+                                <form.Field
+                                    name="label"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Label</FieldLabel>
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Billboard label"
+                                                    id={field.name}
+                                                    name={field.name}
+                                                    value={field.state.value}
+                                                    onBlur={field.handleBlur}
+                                                    onChange={(e) => field.handleChange(e.target.value)}
+                                                    aria-invalid={isInvalid}
+                                                    autoComplete="off"
+                                                />
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                            {isGlobal && (
+                                <div className="flex-1 max-w-70">
+                                    <form.Field
+                                        name="priority"
+                                        children={(field) => {
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                            return (
+                                                <Field data-invalid={isInvalid}>
+                                                    <FieldLabel htmlFor={field.name}>Limit code</FieldLabel>
+                                                    <ButtonGroup>
+                                                        <Input
+                                                            id={field.name}
+                                                            name={field.name}
+                                                            value={field.state.value}
+                                                            onBlur={field.handleBlur}
+                                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                                            aria-invalid={isInvalid}
+                                                            autoComplete="off"
+                                                            type="number"
+                                                            className="h-auto max-h-7 [appearance:textfield]"
+                                                            min={0}
+                                                            max={100}
+                                                            step={1}
+                                                        />
+                                                        <Button
+                                                            onClick={() => {
+                                                                const currentValue = Number(field.state.value) || 1;
+                                                                const nextValue = currentValue - 1;
+                                                                form.setFieldValue("priority", Math.max(1, nextValue));
+                                                            }}
+                                                            disabled={field.state.value === 0}
+                                                            variant="outline"
+                                                            type="button"
+                                                            size="icon-sm"
+                                                        >
+                                                            <MinusIcon />
+                                                        </Button>
+                                                        <Button
+                                                            onClick={() => {
+                                                                const currentValue = Number(field.state.value) || 1;
+                                                                const nextValue = currentValue + 1;
+                                                                form.setFieldValue("priority", nextValue);
+                                                            }}
+                                                            disabled={field.state.value === 100}
+                                                            variant="outline"
+                                                            type="button"
+                                                            size="icon-sm"
+                                                        >
+                                                            <PlusIcon />
+                                                        </Button>
+                                                    </ButtonGroup>
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                                </Field>
+                                            );
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </FieldGroup>
                     <FieldGroup className="col-span-3">
@@ -246,7 +308,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                     return (
                                         <>
                                             <FieldLabel htmlFor={field.name}>Background Image</FieldLabel>
-                                            {showImage && field.state.value ? (
+                                            {field.state.value ? (
                                                 <div className="flex item-center justify-start gap-4 aspect-3/1 mt-2">
                                                     <Image
                                                         width={600}
@@ -274,7 +336,6 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                                                 size="icon-xs"
                                                                 variant="secondary"
                                                                 onClick={() => {
-                                                                    setShowImage(true);
                                                                     form.setFieldValue("imageUrl", initialData.imageUrl);
                                                                 }}
                                                                 type="button"

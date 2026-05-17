@@ -3,8 +3,51 @@ import { base, admin } from "@/orpc/init";
 import { ORPCError } from "@orpc/client";
 import { z } from "zod";
 import slug from "slug";
+import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
+import cloudinary from "@/lib/cloudinary";
 
 export const storesRouter = base.router({
+    upload: admin
+        .input(
+            z.object({
+                file: z
+                    .instanceof(File)
+                    .refine((file) => file.size <= 5 * 1024 * 1024, "Max file size 5MB")
+                    .refine((file) => file.type.startsWith("image/"), "Type image is required"),
+            }),
+        )
+        .handler(async ({ input }) => {
+            const { file } = input;
+
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+                cloudinary.uploader
+                    .upload_stream({ folder: "stores" }, (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+                        if (error) reject(error);
+                        if (!result) return reject(new ORPCError("BAD_REQUEST"));
+                        resolve(result);
+                    })
+                    .end(buffer);
+            });
+
+            const newUpload = await prisma.upload.create({
+                data: {
+                    publicId: uploadResult.public_id,
+                    url: uploadResult.secure_url,
+                    mimetype: file.type,
+                    size: file.size,
+                    isLinked: false,
+                    refType: "STORE",
+                },
+            });
+
+            return {
+                url: newUpload.url,
+                id: newUpload.id,
+            };
+        }),
     create: admin
         .input(
             z.object({
@@ -71,6 +114,7 @@ export const storesRouter = base.router({
                 id: z.string().min(1),
                 name: z.string().min(1),
                 description: z.string().nullable(),
+                thumbnailUrl: z.string().min(1).nullable(),
             }),
         )
         .handler(async ({ input, context }) => {
@@ -85,6 +129,8 @@ export const storesRouter = base.router({
                 throw new ORPCError("NOT_FOUND");
             }
 
+            const isThumbnailChanged = input.thumbnailUrl && store.thumbnail && input.thumbnailUrl !== store.thumbnail;
+
             const storeUpdated = await prisma.store.update({
                 where: {
                     id: input.id,
@@ -93,8 +139,30 @@ export const storesRouter = base.router({
                     name: input.name,
                     description: input.description,
                     slug: slug(input.name),
+                    thumbnail: input.thumbnailUrl,
                 },
             });
+
+            if (input.thumbnailUrl && store.thumbnail && storeUpdated && isThumbnailChanged) {
+                await Promise.all([
+                    prisma.upload.update({
+                        where: {
+                            url: store.thumbnail,
+                        },
+                        data: {
+                            isLinked: false,
+                        },
+                    }),
+                    prisma.upload.update({
+                        where: {
+                            url: input.thumbnailUrl,
+                        },
+                        data: {
+                            isLinked: true,
+                        },
+                    }),
+                ]);
+            }
 
             return storeUpdated;
         }),

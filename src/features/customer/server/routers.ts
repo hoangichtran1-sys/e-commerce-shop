@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { base, authed } from "@/orpc/init";
 import { ORPCError } from "@orpc/client";
 import { z } from "zod";
+import { sortMap, sortValues } from "../types";
 
 export const customerRouter = base.router({
     getStoreBySlug: base
@@ -34,13 +35,23 @@ export const customerRouter = base.router({
         return stores;
     }),
     getCategoriesInStore: base.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
+        const now = new Date();
+
         const categories = await prisma.category.findMany({
             where: {
                 storeId: input.storeId,
             },
             include: {
                 billboard: true,
-                promotions: true,
+                promotions: {
+                    where: {
+                        isActive: true,
+                        startAt: { lte: now },
+                        endAt: { gte: now },
+                    },
+                    orderBy: [{ priority: "desc" }, { value: "desc" }],
+                    take: 1,
+                },
             },
             orderBy: {
                 createdAt: "desc",
@@ -50,22 +61,17 @@ export const customerRouter = base.router({
         return categories;
     }),
     getBillboardGlobal: base.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
-        const billboards = await prisma.billboard.findMany({
+        const billboard = await prisma.billboard.findMany({
             where: {
                 storeId: input.storeId,
                 isGlobal: true,
                 isActive: true,
             },
-            orderBy: {
-                createdAt: "desc",
-            },
+            orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+            take: 1,
         });
 
-        if (billboards.length === 0) {
-            return null;
-        }
-
-        return billboards[0];
+        return billboard[0];
     }),
     getProducts: base
         .input(
@@ -78,27 +84,48 @@ export const customerRouter = base.router({
                 maxPrice: z.number().nullish(),
                 minPrice: z.number().nullish(),
                 search: z.string().nullish(),
+                sort: z.literal(sortValues).default("newest"),
             }),
         )
         .handler(async ({ input }) => {
-            const { storeId, categoryId, colorId, sizeId, isFeatured, minPrice, maxPrice, search } = input;
+            const { storeId, categoryId, colorId, sizeId, isFeatured, minPrice, maxPrice, search, sort } = input;
+            const now = new Date();
 
-            if ((minPrice && !maxPrice) || (!minPrice && maxPrice)) {
+            const hasMin = minPrice !== null && minPrice !== undefined;
+            const hasMax = maxPrice !== null && maxPrice !== undefined;
+
+            if ((hasMin && !hasMax) || (!hasMin && hasMax)) {
                 throw new ORPCError("BAD_REQUEST", { message: "Invalid price range" });
             }
 
-            if (minPrice && maxPrice && minPrice > maxPrice) {
+            if (hasMin && hasMax && minPrice > maxPrice) {
                 throw new ORPCError("BAD_REQUEST", { message: "Min price must be before max price" });
             }
 
-            const queryProducts: Prisma.ProductWhereInput = { storeId };
+            const queryProducts: Prisma.ProductWhereInput = { storeId, status: "PUBLISHED" };
 
             if (categoryId) {
                 queryProducts.categoryId = categoryId;
             }
 
-            if (isFeatured) {
+            if (isFeatured !== undefined && isFeatured !== null) {
                 queryProducts.isFeatured = isFeatured;
+            }
+
+            if (colorId) {
+                queryProducts.colorId = colorId;
+            }
+
+            if (sizeId) {
+                queryProducts.sizeId = sizeId;
+            }
+
+            if (search) {
+                queryProducts.name = { contains: search, mode: "insensitive" };
+            }
+
+            if (hasMax && hasMin) {
+                queryProducts.price = { gte: minPrice, lte: maxPrice };
             }
 
             const products = await prisma.product.findMany({
@@ -109,19 +136,17 @@ export const customerRouter = base.router({
                         include: {
                             promotions: {
                                 where: {
-                                    AND: {
-                                        isActive: true,
-                                        startAt: { lte: new Date() },
-                                        endAt: { gte: new Date() },
-                                    },
+                                    isActive: true,
+                                    startAt: { lte: now },
+                                    endAt: { gte: now },
                                 },
-                                orderBy: {
-                                    value: "desc",
-                                },
+                                orderBy: [{ priority: "desc" }, { value: "desc" }],
+                                take: 1,
                             },
                         },
                     },
                 },
+                orderBy: sortMap[sort],
             });
 
             return products.map((item) => ({
@@ -130,6 +155,8 @@ export const customerRouter = base.router({
             }));
         }),
     getProduct: base.input(z.object({ storeId: z.string().min(1), productId: z.string().min(1) })).handler(async ({ input }) => {
+        const now = new Date();
+
         const product = await prisma.product.findUnique({
             where: {
                 id: input.productId,
@@ -141,15 +168,12 @@ export const customerRouter = base.router({
                     include: {
                         promotions: {
                             where: {
-                                AND: {
-                                    isActive: true,
-                                    startAt: { lte: new Date() },
-                                    endAt: { gte: new Date() },
-                                },
+                                isActive: true,
+                                startAt: { lte: now },
+                                endAt: { gte: now },
                             },
-                            orderBy: {
-                                value: "desc",
-                            },
+                            orderBy: [{ priority: "desc" }, { value: "desc" }],
+                            take: 1,
                         },
                     },
                 },

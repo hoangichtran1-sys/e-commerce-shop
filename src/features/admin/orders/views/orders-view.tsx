@@ -7,7 +7,7 @@ import { orpc } from "@/orpc/orpc-rq.client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { columns } from "../components/columns";
 import { OrderStatus } from "@/generated/prisma/enums";
-import { BanIcon, CheckCircle2Icon, LoaderIcon, XCircleIcon } from "lucide-react";
+import { BanIcon, CheckCircle2Icon, LoaderIcon, PackageCheckIcon, TruckIcon } from "lucide-react";
 import { TbCreditCardRefund } from "react-icons/tb";
 
 interface OrdersViewProps {
@@ -23,9 +23,15 @@ export const OrdersView = ({ storeId }: OrdersViewProps) => {
             value: OrderStatus.PENDING,
             icon: LoaderIcon,
         },
-        { label: "Cancelled", value: OrderStatus.CANCELLED, icon: BanIcon },
         { label: "Paid", value: OrderStatus.PAID, icon: CheckCircle2Icon },
-        { label: "Failed", value: OrderStatus.FAILED, icon: XCircleIcon },
+        {
+            label: "Processing",
+            value: OrderStatus.PROCESSING,
+            icon: LoaderIcon,
+        },
+        { label: "Shipped", value: OrderStatus.SHIPPED, icon: TruckIcon },
+        { label: "Delivered", value: OrderStatus.DELIVERED, icon: PackageCheckIcon },
+        { label: "Cancelled", value: OrderStatus.CANCELLED, icon: BanIcon },
         {
             label: "Refund",
             value: OrderStatus.REFUND,

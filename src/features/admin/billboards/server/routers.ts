@@ -23,17 +23,11 @@ export const billboardsRouter = base.router({
 
             const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
                 cloudinary.uploader
-                    .upload_stream(
-                        { folder: "billboards" },
-                        (
-                            error: UploadApiErrorResponse | undefined,
-                            result: UploadApiResponse | undefined,
-                        ) => {
-                            if (error) reject(error);
-                            if (!result) return reject(new ORPCError("BAD_REQUEST"));
-                            resolve(result);
-                        },
-                    )
+                    .upload_stream({ folder: "billboards" }, (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
+                        if (error) reject(error);
+                        if (!result) return reject(new ORPCError("BAD_REQUEST"));
+                        resolve(result);
+                    })
                     .end(buffer);
             });
 
@@ -61,6 +55,7 @@ export const billboardsRouter = base.router({
                 storeId: z.string().min(1),
                 isGlobal: z.boolean(),
                 isActive: z.boolean(),
+                priority: z.number().int().min(0).max(100),
             }),
         )
         .handler(async ({ input }) => {
@@ -71,6 +66,7 @@ export const billboardsRouter = base.router({
                     storeId: input.storeId,
                     isGlobal: input.isGlobal,
                     isActive: input.isActive,
+                    priority: input.priority,
                 },
             });
 
@@ -87,6 +83,7 @@ export const billboardsRouter = base.router({
 
             return billboardCreated;
         }),
+
     update: admin
         .input(
             z.object({
@@ -96,6 +93,7 @@ export const billboardsRouter = base.router({
                 storeId: z.string().min(1),
                 isGlobal: z.boolean(),
                 isActive: z.boolean(),
+                priority: z.number().int().min(0).max(100),
             }),
         )
         .handler(async ({ input }) => {
@@ -121,6 +119,7 @@ export const billboardsRouter = base.router({
                     imageUrl: input.newImageUrl,
                     isActive: input.isActive,
                     isGlobal: input.isGlobal,
+                    priority: input.priority,
                 },
             });
 
@@ -256,6 +255,34 @@ export const billboardsRouter = base.router({
 
             return toggleActiveBillboard;
         }),
+    priorityChange: admin
+        .input(
+            z.object({
+                id: z.string().min(1),
+                storeId: z.string().min(1),
+                priority: z.number().int().min(0).max(100),
+            }),
+        )
+        .handler(async ({ input }) => {
+            const billboard = await prisma.billboard.findUnique({
+                where: {
+                    id: input.id,
+                    storeId: input.storeId,
+                },
+            });
+            if (!billboard) {
+                throw new ORPCError("NOT_FOUND");
+            }
+
+            const priorityChangeBillboard = await prisma.billboard.update({
+                where: { id: input.id },
+                data: {
+                    priority: input.priority,
+                },
+            });
+
+            return priorityChangeBillboard;
+        }),
     getOne: admin
         .input(
             z.object({
@@ -289,7 +316,7 @@ export const billboardsRouter = base.router({
         const billboards = await prisma.billboard.findMany({
             where: {
                 storeId: input.storeId,
-                isGlobal: false
+                isGlobal: false,
             },
             orderBy: {
                 createdAt: "desc",

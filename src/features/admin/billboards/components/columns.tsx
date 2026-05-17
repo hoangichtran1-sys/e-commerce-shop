@@ -9,6 +9,7 @@ import { BillboardActions } from "./billboard-actions";
 import { format } from "date-fns";
 import { ToggleActive } from "./toggle-active";
 import { SupportIcon } from "@/components/support-icon";
+import { PriorityChange } from "./priority-change";
 
 export const columns: ColumnDef<BillboardGetMany[number]>[] = [
     {
@@ -43,7 +44,7 @@ export const columns: ColumnDef<BillboardGetMany[number]>[] = [
         },
     },
     {
-        accessorKey: "Global",
+        accessorKey: "isGlobal",
         header: () => <div className="text-center w-[50%]">Global</div>,
         cell: ({ row }) => {
             const isGlobal = row.original.isGlobal;
@@ -54,6 +55,25 @@ export const columns: ColumnDef<BillboardGetMany[number]>[] = [
                     <SupportIcon supported={isGlobal} />
                 </div>
             );
+        },
+    },
+    {
+        accessorKey: "priority",
+        header: ({ column }) => {
+            return (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Priority
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => {
+            const id = row.original.id;
+            const isGlobal = row.original.isGlobal;
+            const priority = row.original.priority;
+            const storeId = row.original.storeId;
+
+            return <PriorityChange storeId={storeId} id={id} initialData={priority} isGlobal={isGlobal} />;
         },
     },
     {

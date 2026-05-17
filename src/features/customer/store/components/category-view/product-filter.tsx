@@ -4,8 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
-import { HeartIcon, SearchIcon, StarIcon, TruckIcon } from "lucide-react";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { GemIcon, HeartIcon, SearchIcon, StarIcon, TruckIcon } from "lucide-react";
 
 export const ProductFilter = () => {
     const [selectSize, setSelectSize] = useState("");
@@ -13,7 +13,8 @@ export const ProductFilter = () => {
     const [value, setValue] = useState<number[]>([100, 600]);
     const [checkedTopFavorited, setCheckedTopFavorited] = useState(false);
     const [checkedTopRated, setCheckedTopRated] = useState(false);
-    const [checkedFreeShip, setCheckedFreeShip] = useState(false);
+    const [checkedBestSeller, setCheckedBestSeller] = useState(false);
+    const [checkedFreeShipping, setCheckedFreeShipping] = useState(false);
 
     return (
         <div className="mb-8 px-4 py-10 border-none overflow-y-auto">
@@ -35,11 +36,6 @@ export const ProductFilter = () => {
                         <InputGroupAddon>
                             <SearchIcon />
                         </InputGroupAddon>
-                        <InputGroupAddon align="inline-end">
-                            <InputGroupButton aria-label="Search" size="xs" variant="ghost">
-                                Run
-                            </InputGroupButton>
-                        </InputGroupAddon>
                     </InputGroup>
                 </div>
                 <Separator />
@@ -50,12 +46,11 @@ export const ProductFilter = () => {
                                 Price Range
                             </Label>
                             <span className="text-gray-700 text-xs font-semibold">
-                                {value[0]} – {value[1]} $
+                                ${value[0]} – ${value[1]}
                             </span>
                         </div>
                     </div>
-
-                    <Slider value={value} onValueChange={(val) => setValue(val as number[])} min={0} max={1000} step={5} className="h-full flex-1" />
+                    <Slider value={value} onValueChange={(val) => setValue(val as number[])} min={0} max={5000} step={50} className="h-full flex-1" />
                 </div>
                 <Separator />
                 <div className="flex flex-col items-start gap-y-4">
@@ -101,28 +96,44 @@ export const ProductFilter = () => {
                     </Label>
                     <div className="flex flex-col items-center gap-y-2">
                         <Button
-                            onClick={() => setCheckedFreeShip((current) => !current)}
-                            variant={checkedFreeShip ? "default" : "ghost"}
+                            onClick={() => setCheckedBestSeller((current) => !current)}
+                            variant={checkedBestSeller ? "default" : "ghost"}
                             className="p-4 w-full transition-colors"
                         >
-                            <TruckIcon />
-                            Free Shipping
+                            <div className="flex items-center justify-start gap-x-2">
+                                <GemIcon />
+                                <span>Best seller</span>
+                            </div>
                         </Button>
                         <Button
-                            onClick={() => setCheckedTopFavorited((current) => !current)}
-                            variant={checkedTopFavorited ? "default" : "ghost"}
-                            className="w-full transition-colors p-4"
+                            onClick={() => setCheckedFreeShipping((current) => !current)}
+                            variant={checkedFreeShipping ? "default" : "ghost"}
+                            className="p-4 w-full transition-colors"
                         >
-                            <HeartIcon />
-                            Top Favorited
+                            <div className="flex items-center justify-start gap-x-2">
+                                <TruckIcon />
+                                <span>Free shipping</span>
+                            </div>
                         </Button>
                         <Button
                             onClick={() => setCheckedTopRated((current) => !current)}
                             variant={checkedTopRated ? "default" : "ghost"}
                             className="w-full transition-colors p-4"
                         >
-                            <StarIcon />
-                            Top Rated (4+ starts)
+                            <div className="flex items-center justify-start gap-x-2">
+                                <StarIcon />
+                                <span>Top Rated (4+ starts)</span>
+                            </div>
+                        </Button>
+                        <Button
+                            onClick={() => setCheckedTopFavorited((current) => !current)}
+                            variant={checkedTopFavorited ? "default" : "ghost"}
+                            className="w-full transition-colors p-4"
+                        >
+                            <div className="flex items-center justify-start gap-x-2">
+                                <HeartIcon />
+                                <span>Top Favorite (100+)</span>
+                            </div>
                         </Button>
                     </div>
                 </div>

@@ -16,6 +16,8 @@ export const env = createEnv({
         CLOUDINARY_CLOUD_NAME: z.string().min(1),
         CLOUDINARY_API_KEY: z.string().min(1),
         CLOUDINARY_API_SECRET: z.string().min(1),
+        SHIPPING_FEE: z.coerce.number(),
+        FREE_SHIPPING_THRESHOLD: z.coerce.number(),
     },
     experimental__runtimeEnv: {},
     skipValidation: !!process.env.SKIP_ENV_VALIDATION,

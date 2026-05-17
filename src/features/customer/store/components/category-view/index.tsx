@@ -19,17 +19,18 @@ interface CategoryViewProps {
 }
 
 const sortOptions = [
-    { id: "featured", label: "Featured" },
-    { id: "newest", label: "Newest" },
-    { id: "price-low", label: "Price: Low to High" },
-    { id: "price-high", label: "Price: High to Low" },
-    { id: "rating", label: "Customer Rating" },
+    { value: "newest", label: "Sort by newest" },
+    { value: "featured", label: "Sort by featured" },
+    { value: "in_stock", label: "Sort by in stock" },
+    { value: "price_low", label: "Price: Low to High" },
+    { value: "price_high", label: "Price: High to Low" },
 ];
 
 export const CategoryView = ({ storeId, categoryId }: CategoryViewProps) => {
-    const [selectedSort, setSelectedSort] = useState("featured");
+    const [selectedSort, setSelectedSort] = useState("newest");
 
     const { data: category } = useSuspenseQuery(orpc.customer.getCategory.queryOptions({ input: { storeId, categoryId } }));
+    const { data: products } = useSuspenseQuery(orpc.customer.getProducts.queryOptions({ input: { storeId, categoryId }}))
 
     return (
         <div className="bg-white">
@@ -40,7 +41,7 @@ export const CategoryView = ({ storeId, categoryId }: CategoryViewProps) => {
                         <div className="hidden lg:block lg:col-span-2 hover:border hover:shadow-sm rounded-md hover:border-gray-200">
                             <ProductFilter />
                         </div>
-                        <div className="lg:col-span-6">
+                        <div className="lg:col-span-6 mt-6 lg:mt-0">
                             <div className="flex flex-col gap-y-6">
                                 <div className="flex items-center justify-between lg:justify-end gap-2">
                                     <Sheet>
@@ -62,18 +63,18 @@ export const CategoryView = ({ storeId, categoryId }: CategoryViewProps) => {
                                     </Sheet>
                                     <Select name="sort" value={selectedSort} onValueChange={(val) => setSelectedSort(val)}>
                                         <SelectTrigger className="min-w-60" id="select-sort">
-                                            <SelectValue defaultValue="newest" />
+                                            <SelectValue defaultValue="newest"  />
                                         </SelectTrigger>
-                                        <SelectContent position="popper">
+                                        <SelectContent position="item-aligned">
                                             {sortOptions.map((item) => (
-                                                <SelectItem key={item.id} value={item.id}>
+                                                <SelectItem key={item.value} value={item.value}>
                                                     {item.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <ProductList />
+                                <ProductList data={products} />
                             </div>
                         </div>
                     </div>

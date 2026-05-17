@@ -4,6 +4,7 @@ import { z } from "zod";
 export const formPromotionSchema = z
     .object({
         name: z.string().min(1, "Name is required"),
+        priority: z.number().int().min(0).max(100),
         categoryIds: z.array(z.string()),
         type: z.enum(PromotionType),
         mode: z.enum(PromotionMode),
@@ -71,6 +72,7 @@ export const formPromotionSchema = z
 
 export const insertPromotionSchema = z.object({
     name: z.string().min(1),
+    priority: z.number().int().min(0).max(100),
     storeId: z.string().min(1),
     categoryIds: z.array(z.string()),
     type: z.enum(PromotionType),

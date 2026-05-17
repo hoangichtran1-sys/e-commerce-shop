@@ -15,6 +15,7 @@ datasource db {
 enum UploadType {
   BILLBOARD
   PRODUCT
+  STORE
 }
 
 enum BillboardStatus {
@@ -31,8 +32,10 @@ enum ProductStatus {
 enum OrderStatus {
   PENDING
   PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
   CANCELLED
-  FAILED
   REFUND
 }
 
@@ -172,6 +175,7 @@ model Billboard {
   imageUrl   String
   isGlobal   Boolean @default(false)
   isActive   Boolean @default(false)
+  priority   Int @default(0)
 
   store      Store @relation("StoreToBillboard", fields: [storeId], references: [id])
   categories Category[]
@@ -179,7 +183,7 @@ model Billboard {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([storeId, isGlobal, isActive])
+  @@index([storeId, isGlobal, isActive, priority])
 }
 
 model Category {
@@ -255,6 +259,9 @@ model Product {
   inStock     Boolean @default(false)
   isFeatured  Boolean @default(false)
 
+  quantity    Int @default(1)
+  soldCount   Int @default(0)
+
   images      ProductImage[]
   orderItems  OrderItem[]
   reviews     Review[]
@@ -267,8 +274,9 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@index([storeId, categoryId, status])
-  @@index([storeId, isFeatured, status])
+  @@index([storeId, categoryId, price])
+  @@index([storeId, price])
+  @@index([storeId, status, isFeatured, createdAt])
 }
 
 model ProductImage {
@@ -286,6 +294,7 @@ model ProductImage {
 
 model Order {
   id            String @id @default(uuid())
+  orderCode     String
   storeId       String
   couponId      String?
   userId        String
@@ -302,6 +311,7 @@ model Order {
 
   currency      String  @default("usd")
   amountPaid    Decimal?
+  shippingFee   Float   @default(0)
 
   orderItems    OrderItem[]
 
@@ -314,12 +324,14 @@ model Order {
 
   @@index([storeId, status])
   @@index([couponId, userId])
+  @@unique([storeId, orderCode])
 }
 
 model OrderItem {
   id        String @id @default(uuid())
   orderId   String
   productId String
+  quantity  Int @default(1)
 
   order     Order @relation(fields: [orderId], references: [id])
   product   Product @relation(fields: [productId], references: [id])
@@ -341,6 +353,7 @@ model Promotion {
   endAt      DateTime
   isActive   Boolean @default(false)
 
+  priority         Int    @default(0)
   minOrderValue    Float  @default(0)
   maxDiscountValue Float?
 
@@ -352,7 +365,7 @@ model Promotion {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([storeId, isActive, startAt, endAt])
+  @@index([storeId, isActive, startAt, endAt, priority])
   @@index([storeId, mode])
 }
 

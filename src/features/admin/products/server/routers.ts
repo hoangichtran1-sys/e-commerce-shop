@@ -48,7 +48,7 @@ export const productsRouter = base.router({
             };
         }),
     create: admin.input(createProductSchema).handler(async ({ input }) => {
-        const { storeId, categoryId, sizeId, colorId, name, sku, price, status, inStock, isFeatured, images, description } = input;
+        const { storeId, categoryId, sizeId, colorId, name, sku, price, status, inStock, isFeatured, images, description, quantity } = input;
 
         const existingProduct = await prisma.product.findUnique({
             where: {
@@ -74,6 +74,7 @@ export const productsRouter = base.router({
                     inStock,
                     isFeatured,
                     description,
+                    quantity,
                 },
             });
 
@@ -102,7 +103,7 @@ export const productsRouter = base.router({
         });
     }),
     update: admin.input(updateProductSchema).handler(async ({ input }) => {
-        const { id, storeId, categoryId, sizeId, colorId, name, sku, price, status, inStock, isFeatured, images, description } = input;
+        const { id, storeId, categoryId, sizeId, colorId, name, sku, price, status, inStock, isFeatured, images, description, quantity } = input;
 
         const product = await prisma.product.findUnique({
             where: {
@@ -134,6 +135,7 @@ export const productsRouter = base.router({
                     inStock,
                     isFeatured,
                     description,
+                    quantity,
                 },
             });
 
@@ -242,6 +244,34 @@ export const productsRouter = base.router({
 
             return toggleInStockProduct;
         }),
+    quantityChange: admin
+            .input(
+                z.object({
+                    id: z.string().min(1),
+                    storeId: z.string().min(1),
+                    quantity: z.number().int().min(1),
+                }),
+            )
+            .handler(async ({ input }) => {
+                const product = await prisma.product.findUnique({
+                    where: {
+                        id: input.id,
+                        storeId: input.storeId,
+                    },
+                });
+                if (!product) {
+                    throw new ORPCError("NOT_FOUND");
+                }
+    
+                const quantityChangeProduct = await prisma.product.update({
+                    where: { id: input.id },
+                    data: {
+                        quantity: input.quantity,
+                    },
+                });
+    
+                return quantityChangeProduct;
+            }),
     getOne: admin
         .input(
             z.object({

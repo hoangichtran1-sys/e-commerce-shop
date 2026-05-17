@@ -10,16 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { capitalizeWords, formatPrice, snakeCaseToTitle } from "@/lib/utils";
 import { ToggleActive } from "./toggle-active";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PriorityChange } from "./priority-change";
 
 export const columns: ColumnDef<PromotionGetManyByStore[number]>[] = [
     {
         accessorKey: "name",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Name
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -35,10 +33,7 @@ export const columns: ColumnDef<PromotionGetManyByStore[number]>[] = [
         accessorKey: "mode",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Mode
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -47,19 +42,14 @@ export const columns: ColumnDef<PromotionGetManyByStore[number]>[] = [
         cell: ({ row }) => {
             const mode = row.original.mode;
 
-            return (
-                <Badge variant={mode}>{capitalizeWords(snakeCaseToTitle(mode as string))}</Badge>
-            );
+            return <Badge variant={mode}>{capitalizeWords(snakeCaseToTitle(mode as string))}</Badge>;
         },
     },
     {
         accessorKey: "type",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Type
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -75,10 +65,7 @@ export const columns: ColumnDef<PromotionGetManyByStore[number]>[] = [
         accessorKey: "value",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Value
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
@@ -157,8 +144,8 @@ export const columns: ColumnDef<PromotionGetManyByStore[number]>[] = [
             const start = row.original.startAt;
             const end = row.original.endAt;
             const now = new Date();
-            
-            console.log(id)
+
+            console.log(id);
 
             let currentStatus = "inactive";
 
@@ -198,10 +185,7 @@ export const columns: ColumnDef<PromotionGetManyByStore[number]>[] = [
                 <div className="flex items-center gap-x-2">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Badge
-                                variant="outline"
-                                className="cursor-pointer hover:bg-accent transition-colors"
-                            >
+                            <Badge variant="outline" className="cursor-pointer hover:bg-accent transition-colors">
                                 {items.length} {items.length === 1 ? "Item" : "Items"}
                             </Badge>
                         </TooltipTrigger>
@@ -223,22 +207,22 @@ export const columns: ColumnDef<PromotionGetManyByStore[number]>[] = [
         },
     },
     {
-        accessorKey: "createdAt",
+        accessorKey: "priority",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Created At
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Priority
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
             );
         },
         cell: ({ row }) => {
-            const createdAtFormatted = format(row.original.createdAt, "MMMM do, yyyy");
+            const id = row.original.id;
+            const mode = row.original.mode;
+            const priority = row.original.priority;
+            const storeId = row.original.storeId;
 
-            return <p className="line-clamp-1">{createdAtFormatted}</p>;
+            return <PriorityChange storeId={storeId} id={id} initialData={priority} mode={mode} />;
         },
     },
     {
@@ -260,11 +244,7 @@ export const columns: ColumnDef<PromotionGetManyByStore[number]>[] = [
 
             return (
                 <PromotionActions id={id} storeId={storeId}>
-                    <Button
-                        className="size-8 p-0"
-                        variant="ghost"
-                        aria-label={`Open actions for promotion ${id}`}
-                    >
+                    <Button className="size-8 p-0" variant="ghost" aria-label={`Open actions for promotion ${id}`}>
                         <MoreVerticalIcon className="size-4" />
                     </Button>
                 </PromotionActions>

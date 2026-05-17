@@ -13,16 +13,40 @@ import { Hint } from "@/components/hint";
 
 export const columns: ColumnDef<OrderGetMany[number]>[] = [
     {
+        accessorKey: "orderCode",
+        header: ({ column }) => {
+            return (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Order Code
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => {
+            const orderCode = row.original.orderCode;
+            const shippingFee = formatPrice(row.original.shippingFee);
+
+            return (
+                <Hint text={`Shipping fee: ${shippingFee}`}>
+                    <p className="line-clamp-1 font-semibold">{orderCode}</p>
+                </Hint>
+            );
+        },
+    },
+    {
         accessorKey: "customer",
         header: "Customer",
         cell: ({ row }) => {
             const name = row.original.name || "No information";
             const email = row.original.email || "No information";
+            const address = row.original.address || "No information";
 
             return (
                 <div className="flex flex-col items-center">
-                    <p className="text-sm font-semibold">{name}</p>
-                    <p className="text-xs text-muted-foreground">{email}</p>
+                    <p className="text-sm font-semibold">{name || email}</p>
+                    <Hint text={address}>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{address}</p>
+                    </Hint>
                 </div>
             );
         },
@@ -31,48 +55,48 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
         accessorKey: "products",
         header: "Products",
         cell: ({ row }) => {
-            const productsName = row.original.orderItems.map((orderItem) => orderItem.product.name);
+            const productsItem = row.original.orderItems.map((orderItem) => ({ name: orderItem.product.name, quantity: orderItem.quantity }));
 
-            if (productsName.length === 0) {
+            if (productsItem.length === 0) {
                 return <p className="text-muted-foreground">N/A</p>;
             }
 
-            if (productsName.length < 3) {
+            if (productsItem.length < 3) {
                 return (
                     <div className="flex flex-wrap gap-1">
-                        {productsName.map((name, index) => (
+                        {productsItem.map((p, index) => (
                             <Badge key={index} variant="outline" className="whitespace-nowrap">
-                                {name}
+                                {p.name} x{p.quantity}
                             </Badge>
                         ))}
                     </div>
                 );
             }
 
-            const firstProduct = productsName[0];
-            const secondProduct = productsName[1];
-            const remainingProductsName = productsName.slice(2);
+            const firstProduct = productsItem[0];
+            const secondProduct = productsItem[1];
+            const remainingProductsItem = productsItem.slice(2);
 
             return (
                 <div className="flex items-center gap-x-2">
                     <Badge variant="outline" className="whitespace-nowrap">
-                        {firstProduct}
+                        {firstProduct.name} x{firstProduct.quantity}
                     </Badge>
                     <Badge variant="outline" className="whitespace-nowrap">
-                        {secondProduct}
+                        {secondProduct.name} x{firstProduct.quantity}
                     </Badge>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Badge variant="secondary" className="cursor-pointer hover:bg-accent transition-colors">
-                                +{remainingProductsName.length} more
+                                +{remainingProductsItem.length} more
                             </Badge>
                         </PopoverTrigger>
                         <PopoverContent className="w-fit min-w-37.5 p-3" align="start">
                             <div className="flex flex-col gap-y-2">
                                 <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Other Categories</p>
-                                {remainingProductsName.map((name) => (
-                                    <div key={name} className="text-sm font-medium border-b border-border pb-1 last:border-none">
-                                        {name}
+                                {remainingProductsItem.map((p, index) => (
+                                    <div key={index} className="text-sm font-medium border-b border-border pb-1 last:border-none">
+                                        {p.name} x{p.quantity}
                                     </div>
                                 ))}
                             </div>
@@ -103,37 +127,10 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
         },
     },
     {
-        accessorKey: "address",
-        header: ({ column }) => {
-            return (
-                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Address
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
-            );
-        },
-        cell: ({ row }) => {
-            const address = row.original.address;
-
-            if (!address) {
-                return <p className="text-muted-foreground">N/A</p>;
-            }
-
-            if (address.length < 36) {
-                return <p className="line-clamp-2">{address}</p>;
-            }
-
-            return (
-                <Hint text={address}>
-                    <p className="line-clamp-2">{address.slice(0, 36)}...</p>
-                </Hint>
-            );
-        },
-    },
-    {
         id: "price",
         accessorFn: (row) => {
-            let totalPrice = row.orderItems.reduce((total, item) => total + item.product.price, 0);
+            const shippingFee = row.shippingFee;
+            let totalPrice = row.orderItems.reduce((total, item) => total + item.product.price, 0) - shippingFee;
             const coupon = row.coupon;
 
             if (coupon) {
@@ -155,7 +152,8 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
             );
         },
         cell: ({ row }) => {
-            let totalPrice = row.original.orderItems.reduce((total, item) => total + item.product.price, 0);
+            const shippingFee = row.original.shippingFee;
+            let totalPrice = row.original.orderItems.reduce((total, item) => total + item.product.price, 0) - shippingFee;
             const coupon = row.original.coupon;
 
             if (coupon) {

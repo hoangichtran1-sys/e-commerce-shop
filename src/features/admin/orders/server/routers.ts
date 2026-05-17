@@ -6,15 +6,17 @@ export const ordersRouter = base.router({
     getOne: admin
         .input(
             z.object({
-                id: z.string().min(1),
+                orderCode: z.string().min(1),
                 storeId: z.string().min(1),
             }),
         )
         .handler(async ({ input }) => {
             const order = await prisma.order.findUnique({
                 where: {
-                    id: input.id,
-                    storeId: input.storeId,
+                    storeId_orderCode: {
+                        orderCode: input.orderCode,
+                        storeId: input.storeId,
+                    },
                 },
                 include: {
                     orderItems: {
@@ -24,9 +26,11 @@ export const ordersRouter = base.router({
                                     name: true,
                                     price: true,
                                     id: true,
+                                    sku: true,
                                 },
                             },
                             id: true,
+                            quantity: true,
                         },
                     },
                     coupon: {
@@ -75,9 +79,11 @@ export const ordersRouter = base.router({
                                     name: true,
                                     price: true,
                                     id: true,
+                                    sku: true,
                                 },
                             },
                             id: true,
+                            quantity: true,
                         },
                     },
                     coupon: {
@@ -120,9 +126,11 @@ export const ordersRouter = base.router({
                                 name: true,
                                 price: true,
                                 id: true,
+                                sku: true,
                             },
                         },
                         id: true,
+                        quantity: true,
                     },
                 },
                 coupon: {

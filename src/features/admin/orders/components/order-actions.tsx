@@ -1,9 +1,4 @@
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CopyIcon, ExternalLinkIcon } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
@@ -37,10 +32,7 @@ export const OrderActions = ({ data, children }: OrderActionProps) => {
                             <CopyIcon className="size-4 stroke-2" />
                             Copy transaction ID
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => setOpenOrderSheet(true)}
-                            className="font-medium p-2.5"
-                        >
+                        <DropdownMenuItem onClick={() => setOpenOrderSheet(true)} className="font-medium p-2.5">
                             <ExternalLinkIcon className="size-4 stroke-2" />
                             Order details
                         </DropdownMenuItem>

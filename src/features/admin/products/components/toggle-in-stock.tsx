@@ -9,9 +9,10 @@ interface ToggleInStockProps {
     isChecked: boolean;
     id: string;
     storeId: string;
+    quantity: number;
 }
 
-export const ToggleInStock = ({ id, storeId, isChecked }: ToggleInStockProps) => {
+export const ToggleInStock = ({ id, storeId, isChecked, quantity }: ToggleInStockProps) => {
     const queryClient = useQueryClient();
 
     const toggle = useMutation(
@@ -41,6 +42,7 @@ export const ToggleInStock = ({ id, storeId, isChecked }: ToggleInStockProps) =>
             onCheckedChange={() => toggle.mutate({ id, storeId })}
             size="sm"
             aria-label={`Toggle in stock product ${id}`}
+            disabled={quantity === 0}
         />
     );
 };

@@ -153,6 +153,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
             inStock: !!initialData?.inStock,
             images: previews || [],
             description: initialData?.description || null,
+            quantity: initialData?.quantity || 1,
         },
         validators: {
             onSubmit: createProductSchema.omit({ storeId: true }),
@@ -206,6 +207,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
 
     const categoryId = useStore(form.store, (state) => state.values.categoryId);
     const name = useStore(form.store, (state) => state.values.name);
+    const quantity = useStore(form.store, (state) => state.values.quantity);
 
     const { data: sizes } = useQuery({
         ...orpc.sizes.getManyByStoreAndCategory.queryOptions({
@@ -229,8 +231,6 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
         label: color.value,
         value: color.id,
     }));
-
-    const [value, setValue] = useState(1);
 
     const handleGenerateSku = () => {
         const sku = generateSKU(name);
@@ -357,29 +357,57 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                 />
                             </div>
                             <div className="flex-1 max-w-60">
-                                <Label htmlFor="quantity">Quantity</Label>
-                                <div className="flex gap-2 mt-3">
-                                    <Button
-                                        onClick={() => setValue(Math.max(1, value - 1))}
-                                        size="icon"
-                                        type="button"
-                                        variant="outline"
-                                        disabled={value === 1}
-                                    >
-                                        <MinusIcon className="h-4 w-4" />
-                                    </Button>
-                                    <Input
-                                        className="bg-background text-center max-w-40 [appearance:textfield]"
-                                        id="quantity"
-                                        min="1"
-                                        onChange={(e) => setValue(Number(e.target.value))}
-                                        type="number"
-                                        value={value}
-                                    />
-                                    <Button onClick={() => setValue(value + 1)} size="icon" type="button" variant="outline">
-                                        <PlusIcon className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                <form.Field
+                                    name="quantity"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Quantity</FieldLabel>
+                                                <div className="flex gap-2 mt-3">
+                                                    <Button
+                                                        onClick={() => {
+                                                            const currentValue = Number(field.state.value) || 1;
+                                                            const nextValue = currentValue - 1;
+                                                            form.setFieldValue("quantity", Math.max(1, nextValue));
+                                                        }}
+                                                        size="icon"
+                                                        type="button"
+                                                        variant="outline"
+                                                        disabled={quantity === 1}
+                                                    >
+                                                        <MinusIcon className="h-4 w-4" />
+                                                    </Button>
+                                                    <Input
+                                                        type="number"
+                                                        className="bg-background text-center max-w-40 [appearance:textfield]"
+                                                        min="1"
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        onChange={(e) => field.handleChange(Number(e.target.value))}
+                                                        aria-invalid={isInvalid}
+                                                        autoComplete="off"
+                                                    />
+                                                    <Button
+                                                        onClick={() => {
+                                                            const currentValue = Number(field.state.value) || 1;
+                                                            const nextValue = currentValue + 1;
+                                                            form.setFieldValue("quantity", nextValue);
+                                                        }}
+                                                        size="icon"
+                                                        type="button"
+                                                        variant="outline"
+                                                    >
+                                                        <PlusIcon className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                            </Field>
+                                        );
+                                    }}
+                                />
                             </div>
                         </div>
                     </FieldGroup>
@@ -657,6 +685,7 @@ export const ProductForm = ({ storeId, productId }: ProductFormProps) => {
                                                     checked={field.state.value}
                                                     onCheckedChange={field.handleChange}
                                                     aria-invalid={isInvalid}
+                                                    disabled={initialData?.quantity === 0}
                                                 />
                                                 <FieldLabel htmlFor={field.name}>In Stock</FieldLabel>
                                             </Field>

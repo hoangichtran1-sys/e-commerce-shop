@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { GetStores } from "../../types";
 import Image from "next/image";
 import Cookies from "js-cookie";
-import { FlameIcon } from "lucide-react";
+import { SparklesIcon } from "lucide-react";
 
 interface StoreCardProps {
     item: GetStores[number];
@@ -49,7 +49,7 @@ export const StoreCard = ({ item }: StoreCardProps) => {
 
                 {item.isFeatured && (
                     <div className="text-background-foreground bg-foreground/10 dark:bg-background/20 absolute inset-e-8 top-8 flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium backdrop-blur-xs">
-                        <FlameIcon className="size-4" /> Trending
+                        <SparklesIcon className="size-4" /> Featured
                     </div>
                 )}
             </CardContent>

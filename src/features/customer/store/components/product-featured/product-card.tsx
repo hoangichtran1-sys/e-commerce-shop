@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExpandIcon, ShoppingCartIcon, StarIcon, FlameIcon } from "lucide-react";
+import { ExpandIcon, ShoppingCartIcon, StarIcon, SparklesIcon } from "lucide-react";
 import { FALLBACK_IMAGE } from "@/constants";
 import { GetProducts } from "@/features/customer/types";
 import { formatPrice } from "@/lib/utils";
@@ -36,12 +36,12 @@ export function ProductCard({ product, isGlobal }: ProductCardProps) {
                     {/* CATEGORY */}
                     {!isGlobal ? (
                         <Badge className="absolute left-2 top-2 backdrop-blur">{product.category.name}</Badge>
-                    ) : (
+                    ) : product.isFeatured ? (
                         <Badge className="absolute left-2 top-2 backdrop-blur">
-                            <FlameIcon className="size-3" />
-                            Trending
+                            <SparklesIcon className="size-3" />
+                            Featured
                         </Badge>
-                    )}
+                    ) : null}
 
                     {/* DISCOUNT */}
                     {hasDiscount && <Badge className="absolute right-2 top-2 bg-red-500 hover:bg-red-500">-99%</Badge>}

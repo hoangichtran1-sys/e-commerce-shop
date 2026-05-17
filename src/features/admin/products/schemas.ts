@@ -19,6 +19,7 @@ export const createProductSchema = z.object({
     inStock: z.boolean(),
     images: z.array(z.string()).min(1).max(3),
     description: z.string().nullable(),
+    quantity: z.number().int().min(1)
 });
 
 export const updateProductSchema = createProductSchema.extend({

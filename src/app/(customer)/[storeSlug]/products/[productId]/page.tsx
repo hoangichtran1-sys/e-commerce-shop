@@ -1,4 +1,5 @@
 import { ProductView } from "@/features/customer/store/components/product-view";
+import { env } from "@/lib/env";
 import { client } from "@/lib/orpc";
 import { HydrateClient, orpc, prefetch } from "@/orpc/orpc-rq.server";
 import { Suspense } from "react";
@@ -22,7 +23,7 @@ const Page = async ({ params }: PageProps) => {
         <HydrateClient>
             <Suspense fallback={<p>Loading...</p>}>
                 <ErrorBoundary fallback={<p>Error!</p>}>
-                    <ProductView storeId={store.id} productId={productId} />
+                    <ProductView storeId={store.id} productId={productId} shippingFee={env.SHIPPING_FEE} />
                 </ErrorBoundary>
             </Suspense>
         </HydrateClient>

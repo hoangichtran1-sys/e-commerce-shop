@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { TrashIcon } from "lucide-react";
+import { MinusIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet, FieldTitle } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { MultipleSelect } from "@/components/multiple-select";
 import { BreadcrumbHeader } from "@/components/breadcrumb-header";
 import { add } from "date-fns";
+import { ButtonGroup } from "@/components/ui/button-group";
 
 interface PromotionFormProps {
     promotionId: string;
@@ -118,6 +119,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
         defaultValues: {
             name: initialData?.name || "",
             value: initialData?.value ? initialData.value : 0,
+            priority: initialData?.priority || 0,
             type: initialData?.type || PromotionType.FIXED,
             mode: initialData?.mode || PromotionMode.COUPON,
             categoryIds: (initialData?.categories ?? []).map((category) => category.id),
@@ -415,6 +417,64 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                     }}
                                 />
                             </div>
+                            {mode === "CATEGORY_CAMPAIGN" && (
+                                <div className="flex-1">
+                                    <form.Field
+                                        name="priority"
+                                        children={(field) => {
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                            return (
+                                                <Field data-invalid={isInvalid}>
+                                                    <FieldLabel htmlFor={field.name}>Limit code</FieldLabel>
+                                                    <ButtonGroup>
+                                                        <Input
+                                                            id={field.name}
+                                                            name={field.name}
+                                                            value={field.state.value}
+                                                            onBlur={field.handleBlur}
+                                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                                            aria-invalid={isInvalid}
+                                                            autoComplete="off"
+                                                            type="number"
+                                                            className="h-auto max-h-7 [appearance:textfield]"
+                                                            min={0}
+                                                            max={100}
+                                                            step={1}
+                                                        />
+                                                        <Button
+                                                            onClick={() => {
+                                                                const currentValue = Number(field.state.value) || 1;
+                                                                const nextValue = currentValue - 1;
+                                                                form.setFieldValue("priority", Math.max(1, nextValue));
+                                                            }}
+                                                            disabled={field.state.value === 0}
+                                                            variant="outline"
+                                                            type="button"
+                                                            size="icon-sm"
+                                                        >
+                                                            <MinusIcon />
+                                                        </Button>
+                                                        <Button
+                                                            onClick={() => {
+                                                                const currentValue = Number(field.state.value) || 1;
+                                                                const nextValue = currentValue + 1;
+                                                                form.setFieldValue("priority", nextValue);
+                                                            }}
+                                                            disabled={field.state.value === 100}
+                                                            variant="outline"
+                                                            type="button"
+                                                            size="icon-sm"
+                                                        >
+                                                            <PlusIcon />
+                                                        </Button>
+                                                    </ButtonGroup>
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                                </Field>
+                                            );
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </FieldGroup>
                     <FieldGroup className="col-span-3">

@@ -3,13 +3,13 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDownIcon, MoreVerticalIcon } from "lucide-react";
-import { format } from "date-fns";
 import { ProductGetMany } from "../types";
 import { capitalizeFirst, formatPrice } from "@/lib/utils";
 import { ProductActions } from "./product-actions";
 import { SupportIcon } from "@/components/support-icon";
 import { ToggleInStock } from "./toggle-in-stock";
 import { Hint } from "@/components/hint";
+import { QuantityChange } from "./quantity-change";
 
 export const columns: ColumnDef<ProductGetMany[number]>[] = [
     {
@@ -45,8 +45,16 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         },
         cell: ({ row }) => {
             const price = row.original.price;
+            const soldCount = row.original.soldCount;
 
-            return <p className="line-clamp-1">{formatPrice(price)}</p>;
+            return (
+                <div className="flex flex-col">
+                    <p className="line-clamp-1">{formatPrice(price)}</p>
+                    <p className="text-muted-foreground">
+                        Sold count: <b className="text-foreground">{soldCount}</b>
+                    </p>
+                </div>
+            );
         },
         filterFn: (row, id, value) => {
             const price = row.getValue(id) as number;
@@ -88,24 +96,18 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         },
     },
     {
-        accessorKey: "Size",
-        header: "Size",
+        accessorKey: "variants",
+        header: "Variants",
         cell: ({ row }) => {
             const sizeValue = row.original.size.value;
-
-            return <p className="line-clamp-1">{sizeValue}</p>;
-        },
-    },
-    {
-        accessorKey: "color",
-        header: "Color",
-        cell: ({ row }) => {
             const colorValue = row.original.color.value;
 
             return (
                 <div className="flex items-center gap-x-2">
-                    {colorValue}
-                    <div className="h-6 w-6 rounded-full border" style={{ backgroundColor: colorValue }} />
+                    <p className="line-clamp-1">{sizeValue}</p>
+                    <Hint text={colorValue}>
+                        <div className="h-6 w-6 rounded-full border" style={{ backgroundColor: colorValue }} />
+                    </Hint>
                 </div>
             );
         },
@@ -140,6 +142,40 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         },
     },
     {
+        accessorKey: "quantity",
+        header: ({ column }) => {
+            return (
+                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Quantity
+                    <ArrowUpDownIcon className="h-4 w-4" />
+                </Button>
+            );
+        },
+        cell: ({ row }) => {
+            const id = row.original.id;
+            const quantity = row.original.quantity;
+            const storeId = row.original.storeId;
+
+            if (quantity === 0) {
+                return <p className="text-muted-foreground font-light italic">Out of Stock</p>;
+            }
+
+            return <QuantityChange storeId={storeId} id={id} initialData={quantity} />;
+        },
+    },
+    {
+        accessorKey: "inStock",
+        header: "In Stock",
+        cell: ({ row }) => {
+            const id = row.original.id;
+            const storeId = row.original.storeId;
+            const inStock = row.original.inStock;
+            const quantity = row.original.quantity;
+
+            return <ToggleInStock quantity={quantity} isChecked={inStock} id={id} storeId={storeId} />;
+        },
+    },
+    {
         accessorKey: "isFeatured",
         header: () => <div className="text-center w-[50%]">Featured</div>,
         cell: ({ row }) => {
@@ -151,33 +187,6 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
                     <SupportIcon supported={isFeatured} />
                 </div>
             );
-        },
-    },
-    {
-        accessorKey: "createdAt",
-        header: ({ column }) => {
-            return (
-                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Created At
-                    <ArrowUpDownIcon className="h-4 w-4" />
-                </Button>
-            );
-        },
-        cell: ({ row }) => {
-            const createdAtFormatted = format(row.original.createdAt, "MMMM do, yyyy");
-
-            return <p className="line-clamp-1">{createdAtFormatted}</p>;
-        },
-    },
-    {
-        accessorKey: "inStock",
-        header: "In Stock",
-        cell: ({ row }) => {
-            const id = row.original.id;
-            const storeId = row.original.storeId;
-            const inStock = row.original.inStock;
-
-            return <ToggleInStock isChecked={inStock} id={id} storeId={storeId} />;
         },
     },
     {
