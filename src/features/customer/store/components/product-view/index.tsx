@@ -253,24 +253,33 @@ export const ProductView = ({ storeId, productId, shippingFee }: ProductDetailPr
                                         <div className="h-10 w-10 rounded-full border" style={{ backgroundColor: product.color.value }} />
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-x-2">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="size-9 rounded-full cursor-pointer"
-                                        onClick={() => setIsWishlisted(!isWishlisted)}
-                                        aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                                    >
-                                        <Heart className={cn("size-5", isWishlisted && "fill-rose-500 text-rose-500")} />
-                                    </Button>
-                                    <Button disabled={!product.inStock || product.quantity === 0} onClick={() => {}}>
-                                        <ShoppingCartIcon />
-                                        Add to Card
-                                    </Button>
-                                    <Button variant="outline" onClick={() => {}}>
-                                        <Share2Icon />
-                                        Share
-                                    </Button>
+                                <div className="flex flex-col items-center gap-y-2">
+                                    <div className="flex items-center gap-x-2">
+                                        <Button
+                                            aria-label="Share product"
+                                            className="size-9 rounded-full"
+                                            size="icon"
+                                            variant="outline"
+                                            onClick={() => {}}
+                                        >
+                                            <Share2Icon />
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="size-9 rounded-full"
+                                            onClick={() => setIsWishlisted(!isWishlisted)}
+                                            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                                        >
+                                            <Heart className={cn("size-5", isWishlisted && "fill-rose-500 text-rose-500")} />
+                                        </Button>
+                                    </div>
+                                    <div className="flex items-center gap-x-2">
+                                        <Button disabled={!product.inStock || product.quantity === 0} onClick={() => {}}>
+                                            <ShoppingCartIcon />
+                                            Add to Card
+                                        </Button>
+                                    </div>
                                 </div>
                                 <Separator />
                                 <div className="grid md:grid-cols-2 grid-cols-1 gap-2">

@@ -44,7 +44,7 @@ export function ProductCard({ product, isGlobal }: ProductCardProps) {
                     ) : null}
 
                     {/* DISCOUNT */}
-                    {hasDiscount && <Badge className="absolute right-2 top-2 bg-red-500 hover:bg-red-500">-99%</Badge>}
+                    {isGlobal && hasDiscount && <Badge className="absolute right-2 top-2 bg-red-500 hover:bg-red-500">-99%</Badge>}
 
                     {/* ACTIONS */}
                     <div className="absolute inset-x-0 bottom-4 flex justify-center opacity-0 transition duration-300 group-hover:opacity-100">

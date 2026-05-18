@@ -1,18 +1,19 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-type ProductItem = {
+export type ProductItem = {
     productId: string;
     quantity: number;
-}
+};
 
 interface ShoppingCart {
-    productIds: string[];
+    items: Record<string, ProductItem>;
 }
 
 interface CartState {
     shoppingCarts: Record<string, ShoppingCart>;
-    addProduct: (shoppingSlug: string, productId: string) => void;
+    addToCart: (shoppingSlug: string, item: ProductItem) => void;
+    setQuantity: (shoppingSlug: string, productId: string, quantity: number) => void;
     removeProduct: (shoppingSlug: string, productId: string) => void;
     clearCart: (shoppingSlug: string) => void;
     clearAllCarts: () => void;
@@ -22,39 +23,65 @@ export const useCartShopping = create<CartState>()(
     persist(
         (set) => ({
             shoppingCarts: {},
-            addProduct: (shoppingSlug, productId) =>
-                set((state) => ({
-                    shoppingCarts: {
+            addToCart: (shoppingSlug, item) =>
+                set((state) => {
+                    const cart = state.shoppingCarts[shoppingSlug]?.items || {};
+
+                    const existing = cart[item.productId];
+
+                    return {
                         ...state.shoppingCarts,
                         [shoppingSlug]: {
-                            productIds: [
-                                ...(state.shoppingCarts[shoppingSlug]?.productIds ||
-                                    []),
-                                productId,
-                            ],
+                            items: {
+                                ...cart,
+                                [item.productId]: {
+                                    productId: item.productId,
+                                    quantity: (existing?.quantity || 0) + item.quantity,
+                                },
+                            },
                         },
-                    },
-                })),
+                    };
+                }),
+            setQuantity: (shoppingSlug, productId, quantity) =>
+                set((state) => {
+                    const cart = state.shoppingCarts[shoppingSlug]?.items || {};
+
+                    if (!cart[productId]) return state;
+
+                    return {
+                        shoppingCarts: {
+                            ...state.shoppingCarts,
+                            [shoppingSlug]: {
+                                items: {
+                                    [productId]: {
+                                        ...cart[productId],
+                                        quantity,
+                                    },
+                                },
+                            },
+                        },
+                    };
+                }),
             removeProduct: (shoppingSlug, productId) =>
-                set((state) => ({
-                    shoppingCarts: {
+                set((state) => {
+                    const cart = state.shoppingCarts[shoppingSlug]?.items || {};
+
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { [productId]: _, ...rest } = cart;
+
+                    return {
                         ...state.shoppingCarts,
                         [shoppingSlug]: {
-                            productIds:
-                                state.shoppingCarts[
-                                    shoppingSlug
-                                ]?.productIds.filter(
-                                    (id) => id !== productId,
-                                ) || [],
+                            items: rest,
                         },
-                    },
-                })),
+                    };
+                }),
             clearCart: (shoppingSlug) =>
                 set((state) => ({
                     shoppingCarts: {
                         ...state.shoppingCarts,
                         [shoppingSlug]: {
-                            productIds: [],
+                            items: {},
                         },
                     },
                 })),

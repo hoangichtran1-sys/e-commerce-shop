@@ -32,13 +32,20 @@ const products: Product[] = [
         price: 399,
         rating: 5,
     },
+    {
+        id: 4,
+        title: "Eclax Cage Pack",
+        image: "https://assets.shadcnstore.com/shadcnstore.com/stock/e-commerce/eclax-cage-pack.600w.03040e.avif",
+        price: 399,
+        rating: 5,
+    },
 ];
 
 export const ProductsRelated = () => {
     return (
         <section className="px-12 py-6 mt-6">
         <h2 className='text-2xl font-bold text-balance md:text-xl mb-6'>Products Related</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
             {products.map((product) => (
                 <Card key={product.id} className="group overflow-hidden transition-all hover:shadow-lg">
                     <CardContent className="flex flex-col gap-4">

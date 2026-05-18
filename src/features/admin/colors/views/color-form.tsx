@@ -4,26 +4,11 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
-import {
-    useMutation,
-    useQueryClient,
-    useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { PlusCircleIcon, TrashIcon } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from "@/components/ui/field";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Hint } from "@/components/hint";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -42,10 +27,7 @@ const formSchema = z.object({
     name: z.string().min(1, "Name is required"),
     value: z
         .string()
-        .regex(
-            /^[#][0-9A-Fa-f]{6}$/,
-            "Color must be a valid hex color (e.g., #FFFFFF)",
-        )
+        .regex(/^[#][0-9A-Fa-f]{6}$/, "Color must be a valid hex color (e.g., #FFFFFF)")
         .transform((val) => val.toUpperCase()),
     categoryId: z.string().min(1),
 });
@@ -60,9 +42,7 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
         }),
     );
 
-    const { data: categories } = useSuspenseQuery(
-        orpc.categories.getMany.queryOptions({ input: { storeId } }),
-    );
+    const { data: categories } = useSuspenseQuery(orpc.categories.getMany.queryOptions({ input: { storeId } }));
 
     const categoriesFormatted = categories.map((category) => ({
         label: category.name,
@@ -160,10 +140,7 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
         await remove.mutateAsync({ id: colorId, storeId });
     };
 
-    const [RemoveConfirmation, confirmRemove] = useConfirm(
-        "Are you sure?",
-        "The following action will permanently remove this color",
-    );
+    const [RemoveConfirmation, confirmRemove] = useConfirm("Are you sure?", "The following action will permanently remove this color");
 
     const actionLabel = initialData ? "Save changes" : "Create";
 
@@ -171,19 +148,9 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
         <>
             <RemoveConfirmation />
             <div className="flex items-center justify-between">
-                <BreadcrumbHeader
-                    id={colorId}
-                    storeId={storeId}
-                    name={initialData?.name || "New"}
-                    topic="colors"
-                />
+                <BreadcrumbHeader id={colorId} storeId={storeId} name={initialData?.name || "New"} topic="colors" />
                 {initialData && (
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={edit.isPending || remove.isPending}
-                        onClick={handleRemove}
-                    >
+                    <Button variant="destructive" size="sm" disabled={edit.isPending || remove.isPending} onClick={handleRemove}>
                         <TrashIcon className="size-4" />
                     </Button>
                 )}
@@ -203,16 +170,10 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
                                 <form.Field
                                     name="name"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched &&
-                                            !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
-                                                <FieldLabel
-                                                    htmlFor={field.name}
-                                                >
-                                                    Name
-                                                </FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>Name</FieldLabel>
                                                 <Input
                                                     type="text"
                                                     placeholder="Color name"
@@ -220,22 +181,11 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
                                                     name={field.name}
                                                     value={field.state.value}
                                                     onBlur={field.handleBlur}
-                                                    onChange={(e) =>
-                                                        field.handleChange(
-                                                            e.target.value,
-                                                        )
-                                                    }
+                                                    onChange={(e) => field.handleChange(e.target.value)}
                                                     aria-invalid={isInvalid}
                                                     autoComplete="off"
                                                 />
-                                                {isInvalid && (
-                                                    <FieldError
-                                                        errors={
-                                                            field.state.meta
-                                                                .errors
-                                                        }
-                                                    />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -245,80 +195,37 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
                                 <form.Field
                                     name="categoryId"
                                     children={(field) => {
-                                        const isInvalid =
-                                            field.state.meta.isTouched &&
-                                            !field.state.meta.isValid;
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                         return (
                                             <Field data-invalid={isInvalid}>
-                                                <FieldLabel
-                                                    htmlFor={field.name}
-                                                >
-                                                    Category
-                                                </FieldLabel>
+                                                <FieldLabel htmlFor={field.name}>Category</FieldLabel>
                                                 <div className="flex items-center justify-start gap-2">
-                                                    <Select
-                                                        name={field.name}
-                                                        value={
-                                                            field.state.value
-                                                        }
-                                                        onValueChange={
-                                                            field.handleChange
-                                                        }
-                                                    >
-                                                        <SelectTrigger
-                                                            id="select-category"
-                                                            aria-invalid={
-                                                                isInvalid
-                                                            }
-                                                            className="w-full"
-                                                        >
+                                                    <Select name={field.name} value={field.state.value} onValueChange={field.handleChange}>
+                                                        <SelectTrigger id="select-category" aria-invalid={isInvalid} className="w-full">
                                                             <SelectValue placeholder="Select category" />
                                                         </SelectTrigger>
                                                         <SelectContent position="popper">
-                                                            {categoriesFormatted.map(
-                                                                (item) => (
-                                                                    <SelectItem
-                                                                        key={
-                                                                            item.value
-                                                                        }
-                                                                        value={
-                                                                            item.value
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            item.label
-                                                                        }
-                                                                    </SelectItem>
-                                                                ),
-                                                            )}
+                                                            {categoriesFormatted.map((item) => (
+                                                                <SelectItem key={item.value} value={item.value}>
+                                                                    {item.label}
+                                                                </SelectItem>
+                                                            ))}
                                                         </SelectContent>
                                                     </Select>
-                                                    {categoriesFormatted.length ===
-                                                        0 && (
+                                                    {categoriesFormatted.length === 0 && (
                                                         <Hint text="New category">
                                                             <Button
                                                                 size="icon-sm"
                                                                 type="button"
                                                                 variant="outline"
-                                                                onClick={() =>
-                                                                    router.push(
-                                                                        `/admin/${storeId}/categories/new`,
-                                                                    )
-                                                                }
+                                                                onClick={() => router.push(`/admin/${storeId}/categories/new`)}
                                                             >
                                                                 <PlusCircleIcon className="size-4" />
                                                             </Button>
                                                         </Hint>
                                                     )}
                                                 </div>
-                                                {isInvalid && (
-                                                    <FieldError
-                                                        errors={
-                                                            field.state.meta
-                                                                .errors
-                                                        }
-                                                    />
-                                                )}
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                             </Field>
                                         );
                                     }}
@@ -331,33 +238,21 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
                             <form.Field
                                 name="value"
                                 children={(field) => {
-                                    const isInvalid =
-                                        field.state.meta.isTouched &&
-                                        !field.state.meta.isValid;
+                                    const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                     return (
                                         <Field data-invalid={isInvalid}>
                                             <FieldLabel htmlFor={field.name}>
                                                 Value
-                                                <span className="text-neutral-600">
-                                                    (Select color)
-                                                </span>
+                                                <span className="text-neutral-600">(Select color)</span>
                                             </FieldLabel>
                                             <InputColor
                                                 label=""
                                                 value={field.state.value}
-                                                onChange={(value) =>
-                                                    field.handleChange(value)
-                                                }
+                                                onChange={(value) => field.handleChange(value)}
                                                 onBlur={field.handleBlur}
                                                 className="mt-0"
                                             />
-                                            {isInvalid && (
-                                                <FieldError
-                                                    errors={
-                                                        field.state.meta.errors
-                                                    }
-                                                />
-                                            )}
+                                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                         </Field>
                                     );
                                 }}
@@ -371,19 +266,12 @@ export const ColorForm = ({ storeId, colorId }: ColorFormProps) => {
                         const isDirty =
                             values.name !== (initialData?.name || "") ||
                             values.value !== (initialData?.value || "") ||
-                            values.categoryId !==
-                                (initialData?.categoryId || "");
+                            values.categoryId !== (initialData?.categoryId || "");
 
-                        const isDisabled = initialData
-                            ? !isDirty || edit.isPending
-                            : create.isPending;
+                        const isDisabled = initialData ? !isDirty || edit.isPending : create.isPending;
 
                         return (
-                            <Button
-                                disabled={isDisabled || remove.isPending}
-                                type="submit"
-                                className="ml-auto"
-                            >
+                            <Button disabled={isDisabled || remove.isPending} type="submit" className="ml-auto">
                                 {actionLabel}
                             </Button>
                         );
