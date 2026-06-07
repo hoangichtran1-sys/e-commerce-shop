@@ -27,12 +27,12 @@ export const NoResults = ({ icon: Icon = InboxIcon, topic = "items", isAdmin = f
             </EmptyHeader>
             <EmptyContent>
                 <div className="flex items-center gap-x-4">
-                    <Button onClick={() => router.refresh()} variant="outline">
+                    <Button type="button" onClick={() => router.refresh()} variant="outline">
                         <RefreshCcwIcon />
                         Refresh
                     </Button>
                     {isAdmin && (
-                        <Button onClick={() => router.push("/admin")} variant="secondary">
+                        <Button type="button" onClick={() => router.push("/admin")} variant="secondary">
                             <PlusIcon />
                             Add {topic}
                         </Button>

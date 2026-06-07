@@ -1,14 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { toast } from "sonner";
-import {
-    Item,
-    ItemMedia,
-    ItemContent,
-    ItemTitle,
-    ItemDescription,
-    ItemActions,
-} from "@/components/ui/item";
+import { Item, ItemMedia, ItemContent, ItemTitle, ItemDescription, ItemActions } from "@/components/ui/item";
 import { SupportIcon } from "@/components/support-icon";
 import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
@@ -31,10 +24,7 @@ export const PromotionItem = ({ categoryId, item, storeId }: PromotionItemProps)
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
 
-    const duration =
-        item.startAt && item.endAt
-            ? `${format(item.startAt, "MMMM do, yyyy")} - ${format(item.endAt, "MMMM do, yyyy")}`
-            : "Unlimited";
+    const duration = item.startAt && item.endAt ? `${format(item.startAt, "MMMM do, yyyy")} - ${format(item.endAt, "MMMM do, yyyy")}` : "Unlimited";
 
     const disconnect = useMutation(
         orpc.categories.disconnect.mutationOptions({
@@ -45,11 +35,12 @@ export const PromotionItem = ({ categoryId, item, storeId }: PromotionItemProps)
                         input: { storeId },
                     }),
                 );
-                queryClient.invalidateQueries(
-                    orpc.promotions.getOne.queryOptions({
-                        input: { storeId, id: item.id },
+                queryClient.invalidateQueries({
+                    queryKey: orpc.promotions.getOne.key({
+                        input: { id: item.id, storeId },
                     }),
-                );
+                    refetchType: "all",
+                });
             },
             onError: (error) => {
                 toast.error(error.message);
@@ -83,36 +74,19 @@ export const PromotionItem = ({ categoryId, item, storeId }: PromotionItemProps)
             <ItemActions>
                 <Popover open={isOpen} onOpenChange={setIsOpen}>
                     <PopoverTrigger asChild>
-                        <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            className="rounded-full"
-                            aria-label="Disconnect"
-                        >
+                        <Button size="icon-sm" variant="ghost" className="rounded-full" aria-label="Disconnect">
                             <XIcon />
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent>
                         <div className="space-y-4">
                             <h4 className="font-semibold">Are you sure?</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Action will disconnect this promotion
-                            </p>
+                            <p className="text-sm text-muted-foreground">Action will disconnect this promotion</p>
                             <div className="flex justify-end gap-2">
-                                <Button
-                                    disabled={disconnect.isPending}
-                                    onClick={() => setIsOpen(false)}
-                                    size="sm"
-                                    variant="outline"
-                                >
+                                <Button disabled={disconnect.isPending} onClick={() => setIsOpen(false)} size="sm" variant="outline">
                                     Cancel
                                 </Button>
-                                <Button
-                                    disabled={disconnect.isPending}
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={handleDisconnect}
-                                >
+                                <Button disabled={disconnect.isPending} variant="destructive" size="sm" onClick={handleDisconnect}>
                                     Confirm
                                 </Button>
                             </div>

@@ -4,8 +4,9 @@ import { ORPCError } from "@orpc/client";
 import { z } from "zod";
 import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 import cloudinary from "@/lib/cloudinary";
-import { createProductSchema, updateProductSchema } from "../schemas";
+import { createProductWithVariantsSchema, updateProductWithVariantsSchema, variantItemSchema } from "../schemas";
 import { Prisma } from "@/generated/prisma/client";
+import { checkDuplicate, generateSearchable, getMinPrice } from "@/lib/utils";
 
 export const productsRouter = base.router({
     upload: admin
@@ -47,34 +48,66 @@ export const productsRouter = base.router({
                 id: uploadCreated.id,
             };
         }),
-    create: admin.input(createProductSchema).handler(async ({ input }) => {
-        const { storeId, categoryId, sizeId, colorId, name, sku, price, status, inStock, isFeatured, images, description, quantity } = input;
+    create: admin.input(createProductWithVariantsSchema).handler(async ({ input }) => {
+        const { storeId, categoryId, name, status, isFeatured, images, description, variants, features } = input;
+        const skuInput = variants.map((variant) => variant.sku);
 
-        const existingProduct = await prisma.product.findUnique({
+        const isDuplicateSku = checkDuplicate(skuInput);
+        if (isDuplicateSku) {
+            throw new ORPCError("CONFLICT");
+        }
+
+        const existing = await prisma.productVariant.findFirst({
             where: {
-                sku: input.sku,
+                storeId,
+                sku: {
+                    in: skuInput,
+                },
             },
         });
 
-        if (existingProduct) {
+        if (existing) {
             throw new ORPCError("CONFLICT");
         }
+
+        const category = await prisma.category.findUnique({
+            where: {
+                id: categoryId,
+            },
+        });
+
+        if (!category || category.parentId === null) {
+            throw new ORPCError("BAD_REQUEST");
+        }
+
+        const searchableAttrs = generateSearchable(variants);
+        const minPrice = getMinPrice(variants);
+        const maxPrice = getMinPrice(variants);
 
         return await prisma.$transaction(async (tx) => {
             const productCreated = await tx.product.create({
                 data: {
                     storeId,
                     categoryId,
-                    sizeId,
-                    colorId,
                     name,
-                    sku,
-                    price: Prisma.Decimal(price),
                     status,
-                    inStock,
                     isFeatured,
                     description,
-                    quantity,
+                    maxPrice,
+                    minPrice,
+                    features,
+                    searchableAttributes: searchableAttrs,
+                    variants: {
+                        createMany: {
+                            data: variants.map((variant) => ({
+                                storeId,
+                                sku: variant.sku,
+                                stock: variant.stock,
+                                combination: variant.combination,
+                                price: Prisma.Decimal(variant.price),
+                            })),
+                        },
+                    },
                 },
             });
 
@@ -96,14 +129,11 @@ export const productsRouter = base.router({
                 });
             }
 
-            return {
-                ...productCreated,
-                price: productCreated.price.toNumber(),
-            };
+            return productCreated;
         });
     }),
-    update: admin.input(updateProductSchema).handler(async ({ input }) => {
-        const { id, storeId, categoryId, sizeId, colorId, name, sku, price, status, inStock, isFeatured, images, description, quantity } = input;
+    update: admin.input(updateProductWithVariantsSchema).handler(async ({ input }) => {
+        const { id, storeId, categoryId, name, status, isFeatured, images, description, variants, features } = input;
 
         const product = await prisma.product.findUnique({
             where: {
@@ -116,6 +146,10 @@ export const productsRouter = base.router({
             throw new ORPCError("NOT_FOUND");
         }
 
+        const searchableAttrs = generateSearchable(variants);
+        const minPrice = getMinPrice(variants);
+        const maxPrice = getMinPrice(variants);
+
         return await prisma.$transaction(async (tx) => {
             const oldImages = await tx.productImage.findMany({
                 where: { productId: id },
@@ -126,16 +160,36 @@ export const productsRouter = base.router({
                 where: { id },
                 data: {
                     categoryId,
-                    sizeId,
-                    colorId,
                     name,
-                    sku,
-                    price: Prisma.Decimal(price),
                     status,
-                    inStock,
                     isFeatured,
                     description,
-                    quantity,
+                    maxPrice,
+                    minPrice,
+                    features,
+                    searchableAttributes: searchableAttrs,
+                    variants: {
+                        upsert: variants.map((variant) => ({
+                            where: {
+                                storeId_sku: {
+                                    storeId,
+                                    sku: variant.sku,
+                                },
+                            },
+                            update: {
+                                stock: variant.stock,
+                                combination: variant.combination,
+                                price: new Prisma.Decimal(variant.price),
+                            },
+                            create: {
+                                storeId,
+                                sku: variant.sku,
+                                stock: variant.stock,
+                                combination: variant.combination,
+                                price: new Prisma.Decimal(variant.price),
+                            },
+                        })),
+                    },
                 },
             });
 
@@ -163,12 +217,60 @@ export const productsRouter = base.router({
                 });
             }
 
-            return {
-                ...productUpdated,
-                price: productUpdated.price.toNumber(),
-            };
+            return productUpdated;
         });
     }),
+    updateVariants: admin
+        .input(
+            z.object({
+                storeId: z.string().min(1),
+                productId: z.string().min(1),
+                variants: z.array(variantItemSchema).min(1),
+            }),
+        )
+        .handler(async ({ input }) => {
+            const { storeId, productId, variants } = input;
+            const product = await prisma.product.findUnique({
+                where: {
+                    id: productId,
+                    storeId,
+                },
+            });
+
+            if (!product) {
+                throw new ORPCError("NOT_FOUND");
+            }
+
+            const productUpdated = await prisma.product.update({
+                where: { id: productId },
+                data: {
+                    variants: {
+                        upsert: variants.map((variant) => ({
+                            where: {
+                                storeId_sku: {
+                                    storeId,
+                                    sku: variant.sku,
+                                },
+                            },
+                            update: {
+                                stock: variant.stock,
+                                combination: variant.combination,
+                                price: new Prisma.Decimal(variant.price),
+                            },
+                            create: {
+                                storeId,
+                                sku: variant.sku,
+                                stock: variant.stock,
+                                combination: variant.combination,
+                                price: new Prisma.Decimal(variant.price),
+                            },
+                        })),
+                    },
+                },
+            });
+
+            return productUpdated;
+        }),
     delete: admin
         .input(
             z.object({
@@ -217,7 +319,7 @@ export const productsRouter = base.router({
 
             return productDeleted;
         }),
-    toggleInStock: admin
+    toggleFeatured: admin
         .input(
             z.object({
                 id: z.string().min(1),
@@ -235,43 +337,15 @@ export const productsRouter = base.router({
                 throw new ORPCError("NOT_FOUND");
             }
 
-            const toggleInStockProduct = await prisma.product.update({
+            const toggleFeaturedProduct = await prisma.product.update({
                 where: { id: input.id },
                 data: {
-                    inStock: !product.inStock,
+                    isFeatured: !product.isFeatured,
                 },
             });
 
-            return toggleInStockProduct;
+            return toggleFeaturedProduct;
         }),
-    quantityChange: admin
-            .input(
-                z.object({
-                    id: z.string().min(1),
-                    storeId: z.string().min(1),
-                    quantity: z.number().int().min(1),
-                }),
-            )
-            .handler(async ({ input }) => {
-                const product = await prisma.product.findUnique({
-                    where: {
-                        id: input.id,
-                        storeId: input.storeId,
-                    },
-                });
-                if (!product) {
-                    throw new ORPCError("NOT_FOUND");
-                }
-    
-                const quantityChangeProduct = await prisma.product.update({
-                    where: { id: input.id },
-                    data: {
-                        quantity: input.quantity,
-                    },
-                });
-    
-                return quantityChangeProduct;
-            }),
     getOne: admin
         .input(
             z.object({
@@ -287,6 +361,14 @@ export const productsRouter = base.router({
                 },
                 include: {
                     images: true,
+                    variants: true,
+                    category: {
+                        select: {
+                            id: true,
+                            name: true,
+                            parentId: true,
+                        },
+                    },
                 },
             });
 
@@ -296,7 +378,12 @@ export const productsRouter = base.router({
 
             return {
                 ...product,
-                price: product.price.toNumber(),
+                minPrice: product.minPrice.toNumber(),
+                maxPrice: product.maxPrice.toNumber(),
+                variants: product.variants.map((variant) => ({
+                    ...variant,
+                    price: variant.price.toNumber(),
+                })),
             };
         }),
     getMany: admin.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
@@ -305,9 +392,20 @@ export const productsRouter = base.router({
                 storeId: input.storeId,
             },
             include: {
-                category: true,
-                size: true,
-                color: true,
+                category: {
+                    include: {
+                        parent: true,
+                    },
+                },
+                variants: true,
+                images: true,
+                reviews: true,
+                _count: {
+                    select: {
+                        reviews: true,
+                        favorites: true,
+                    },
+                },
             },
             orderBy: {
                 createdAt: "desc",
@@ -316,40 +414,14 @@ export const productsRouter = base.router({
 
         const productsFormatted = products.map((product) => ({
             ...product,
-            price: product.price.toNumber(),
+            minPrice: product.minPrice.toNumber(),
+            maxPrice: product.maxPrice.toNumber(),
+            variants: product.variants.map((variant) => ({
+                ...variant,
+                price: variant.price.toNumber(),
+            })),
         }));
 
         return productsFormatted;
     }),
-    getManyByCategory: admin
-        .input(
-            z.object({
-                storeId: z.string().min(1),
-                categoryId: z.string().min(1),
-            }),
-        )
-        .handler(async ({ input }) => {
-            const products = await prisma.product.findMany({
-                where: {
-                    storeId: input.storeId,
-                    categoryId: input.categoryId,
-                    status: "PUBLISHED",
-                },
-                include: {
-                    category: true,
-                    size: true,
-                    color: true,
-                },
-                orderBy: {
-                    createdAt: "desc",
-                },
-            });
-
-            const productsFormatted = products.map((product) => ({
-                ...product,
-                price: product.price.toNumber(),
-            }));
-
-            return productsFormatted;
-        }),
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMountedState } from "react-use";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { ImageUpIcon, LockIcon, LogOutIcon, PackageCheckIcon } from "lucide-react";
@@ -10,13 +11,15 @@ import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { GeneratedAvatar } from "@/components/generated-avatar";
 
 export const UserMenu = () => {
+    const isMounted = useMountedState();
+
     const router = useRouter();
 
     const session = authClient.useSession();
 
     const currentUser = session?.data?.user;
 
-    if (!currentUser) {
+    if (!currentUser || !isMounted) {
         return null;
     }
 

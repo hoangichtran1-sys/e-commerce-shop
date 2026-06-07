@@ -1,5 +1,6 @@
+import { ConfettiProvider } from "@/providers/confetti-provider";
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -7,18 +8,18 @@ interface LayoutProps {
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-plus-jakarta" });
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  display: 'swap',
-});
-
 export const metadata: Metadata = {
     title: "E-commerce store",
     description: "E-commerce store",
 };
 
 const Layout = ({ children }: LayoutProps) => {
-    return <div className={`${plusJakartaSans.variable}`}>{children}</div>;
+    return (
+        <div className={`${plusJakartaSans.variable}`}>
+            <ConfettiProvider />
+            {children}
+        </div>
+    );
 };
 
 export default Layout;

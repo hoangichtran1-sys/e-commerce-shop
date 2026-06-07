@@ -4,439 +4,534 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
 }
 
 enum UploadType {
-  BILLBOARD
-  PRODUCT
-  STORE
+    BILLBOARD
+    PRODUCT
+    STORE
 }
 
 enum BillboardStatus {
-  ACTIVE
-  INACTIVE
+    ACTIVE
+    INACTIVE
+}
+
+enum AttributeType {
+    COLOR
+    SIZE
+    MATERIAL
 }
 
 enum ProductStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+    DRAFT
+    PUBLISHED
+    ARCHIVED
 }
 
 enum OrderStatus {
-  PENDING
-  PAID
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-  REFUND
+    PENDING
+    PAID
+    PROCESSING
+    SHIPPED
+    DELIVERED
+    CANCELLED
+    REFUND
 }
 
 enum PromotionType {
-  PERCENT
-  FIXED
+    PERCENT
+    FIXED
 }
 
 enum PromotionMode {
-  COUPON
-  CATEGORY_CAMPAIGN
+    COUPON
+    CATEGORY_CAMPAIGN
+}
+
+enum ReactionType {
+    LIKE
+    DISLIKE
+}
+
+enum ReviewReportReason {
+    SPAM
+    OFFENSIVE
+    FAKE_REVIEW
+    MISLEADING
+    OTHER
 }
 
 enum AutoReplyType {
-  NEGATIVE
-  POSITIVE
-  NORMAL
+    NEGATIVE
+    POSITIVE
+    NORMAL
 }
 
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  role          String    @default("customer")
+    id            String   @id
+    name          String
+    email         String
+    emailVerified Boolean  @default(false)
+    image         String?
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    role          String   @default("customer")
 
-  sessions      Session[]
-  accounts      Account[]
-  stores        Store[]
-  reviews       Review[]
-  orders        Order[]
+    sessions  Session[]
+    accounts  Account[]
+    stores    Store[]
+    reviews   Review[]
+    orders    Order[]
+    favorites Favorite[]
+    reactions ReviewReaction[]
+    reports   ReviewReport[]
 
-  stripeCustomer StripeCustomer?
+    stripeCustomer StripeCustomer?
 
-  @@unique([email])
-  @@map("user")
+    @@unique([email])
+    @@map("user")
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    id        String   @id
+    expiresAt DateTime
+    token     String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    ipAddress String?
+    userAgent String?
+    userId    String
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
-  @@index([userId])
-  @@map("session")
+    @@unique([token])
+    @@index([userId])
+    @@map("session")
 }
 
 model Account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+    id                    String    @id
+    accountId             String
+    providerId            String
+    userId                String
+    user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    accessToken           String?
+    refreshToken          String?
+    idToken               String?
+    accessTokenExpiresAt  DateTime?
+    refreshTokenExpiresAt DateTime?
+    scope                 String?
+    password              String?
+    createdAt             DateTime  @default(now())
+    updatedAt             DateTime  @updatedAt
 
-  @@index([userId])
-  @@map("account")
+    @@index([userId])
+    @@map("account")
 }
 
 model Verification {
-  id         String   @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+    id         String   @id
+    identifier String
+    value      String
+    expiresAt  DateTime
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
 
-  @@index([identifier])
-  @@map("verification")
+    @@index([identifier])
+    @@map("verification")
 }
 
 model Upload {
-  id          String   @id @default(uuid())
-  publicId    String   @unique
-  url         String   @unique
-  refType     UploadType
-  mimetype    String?
-  size        Int?
-  isLinked    Boolean  @default(false)
-  createdAt   DateTime @default(now())
+    id        String     @id @default(uuid())
+    publicId  String     @unique
+    url       String     @unique
+    refType   UploadType
+    mimetype  String?
+    size      Int?
+    isLinked  Boolean    @default(false)
+    createdAt DateTime   @default(now())
 
-  @@index([mimetype])
-  @@index([isLinked, createdAt])
-  @@index([refType])
+    @@index([mimetype])
+    @@index([isLinked, createdAt])
+    @@index([refType])
 }
 
 model Store {
-  id          String @id @default(uuid())
-  name        String
-  slug        String @unique
-  thumbnail   String? 
-  description String? @db.Text
-  isFeatured  Boolean @default(false)
-  userId      String
+    id          String  @id @default(uuid())
+    name        String
+    slug        String  @unique
+    thumbnail   String?
+    description String? @db.Text
+    isFeatured  Boolean @default(false)
+    userId      String
 
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  billboards  Billboard[] @relation("StoreToBillboard")
-  categories  Category[]  @relation("StoreToCategory")
-  sizes       Size[]      @relation("StoreToSize")
-  colors      Color[]     @relation("StoreToColor")
-  products    Product[]   @relation("StoreToProduct")
-  orders      Order[]     @relation("StoreToOrder")
-  promotions  Promotion[] @relation("StoreToPromotion")
-  coupons     Coupon[]    @relation("StoreToCoupon")
-  reviews     Review[]    @relation("StoreToReview")
-  autoReplies AutoReply[] @relation("StoreToAutoReply")   
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+    billboards  Billboard[] @relation("StoreToBillboard")
+    attributes  Attribute[] @relation("StoreToAttribute")
+    categories  Category[]  @relation("StoreToCategory")
+    products    Product[]   @relation("StoreToProduct")
+    orders      Order[]     @relation("StoreToOrder")
+    promotions  Promotion[] @relation("StoreToPromotion")
+    coupons     Coupon[]    @relation("StoreToCoupon")
+    reviews     Review[]    @relation("StoreToReview")
+    autoReplies AutoReply[] @relation("StoreToAutoReply")
 
-  @@index([userId])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([userId])
 }
 
 model Billboard {
-  id         String @id @default(uuid())
-  storeId    String
-  label      String
-  imageUrl   String
-  isGlobal   Boolean @default(false)
-  isActive   Boolean @default(false)
-  priority   Int @default(0)
+    id       String  @id @default(uuid())
+    storeId  String
+    label    String
+    imageUrl String
+    isGlobal Boolean @default(false)
+    isActive Boolean @default(false)
+    priority Int     @default(0)
 
-  store      Store @relation("StoreToBillboard", fields: [storeId], references: [id])
-  categories Category[]
+    store      Store      @relation("StoreToBillboard", fields: [storeId], references: [id])
+    categories Category[]
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  @@index([storeId, isGlobal, isActive, priority])
+    @@index([storeId, isGlobal, isActive, priority])
 }
 
 model Category {
-  id          String @id @default(uuid())
-  storeId     String
-  billboardId String
-  name        String
+    id          String  @id @default(uuid())
+    storeId     String
+    billboardId String?
+    parentId    String?
+    name        String
+    slug        String
 
-  sizes       Size[]      @relation("CategoryToSize")
-  colors      Color[]     @relation("CategoryToColor")
-  products    Product[]   @relation("CategoryToProduct")
-  promotions  Promotion[] @relation("CategoryToPromotion")
+    children   Category[]  @relation("CategoryToSub")
+    products   Product[]   @relation("CategoryToProduct")
+    promotions Promotion[] @relation("CategoryToPromotion")
 
-  store       Store @relation("StoreToCategory", fields: [storeId], references: [id])
-  billboard   Billboard @relation(fields: [billboardId], references: [id])
+    store     Store      @relation("StoreToCategory", fields: [storeId], references: [id])
+    billboard Billboard? @relation(fields: [billboardId], references: [id])
+    parent    Category?  @relation("CategoryToSub", fields: [parentId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  @@index([storeId])
-  @@index([billboardId])
+    @@unique([storeId, slug])
+    @@index([storeId, parentId])
+    @@index([storeId, billboardId])
 }
 
-model Size {
-  id          String @id @default(uuid())
-  storeId     String
-  categoryId  String
-  name        String
-  value       String @db.VarChar(10)
+model Attribute {
+    id      String           @id @default(uuid())
+    storeId String
+    name    String
+    type    AttributeType
+    values  AttributeValue[]
 
-  products    Product[]
+    store Store @relation("StoreToAttribute", fields: [storeId], references: [id])
 
-  store       Store @relation("StoreToSize", fields: [storeId], references: [id])
-  category    Category @relation("CategoryToSize", fields: [categoryId], references: [id])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([storeId, categoryId])
-  @@unique([storeId, categoryId, value])
+    @@index([storeId, type])
 }
 
-model Color {
-  id          String @id @default(uuid())
-  storeId     String
-  categoryId  String
-  name        String
-  value       String @db.VarChar(10)
+model AttributeValue {
+    id          String @id @default(uuid())
+    value       String
+    attributeId String
 
-  products    Product[]
+    attribute Attribute @relation(fields: [attributeId], references: [id])
 
-  store       Store @relation("StoreToColor", fields: [storeId], references: [id])
-  category    Category @relation("CategoryToColor", fields: [categoryId], references: [id])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([storeId, categoryId])
-  @@unique([storeId, categoryId, value])
+    @@index([attributeId])
 }
 
 model Product {
-  id          String @id @default(uuid())
-  storeId     String
-  categoryId  String
-  sizeId      String
-  colorId     String
-  name        String
-  sku         String @unique @db.VarChar(50)
-  description String? @db.Text
-  price       Decimal
-  status      ProductStatus
-  inStock     Boolean @default(false)
-  isFeatured  Boolean @default(false)
+    id          String        @id @default(uuid())
+    storeId     String
+    categoryId  String
+    name        String
+    description String?       @db.Text
+    isFeatured  Boolean       @default(false)
+    status      ProductStatus
 
-  quantity    Int @default(1)
-  soldCount   Int @default(0)
+    minPrice Decimal @default(0)
+    maxPrice Decimal @default(0)
 
-  images      ProductImage[]
-  orderItems  OrderItem[]
-  reviews     Review[]
+    soldCount            Int      @default(0)
+    features             String[]
+    searchableAttributes String[]
 
-  store       Store @relation("StoreToProduct", fields: [storeId], references: [id])
-  category    Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
-  size        Size @relation(fields: [sizeId], references: [id])
-  color       Color @relation(fields: [colorId], references: [id])
+    reviews   Review[]
+    variants  ProductVariant[]
+    images    ProductImage[]
+    favorites Favorite[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+    store    Store    @relation("StoreToProduct", fields: [storeId], references: [id])
+    category Category @relation("CategoryToProduct", fields: [categoryId], references: [id])
 
-  @@index([storeId, categoryId, price])
-  @@index([storeId, price])
-  @@index([storeId, status, isFeatured, createdAt])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([storeId, status, categoryId, isFeatured])
+    @@index([storeId, status, minPrice])
+    @@index([storeId, status, maxPrice])
+    @@index([searchableAttributes], type: Gin)
+}
+
+model ProductVariant {
+    id        String @id @default(uuid())
+    productId String
+    storeId   String
+
+    sku   String  @db.VarChar(50)
+    price Decimal
+    stock Int     @default(0)
+
+    combination Json
+
+    orderItems OrderItem[]
+
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([storeId, sku])
+    @@index([storeId, productId])
 }
 
 model ProductImage {
-  id        String @id @default(uuid())
-  productId String
-  url       String
+    id        String @id @default(uuid())
+    productId String
+    url       String
 
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  @@index([productId])
+    @@index([productId])
+}
+
+model Favorite {
+    id        String @id @default(uuid())
+    userId    String
+    productId String
+
+    user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, productId])
+    @@index([userId])
+    @@index([productId])
 }
 
 model Order {
-  id            String @id @default(uuid())
-  orderCode     String
-  storeId       String
-  couponId      String?
-  userId        String
-  status        OrderStatus
-  phone         String @default("")
-  address       String @default("")
+    id        String      @id @default(uuid())
+    orderCode String
+    storeId   String
+    couponId  String?
+    userId    String
+    status    OrderStatus
+    phone     String      @default("")
+    address   String      @default("")
 
-  country       String?
-  email         String?
-  name          String?
+    country String?
+    email   String?
+    name    String?
 
-  transactionId String? @unique
-  receiptUrl    String?
+    transactionId String? @unique
+    receiptUrl    String?
 
-  currency      String  @default("usd")
-  amountPaid    Decimal?
-  shippingFee   Float   @default(0)
+    currency   String   @default("usd")
+    amountPaid Decimal?
 
-  orderItems    OrderItem[]
+    discountSnapshot Json?
 
-  coupon        Coupon? @relation(fields: [couponId], references: [id])
-  store         Store @relation("StoreToOrder", fields: [storeId], references: [id])
-  user          User @relation(fields: [userId], references: [id])
+    orderItems OrderItem[]
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+    coupon Coupon? @relation(fields: [couponId], references: [id])
+    store  Store   @relation("StoreToOrder", fields: [storeId], references: [id])
+    user   User    @relation(fields: [userId], references: [id])
 
-  @@index([storeId, status])
-  @@index([couponId, userId])
-  @@unique([storeId, orderCode])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([storeId, orderCode])
+    @@index([storeId, status])
+    @@index([couponId, userId, status])
 }
 
 model OrderItem {
-  id        String @id @default(uuid())
-  orderId   String
-  productId String
-  quantity  Int @default(1)
+    id               String  @id @default(uuid())
+    orderId          String
+    productVariantId String
+    originalPrice    Decimal
+    finalPrice       Decimal
+    quantity         Int     @default(1)
 
-  order     Order @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+    order          Order          @relation(fields: [orderId], references: [id])
+    productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
 
-  createdAt DateTime @default(now())
+    createdAt DateTime @default(now())
 
-  @@index([orderId])
-  @@index([productId])
+    @@index([orderId])
+    @@index([productVariantId])
 }
 
 model Promotion {
-  id         String @id @default(uuid())
-  name       String
-  storeId    String
-  type       PromotionType
-  mode       PromotionMode
-  value      Float
-  startAt    DateTime
-  endAt      DateTime
-  isActive   Boolean @default(false)
+    id       String        @id @default(uuid())
+    name     String
+    storeId  String
+    type     PromotionType
+    mode     PromotionMode
+    value    Float
+    startAt  DateTime
+    endAt    DateTime
+    isActive Boolean       @default(false)
 
-  priority         Int    @default(0)
-  minOrderValue    Float  @default(0)
-  maxDiscountValue Float?
+    priority         Int    @default(0)
+    minOrderValue    Float  @default(0)
+    maxDiscountValue Float?
 
-  coupons    Coupon[]
-  categories Category[] @relation("CategoryToPromotion")
+    coupons    Coupon[]
+    categories Category[] @relation("CategoryToPromotion")
 
-  store      Store @relation("StoreToPromotion", fields: [storeId], references: [id])
+    store Store @relation("StoreToPromotion", fields: [storeId], references: [id])
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  @@index([storeId, isActive, startAt, endAt, priority])
-  @@index([storeId, mode])
+    @@index([storeId, isActive, startAt, endAt, priority])
+    @@index([storeId, mode])
 }
 
 model Coupon {
-  id           String @id @default(uuid())
-  storeId      String
-  promotionId  String
-  code         String @unique
+    id          String @id @default(uuid())
+    storeId     String
+    promotionId String
+    code        String
 
-  usageLimit   Int? @default(1)
-  usedCount    Int  @default(0)
-  perUserLimit Int? @default(1)
+    usageLimit   Int? @default(1)
+    usedCount    Int  @default(0)
+    perUserLimit Int? @default(1)
 
-  orders       Order[]
+    orders Order[]
 
-  promotion    Promotion @relation(fields: [promotionId], references: [id])
-  store        Store     @relation("StoreToCoupon", fields: [storeId], references: [id])
+    promotion Promotion @relation(fields: [promotionId], references: [id])
+    store     Store     @relation("StoreToCoupon", fields: [storeId], references: [id])
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  @@index([storeId, code])
-  @@index([promotionId])
+    @@unique([storeId, code])
+    @@index([promotionId])
 }
 
 model Review {
-  id          String @id @default(uuid())
-  storeId     String
-  userId      String
-  productId   String
-  autoReplyId String?
-  rating      Int     @db.SmallInt @default(0)
-  feedback    String? @db.Text
+    id          String  @id @default(uuid())
+    storeId     String
+    userId      String
+    productId   String
+    autoReplyId String?
+    rating      Int     @default(0) @db.SmallInt
+    feedback    String? @db.Text
 
-  store       Store     @relation("StoreToReview", fields: [storeId], references: [id], onDelete: Cascade)
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  autoReply   AutoReply? @relation(fields: [autoReplyId], references: [id], onDelete: SetNull)
+    reportCount Int     @default(0)
+    isHidden    Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+    store     Store      @relation("StoreToReview", fields: [storeId], references: [id], onDelete: Cascade)
+    user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+    product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+    autoReply AutoReply? @relation(fields: [autoReplyId], references: [id], onDelete: SetNull)
 
-  @@index([storeId, productId])
-  @@index([storeId, rating])
-  @@unique([storeId, userId, productId])
+    reactions ReviewReaction[]
+    reports   ReviewReport[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([storeId, userId, productId])
+    @@index([storeId, productId, rating])
+}
+
+model ReviewReaction {
+    id       String       @id @default(uuid())
+    userId   String
+    reviewId String
+    type     ReactionType
+
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, reviewId])
+    @@index([userId])
+    @@index([reviewId])
+}
+
+model ReviewReport {
+    id String @id @default(uuid())
+
+    reviewId String
+    userId   String
+
+    type   ReviewReportReason
+    reason String?
+
+    createdAt DateTime @default(now())
+
+    review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([reviewId, userId])
+    @@index([userId])
+    @@index([reviewId])
 }
 
 model AutoReply {
-  id        String @id @default(uuid())
-  storeId   String
-  content   String @db.Text
-  type      AutoReplyType @default(NORMAL)
-  isActive  Boolean @default(false)
+    id       String        @id @default(uuid())
+    storeId  String
+    content  String        @db.Text
+    type     AutoReplyType @default(NORMAL)
+    isActive Boolean       @default(false)
 
-  reviews   Review[]
+    reviews Review[]
 
-  store       Store     @relation("StoreToAutoReply", fields: [storeId], references: [id])
+    store Store @relation("StoreToAutoReply", fields: [storeId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  @@index([storeId, isActive, type])
+    @@index([storeId, isActive, type])
 }
 
 model StripeCustomer {
-  id               String @id @default(uuid())
-  userId           String @unique
-  stripeCustomerId String @unique
+    id               String @id @default(uuid())
+    userId           String @unique
+    stripeCustomerId String @unique
 
-  user             User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }

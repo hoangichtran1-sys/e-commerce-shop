@@ -22,7 +22,7 @@ const Page = async ({ params }: PageProps) => {
     }
 
     await prefetch(
-        orpc.categories.getMany.queryOptions({
+        orpc.categories.getManyParent.queryOptions({
             input: { storeId },
         }),
     );
@@ -33,10 +33,7 @@ const Page = async ({ params }: PageProps) => {
                 <ErrorBoundary fallback={<p>Error!</p>}>
                     <div className="flex-col">
                         <div className="flex-1 space-y-4 p-8 pt-6">
-                            <PromotionForm
-                                storeId={storeId}
-                                promotionId={promotionId}
-                            />
+                            <PromotionForm storeId={storeId} promotionId={promotionId} />
                         </div>
                     </div>
                 </ErrorBoundary>

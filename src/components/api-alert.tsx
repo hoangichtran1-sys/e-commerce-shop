@@ -18,19 +18,12 @@ const textMap: Record<ApiAlertProps["variant"], string> = {
     admin: "Admin",
 };
 
-const variantMap: Record<
-    ApiAlertProps["variant"],
-    "secondary" | "destructive"
-> = {
+const variantMap: Record<ApiAlertProps["variant"], "secondary" | "destructive"> = {
     public: "secondary",
     admin: "destructive",
 };
 
-export const ApiAlert = ({
-    title,
-    description,
-    variant = "public",
-}: ApiAlertProps) => {
+export const ApiAlert = ({ title, description, variant = "public" }: ApiAlertProps) => {
     const isMounted = useMountedState();
 
     if (!isMounted) {
@@ -50,14 +43,8 @@ export const ApiAlert = ({
                 <Badge variant={variantMap[variant]}>{textMap[variant]}</Badge>
             </AlertTitle>
             <AlertDescription className="mt-4 flex items-center justify-between">
-                <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
-                    {description}
-                </code>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => onCopy(description)}
-                >
+                <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">{description}</code>
+                <Button variant="outline" size="icon" onClick={() => onCopy(description)}>
                     <CopyIcon className="size-4" />
                 </Button>
             </AlertDescription>

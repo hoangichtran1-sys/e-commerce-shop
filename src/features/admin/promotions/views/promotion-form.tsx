@@ -28,6 +28,7 @@ import { MultipleSelect } from "@/components/multiple-select";
 import { BreadcrumbHeader } from "@/components/breadcrumb-header";
 import { add } from "date-fns";
 import { ButtonGroup } from "@/components/ui/button-group";
+import InputNumber from "rc-input-number";
 
 interface PromotionFormProps {
     promotionId: string;
@@ -44,7 +45,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
         }),
     );
 
-    const { data: categories } = useSuspenseQuery(orpc.categories.getMany.queryOptions({ input: { storeId } }));
+    const { data: categories } = useSuspenseQuery(orpc.categories.getManyParent.queryOptions({ input: { storeId } }));
 
     const categoriesFormatted = categories.map((category) => ({
         label: category.name,
@@ -203,6 +204,11 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
         }
     }, [toggleDisplayDiscount]);
 
+    const isDisabledMode =
+        !!initialData &&
+        ((initialData.mode === "CATEGORY_CAMPAIGN" && initialData._count.categories > 0) ||
+            (initialData.mode === "COUPON" && initialData._count.coupons > 0));
+
     return (
         <>
             <RemoveConfirmation />
@@ -234,6 +240,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                             <FieldSet>
                                                 <FieldLegend>Mode</FieldLegend>
                                                 <RadioGroup
+                                                    disabled={isDisabledMode}
                                                     name={field.name}
                                                     value={field.state.value}
                                                     onValueChange={(value) => {
@@ -371,6 +378,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                     name="value"
                                     children={(field) => {
                                         const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+
                                         return (
                                             <Field data-invalid={isInvalid}>
                                                 <FieldLabel htmlFor={field.name}>Value</FieldLabel>
@@ -380,16 +388,16 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                         {type === "PERCENT" && <Label htmlFor="fixed">%</Label>}
                                                     </InputGroupAddon>
                                                     {type === "FIXED" && (
-                                                        <InputGroupInput
-                                                            type="number"
+                                                        <InputNumber
                                                             min={0}
                                                             step={0.01}
-                                                            placeholder="50"
+                                                            placeholder="60"
+                                                            className="ml-2 rounded-none border-none bg-transparent shadow-none ring-0 focus:outline-none text-sm"
                                                             id={field.name}
                                                             name={field.name}
                                                             value={field.state.value}
                                                             onBlur={field.handleBlur}
-                                                            onChange={(e) => field.handleChange(Number(e.target.value))}
+                                                            onChange={(value) => field.handleChange(value || 0)}
                                                             aria-invalid={isInvalid}
                                                             autoComplete="off"
                                                         />
@@ -400,7 +408,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                             min={1}
                                                             max={100}
                                                             step={1}
-                                                            placeholder="50"
+                                                            placeholder="15"
                                                             id={field.name}
                                                             name={field.name}
                                                             value={field.state.value}
@@ -425,7 +433,7 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                             return (
                                                 <Field data-invalid={isInvalid}>
-                                                    <FieldLabel htmlFor={field.name}>Limit code</FieldLabel>
+                                                    <FieldLabel htmlFor={field.name}>Priority</FieldLabel>
                                                     <ButtonGroup>
                                                         <Input
                                                             id={field.name}
@@ -494,16 +502,16 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                     <InputGroupAddon>
                                                         <Label htmlFor={field.name}>$</Label>
                                                     </InputGroupAddon>
-                                                    <InputGroupInput
-                                                        type="number"
+                                                    <InputNumber
                                                         min={0}
                                                         step={0.01}
                                                         placeholder="50"
                                                         id={field.name}
+                                                        className="ml-2 rounded-none border-0 bg-transparent shadow-none ring-0 focus:outline-none text-sm"
                                                         name={field.name}
                                                         value={field.state.value}
                                                         onBlur={field.handleBlur}
-                                                        onChange={(e) => field.handleChange(Number(e.target.value))}
+                                                        onChange={(value) => field.handleChange(value || 0)}
                                                         aria-invalid={isInvalid}
                                                         autoComplete="off"
                                                         disabled={mode === "CATEGORY_CAMPAIGN"}
@@ -556,16 +564,16 @@ export const PromotionForm = ({ storeId, promotionId }: PromotionFormProps) => {
                                                                 <InputGroupAddon>
                                                                     <Label htmlFor={field.name}>$</Label>
                                                                 </InputGroupAddon>
-                                                                <InputGroupInput
-                                                                    type="number"
+                                                                <InputNumber
                                                                     min={0.01}
                                                                     step={0.01}
                                                                     placeholder="50"
+                                                                    className="ml-2 rounded-none border-0 bg-transparent shadow-none ring-0 focus:outline-none text-sm"
                                                                     id={field.name}
                                                                     name={field.name}
-                                                                    value={field.state.value || 0.01}
+                                                                    value={field.state.value || 0}
                                                                     onBlur={field.handleBlur}
-                                                                    onChange={(e) => field.handleChange(Number(e.target.value))}
+                                                                    onChange={(value) => field.handleChange(value)}
                                                                     aria-invalid={isInvalid}
                                                                     autoComplete="off"
                                                                 />

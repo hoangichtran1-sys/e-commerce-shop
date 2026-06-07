@@ -102,10 +102,21 @@ export const billboardsRouter = base.router({
                     id: input.id,
                     storeId: input.storeId,
                 },
+                include: {
+                    _count: {
+                        select: { categories: true },
+                    },
+                },
             });
 
             if (!billboard) {
                 throw new ORPCError("NOT_FOUND");
+            }
+
+            if (input.isGlobal === true) {
+                if (billboard._count.categories > 0) {
+                    throw new ORPCError("BAD_REQUEST", { message: "Update scope failed because relation with category" });
+                }
             }
 
             const isImageChanged = input.newImageUrl !== billboard.imageUrl;
@@ -295,6 +306,11 @@ export const billboardsRouter = base.router({
                 where: {
                     id: input.id,
                     storeId: input.storeId,
+                },
+                include: {
+                    _count: {
+                        select: { categories: true },
+                    },
                 },
             });
 

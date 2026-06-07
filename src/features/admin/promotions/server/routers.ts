@@ -43,10 +43,30 @@ export const promotionsRouter = base.router({
                     id,
                     storeId,
                 },
+                include: {
+                    _count: {
+                        select: {
+                            coupons: true,
+                            categories: true,
+                        },
+                    },
+                },
             });
 
             if (!promotion) {
                 throw new ORPCError("NOT_FOUND");
+            }
+
+            if (mode === "CATEGORY_CAMPAIGN") {
+                if (promotion._count.coupons > 0) {
+                    throw new ORPCError("BAD_REQUEST", { message: "Update mode failed because relation with coupon" });
+                }
+            }
+
+            if (mode === "COUPON") {
+                if (promotion._count.categories > 0) {
+                    throw new ORPCError("BAD_REQUEST", { message: "Update mode failed because relation with category" });
+                }
             }
 
             const promotionUpdated = await prisma.promotion.update({
@@ -169,7 +189,12 @@ export const promotionsRouter = base.router({
                 },
                 include: {
                     categories: true,
-                    coupons: true,
+                    _count: {
+                        select: {
+                            coupons: true,
+                            categories: true,
+                        },
+                    },
                 },
             });
 

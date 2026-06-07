@@ -1,141 +1,125 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import {
-    Star,
-    PlusCircleIcon,
-    ShoppingCartIcon,
-    Share2Icon,
-    MessageSquareIcon,
-    FlagIcon,
-    ThumbsUpIcon,
-    ThumbsDownIcon,
-    Heart,
-    Edit2Icon,
-    SparklesIcon,
-    TruckIcon,
-    RotateCcwIcon,
-    MinusIcon,
-    PlusIcon,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShoppingCartIcon, Share2Icon, Heart, TruckIcon, RotateCcwIcon, MinusIcon, PlusIcon, Trash2Icon, Edit3Icon, FlameIcon } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import Image from "next/image";
-import { cn, formatNumber, formatPrice } from "@/lib/utils";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { cn, formatPrice, capitalizeFirst, getAttributesFromVariants } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/orpc/orpc-rq.client";
-import { GeneratedAvatar } from "@/components/generated-avatar";
-import { format, formatDistanceToNow } from "date-fns";
-import { NoResults } from "@/components/no-results";
-import { ReviewModal } from "@/components/modals/review-modal";
-import { authClient } from "@/lib/auth-client";
-import { Hint } from "@/components/hint";
 import { Separator } from "@/components/ui/separator";
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { ProductsRelated } from "../products-related";
+import { Preview } from "@/components/preview";
+import { User } from "@/lib/auth";
+import { useCart } from "@/features/customer/hooks/use-cart";
+import { GROWTH_RATE, MONTH_QUANTITY } from "@/constants";
+import { ReviewSection } from "./review-section";
+import { Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
+import { GetProduct } from "@/features/customer/types";
 
 interface ProductDetailProps {
     storeId: string;
-    productId: string;
+    storeSlug: string;
     shippingFee: number;
+    currentUser: User | null;
+    product: GetProduct;
 }
 
-const PRODUCT_FEATURES = {
-    features: ["Industry-leading noise cancellation", "30-hour battery life", "Touch sensor controls", "Speak-to-chat technology"],
-};
-
-export const ProductView = ({ storeId, productId, shippingFee }: ProductDetailProps) => {
+export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, product }: ProductDetailProps) => {
     const [mainApi, setMainApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(0);
-    const [openReviewModal, setOpenReviewModal] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isWishlisted, setIsWishlisted] = useState(false);
-    const [isLiked, setIsLiked] = useState(false);
-    const [isDisliked, setIsDisliked] = useState(false);
-    const [quantity, setQuantity] = useState(1);
 
-    const session = authClient.useSession();
-    const currentUser = session?.data?.user;
+    const { addToCart, isProductVariantInCart, removeProductVariant, productVariantItems, setQuantityVariant } = useCart(storeSlug);
 
-    const { data: product } = useSuspenseQuery(orpc.customer.getProduct.queryOptions({ input: { storeId, productId } }));
+    // const { data: product } = useSuspenseQuery(orpc.customer.getProduct.queryOptions({ input: { storeId, productId } }));
+    const { data: trendingData } = useQuery(orpc.customer.checkTrending.queryOptions({ input: { storeId, productId: product.id } }));
 
-    const { data: initialData } = useQuery({
-        ...orpc.customer.getReview.queryOptions({ input: { storeId, productId } }),
-        enabled: !!currentUser,
-    });
+    const variants = product.variants.map((variant) => ({
+        sku: variant.sku,
+        stock: variant.stock,
+        price: variant.price,
+        combination: variant.combination as Record<string, string>,
+        id: variant.id,
+    }));
+
+    const availableAttributes = useMemo(() => getAttributesFromVariants(variants), [variants]);
+
+    const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>(variants[0]?.combination || {});
+
+    const activeVariant = useMemo(() => {
+        return variants.find((variant) => {
+            const combo = variant.combination;
+            return Object.entries(selectedAttributes).every(([key, value]) => combo[key] === value);
+        });
+    }, [selectedAttributes, variants]);
+
+    const initialQuantity = activeVariant && productVariantItems?.[activeVariant.id] ? productVariantItems[activeVariant.id].quantity : 1;
+
+    const [quantity, setQuantity] = useState(initialQuantity);
+
+    const handleSelectAttribute = (key: string, value: string) => {
+        setSelectedAttributes((prev) => ({
+            ...prev,
+            [key]: value,
+        }));
+    };
 
     useEffect(() => {
         if (!mainApi) return;
-        mainApi.on("select", () => {
-            setCurrent(mainApi.selectedScrollSnap());
-        });
+
+        const handleSelect = () => {
+            const currentIndex = mainApi.selectedScrollSnap();
+            setCurrent(currentIndex);
+        };
+
+        mainApi.on("select", handleSelect);
+
+        return () => {
+            mainApi.off("select", handleSelect);
+        };
     }, [mainApi]);
 
     const scrollTo = (index: number) => {
         mainApi?.scrollTo(index);
     };
 
-    const rating = useMemo(() => {
-        const totalReview = product.reviews.length;
-        if (totalReview === 0) return 0;
-
-        const totalRating = product.reviews.reduce((curr, item) => curr + item.rating, 0);
-        return totalRating / totalReview;
-    }, [product]);
-
-    const reviewProgress = useMemo(() => {
-        const oneStar = product.reviews.filter((rev) => rev.rating === 1).length;
-        const twoStar = product.reviews.filter((rev) => rev.rating === 2).length;
-        const threeStar = product.reviews.filter((rev) => rev.rating === 3).length;
-        const fourStar = product.reviews.filter((rev) => rev.rating === 4).length;
-        const fiveStar = product.reviews.filter((rev) => rev.rating === 5).length;
-
-        return [fiveStar, fourStar, threeStar, twoStar, oneStar];
-    }, [product]);
-
-    const reviewsData = useMemo(() => {
-        if (currentUser) {
-            const currentReview = product.reviews.find((rev) => rev.userId === currentUser.id);
-            if (currentReview) {
-                const otherReviews = product.reviews.filter((rev) => rev.userId !== currentUser.id);
-                return [currentReview, ...otherReviews];
-            }
-        }
-        return product.reviews;
-    }, [currentUser, product.reviews]);
-
     const updateQuantity = (increment: boolean) => {
         setQuantity((current) => Math.max(1, current + (increment ? 1 : -1)));
     };
 
+    const isTrending = useMemo(() => {
+        if (!trendingData) return false;
+
+        return trendingData.growthRate >= GROWTH_RATE && trendingData.thisMonthQty >= MONTH_QUANTITY;
+    }, [trendingData]);
+
     return (
         <>
-            <ReviewModal
-                initialData={initialData}
-                storeId={storeId}
-                productId={productId}
-                isOpen={openReviewModal}
-                onClose={() => setOpenReviewModal(false)}
-            />
             <div className="p-6 max-w-7xl mx-auto space-y-6 bg-slate-50/50">
                 {/* Header Section */}
                 <div className="flex flex-col justify-between items-start gap-1">
                     <h1 className="text-2xl font-bold">{product.name}</h1>
                     <div className="flex gap-4 text-sm text-muted-foreground mt-1">
                         <span>
-                            Category: <b className="text-foreground">{product.category.name}</b>
+                            Category:{" "}
+                            <b className="text-foreground">
+                                {product.category.parent?.name} • {product.category.name}
+                            </b>
                         </span>
-                        {product.category.promotions.length > 0 && (
+                        {(product.category?.parent?.promotions ?? []).length > 0 && (
                             <span>
-                                Promotion: <b className="text-foreground">{product.category.promotions[0].value}%</b>
+                                Promotion: <b className="text-foreground">{product.category.parent?.promotions[0].value}%</b>
                             </span>
                         )}
                         <span>
-                            SKU: <b className="text-foreground">{product.sku}</b>
+                            Sku: <b className="text-foreground">{activeVariant?.sku || "No sku"}</b>
                         </span>
                     </div>
                 </div>
@@ -144,10 +128,10 @@ export const ProductView = ({ storeId, productId, shippingFee }: ProductDetailPr
                     {/* LEFT COLUMN: Gallery */}
                     <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-6 h-fit">
                         <Carousel setApi={setMainApi} className="w-full relative">
-                            {product.isFeatured && (
+                            {isTrending && (
                                 <Badge className="absolute left-3 top-3 backdrop-blur z-10">
-                                    <SparklesIcon className="size-4" />
-                                    Featured
+                                    <FlameIcon className="size-4" />
+                                    Trending
                                 </Badge>
                             )}
                             <CarouselContent>
@@ -168,10 +152,9 @@ export const ProductView = ({ storeId, productId, shippingFee }: ProductDetailPr
                             {product.images.map((src, i) => (
                                 <button
                                     key={i}
-                                    onClick={() => scrollTo(i)}
-                                    className={`aspect-square rounded-lg border-2 overflow-hidden transition-all ${
-                                        current === i ? "border-primary" : "border-transparent opacity-60"
-                                    }`}
+                                    onMouseEnter={() => scrollTo(i)}
+                                    className={`aspect-square rounded-lg border-2 overflow-hidden transition-all ${current === i ? "border-primary" : "border-transparent opacity-60"
+                                        }`}
                                 >
                                     <Image width={50} height={50} src={src.url} alt="Thumb" className="w-full h-full object-cover" />
                                 </button>
@@ -185,268 +168,210 @@ export const ProductView = ({ storeId, productId, shippingFee }: ProductDetailPr
                             <CardContent className="p-6 space-y-6">
                                 <div onClick={() => setIsExpanded((current) => !current)}>
                                     <h3 className="font-bold mb-2">Description:</h3>
-                                    <p className={cn("text-sm text-muted-foreground whitespace-pre-wrap", !isExpanded && "line-clamp-3")}>
-                                        {product?.description || "No description"}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-x-2">
-                                    {/* <h2 className="italic font-light tracking-tighter text-4xl mb-2 text-muted-foreground line-through">
-                                    {formatPrice(100)}
-                                </h2> */}
-                                    <h2 className="font-bold tracking-tighter text-4xl mb-2">{formatPrice(product.price)}</h2>
-                                </div>
-                                <div>
-                                    <div className="flex items-center justify-between w-full max-w-[50%]">
-                                        <h3 className="font-bold mb-2">Select Quantity</h3>
-                                        {product.inStock && product.quantity > 0 ? (
-                                            <Badge variant="secondary">Only {product.quantity} Items Left!</Badge>
-                                        ) : (
-                                            <Badge variant="destructive">Out of Stock!</Badge>
+                                    <div
+                                        className={cn(
+                                            "text-sm text-muted-foreground whitespace-pre-wrap prose prose-slate max-w-none dark:prose-invert",
+                                            !isExpanded && "line-clamp-3",
                                         )}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-8 cursor-pointer"
-                                            onClick={() => updateQuantity(false)}
-                                            disabled={quantity <= 1 || !product.inStock || product.quantity === 0}
-                                        >
-                                            <MinusIcon />
-                                        </Button>
-                                        <span
-                                            className={cn(
-                                                "w-8 text-center text-sm font-medium",
-                                                (!product.inStock || product.quantity === 0) && "text-muted-foreground",
-                                            )}
-                                        >
-                                            {quantity}
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-8 cursor-pointer"
-                                            onClick={() => updateQuantity(true)}
-                                            disabled={quantity >= product.quantity || !product.inStock || product.quantity === 0}
-                                        >
-                                            <PlusIcon />
-                                        </Button>
+                                    >
+                                        <Preview value={product.description || "No description"} />
                                     </div>
                                 </div>
+
+                                {activeVariant ? (
+                                    <>
+                                        <div className="flex items-center gap-x-2">
+                                            {product.category?.parent?.promotions && product.category.parent.promotions.length > 0 ? (
+                                                <>
+                                                    <h2 className="font-bold tracking-tighter text-4xl mb-2">
+                                                        {formatPrice(
+                                                            activeVariant.price -
+                                                            (activeVariant.price * product.category.parent.promotions[0].value) / 100,
+                                                        )}
+                                                    </h2>
+                                                    <h2 className="italic font-light tracking-tighter text-4xl mb-2 text-muted-foreground line-through">
+                                                        {formatPrice(activeVariant.price)}
+                                                    </h2>
+                                                </>
+                                            ) : (
+                                                <h2 className="font-bold tracking-tighter text-4xl mb-2">{formatPrice(activeVariant.price)}</h2>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center justify-between w-full max-w-[50%]">
+                                                <h3 className="font-bold mb-2">Select Quantity</h3>
+                                                {activeVariant.stock > 0 ? (
+                                                    <Badge variant="secondary">Only {activeVariant.stock} Items Left!</Badge>
+                                                ) : (
+                                                    <Badge variant="destructive">Out of Stock!</Badge>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="size-8 cursor-pointer"
+                                                    onClick={() => updateQuantity(false)}
+                                                    disabled={quantity <= 1 || activeVariant.stock === 0}
+                                                >
+                                                    <MinusIcon />
+                                                </Button>
+                                                <span
+                                                    className={cn(
+                                                        "w-8 text-center text-sm font-medium",
+                                                        activeVariant.stock === 0 && "text-muted-foreground",
+                                                    )}
+                                                >
+                                                    {quantity}
+                                                </span>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="size-8 cursor-pointer"
+                                                    onClick={() => updateQuantity(true)}
+                                                    disabled={quantity >= activeVariant.stock || activeVariant.stock === 0}
+                                                >
+                                                    <PlusIcon />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-muted-foreground italic">Not variant found</p>
+                                )}
+
                                 <div>
                                     <h3 className="font-bold mb-2">Key Features:</h3>
                                     <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                                        {PRODUCT_FEATURES.features.map((f, i) => (
+                                        {product.features.map((f, i) => (
                                             <li key={i}>{f}</li>
                                         ))}
                                     </ul>
                                 </div>
-                                <div className="flex items-center gap-x-10">
-                                    <div>
-                                        <h3 className="font-bold mb-2">Size</h3>
-                                        <Button variant="outline" className="h-8 px-4 py-2 size-10 rounded-full p-0 hover:bg-background">
-                                            {product.size.value}
-                                        </Button>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold mb-2">Color</h3>
-                                        <div className="h-10 w-10 rounded-full border" style={{ backgroundColor: product.color.value }} />
-                                    </div>
-                                </div>
-                                <div className="flex flex-col items-center gap-y-2">
-                                    <div className="flex items-center gap-x-2">
-                                        <Button
-                                            aria-label="Share product"
-                                            className="size-9 rounded-full"
-                                            size="icon"
-                                            variant="outline"
-                                            onClick={() => {}}
-                                        >
-                                            <Share2Icon />
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="size-9 rounded-full"
-                                            onClick={() => setIsWishlisted(!isWishlisted)}
-                                            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                                        >
-                                            <Heart className={cn("size-5", isWishlisted && "fill-rose-500 text-rose-500")} />
-                                        </Button>
-                                    </div>
-                                    <div className="flex items-center gap-x-2">
-                                        <Button disabled={!product.inStock || product.quantity === 0} onClick={() => {}}>
-                                            <ShoppingCartIcon />
-                                            Add to Card
-                                        </Button>
-                                    </div>
-                                </div>
-                                <Separator />
-                                <div className="grid md:grid-cols-2 grid-cols-1 gap-2">
-                                    <Item variant="outline">
-                                        <ItemMedia variant="icon">
-                                            <TruckIcon />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>Free Delivery</ItemTitle>
-                                            <ItemDescription>Free delivery on orders over {formatPrice(shippingFee)}.</ItemDescription>
-                                        </ItemContent>
-                                    </Item>
-                                    <Item variant="outline">
-                                        <ItemMedia variant="icon">
-                                            <RotateCcwIcon />
-                                        </ItemMedia>
-                                        <ItemContent>
-                                            <ItemTitle>Return Delivery</ItemTitle>
-                                            <ItemDescription>Free 30Days Delivery Returns.</ItemDescription>
-                                        </ItemContent>
-                                    </Item>
-                                </div>
-                            </CardContent>
-                        </Card>
 
-                        <Card className="shadow-sm">
-                            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-                                <CardTitle className="text-lg font-bold">Reviews</CardTitle>
-                                <Button
-                                    onClick={() => setOpenReviewModal(true)}
-                                    variant="outline"
-                                    size="sm"
-                                    className={cn("gap-2", initialData && "hidden")}
-                                >
-                                    <PlusCircleIcon className="w-4 h-4" /> Submit Review
-                                </Button>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    <div className="md:col-span-2 order-2 md:order-1 space-y-4">
-                                        {product.reviews.length === 0 && <NoResults icon={MessageSquareIcon} topic="reviews" />}
-                                        {reviewsData.map((rev) => {
-                                            return (
-                                                <div key={rev.id} className="p-4 rounded-lg border bg-card text-card-foreground shadow-sm space-y-3">
-                                                    <div className="flex justify-between items-start">
-                                                        <div className="flex items-center gap-3">
-                                                            {rev.user.image ? (
-                                                                <Avatar>
-                                                                    <AvatarImage src={rev.user.image} />
-                                                                </Avatar>
-                                                            ) : (
-                                                                <GeneratedAvatar seed={rev.user.name || rev.user.email} />
+                                <div className="space-y-4 border-t pt-4">
+                                    {Object.entries(availableAttributes).map(([attrName, attrValues]) => (
+                                        <div key={attrName} className="space-y-2">
+                                            <h4 className="text-sm font-semibold text-slate-700 mb-2">{capitalizeFirst(attrName)}:</h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {attrValues.map((value) => {
+                                                    const isSelected = selectedAttributes[attrName] === value;
+
+                                                    return attrName === "color" ? (
+                                                        <div
+                                                            onClick={() => handleSelectAttribute(attrName, value)}
+                                                            className={cn(
+                                                                "rounded-md h-9 w-9 cursor-pointer border border-gray-400",
+                                                                isSelected && "ring-2 ring-black ring-offset-2",
                                                             )}
-                                                            <div>
-                                                                <p className="font-semibold text-sm">{rev.user.name || rev.user.email}</p>
-                                                                <div className="flex items-center gap-x-2 mt-1">
-                                                                    <Badge variant="outline">
-                                                                        <div className="flex items-center gap-1">
-                                                                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                                                            <span className="text-xs font-semibold text-neutral-600">
-                                                                                {rev.rating}
-                                                                            </span>
-                                                                        </div>
-                                                                    </Badge>
-                                                                    <span className="text-muted-foreground">•</span>
-                                                                    <Hint text={format(rev.createdAt, "LLL dd, y")}>
-                                                                        <span className="text-xs text-muted-foreground">
-                                                                            {formatDistanceToNow(new Date(rev.createdAt), { addSuffix: true })}
-                                                                        </span>
-                                                                    </Hint>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-x-2">
-                                                            <Button variant="ghost" onClick={() => {}} size="icon">
-                                                                <FlagIcon />
-                                                            </Button>
-                                                            {currentUser && currentUser.id === rev.userId && (
-                                                                <Button variant="ghost" onClick={() => setOpenReviewModal(true)} size="icon">
-                                                                    <Edit2Icon />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-sm text-slate-700 leading-relaxed line-clamp-5">
-                                                        &quot;{rev.feedback || "No feedback"}&quot;
-                                                    </p>
-                                                    <div className="mt-4 flex gap-4">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => setIsLiked((current) => !current)}
-                                                            className="h-8 px-3 text-xs text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                                                            aria-label="review reaction"
-                                                        >
-                                                            <ThumbsUpIcon className={cn("size-4", isLiked && "fill-current")} />
-                                                            <span>{isLiked ? 1 : 0}</span>
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => setIsDisliked((current) => !current)}
-                                                            className="h-8 px-3 text-xs text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                                                            aria-label="review reaction"
-                                                        >
-                                                            <ThumbsDownIcon className={cn("size-4", isDisliked && "fill-current")} />
-                                                            <span>{isDisliked ? 1 : 0}</span>
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                        {reviewsData.length >= 8 && (
-                                            <Button variant="ghost" className="w-full text-muted-foreground">
-                                                Load more..
-                                            </Button>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-6 order-1 md:order-2">
-                                        <div className="p-6 border rounded-xl sticky top-6">
-                                            <div className="flex flex-col items-center gap-2 mb-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex gap-1">
-                                                        {[...Array(5)].map((_, i) => {
-                                                            const isFilled = i < Math.floor(rating);
-
-                                                            return (
-                                                                <Star
-                                                                    key={i}
-                                                                    className={`size-5 ${isFilled ? "text-orange-400" : "text-slate-300"}`}
-                                                                    fill={isFilled ? "currentColor" : "none"}
-                                                                />
-                                                            );
-                                                        })}
-                                                    </div>
-                                                    <span className="font-bold text-2xl">{rating}</span>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    (Based on {formatNumber(product.reviews.length)} reviews)
-                                                </p>
-                                            </div>
-                                            <div className="space-y-3">
-                                                {reviewProgress.map((pct, i) => (
-                                                    <div key={i} className="flex items-center gap-2 text-xs">
-                                                        <div className="w-8 text-sm flex items-center gap-x-1">
-                                                            {5 - i} <Star className="size-4 fill-amber-400 text-amber-400" />{" "}
-                                                        </div>
-                                                        <Progress
-                                                            value={product.reviews.length > 0 ? (pct / product.reviews.length) * 100 : 0}
-                                                            className="h-1.5"
+                                                            style={{ backgroundColor: value }}
+                                                            key={value}
                                                         />
-                                                        <span className="w-8 text-right">
-                                                            {product.reviews.length > 0 ? (pct / product.reviews.length) * 100 : 0}%
-                                                        </span>
-                                                    </div>
-                                                ))}
+                                                    ) : (
+                                                        <Button
+                                                            key={value}
+                                                            variant={isSelected ? "default" : "outline"}
+                                                            size="sm"
+                                                            className="h-9 px-4 rounded-md"
+                                                            onClick={() => handleSelectAttribute(attrName, value)}
+                                                        >
+                                                            {value}
+                                                        </Button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
-                                    </div>
+                                    ))}
                                 </div>
+
+                                <div className="flex items-end gap-x-2">
+                                    <Button aria-label="Share product" className="rounded-full" size="icon-xs" variant="outline" onClick={() => { }}>
+                                        <Share2Icon className="size-3" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="icon-xs"
+                                        className="rounded-full"
+                                        onClick={() => setIsWishlisted(!isWishlisted)}
+                                        aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                                    >
+                                        <Heart className={cn("size-3", isWishlisted && "fill-rose-500 text-rose-500")} />
+                                    </Button>
+                                    {activeVariant && (
+                                        <div className="flex items-center gap-x-3">
+                                            {isProductVariantInCart(activeVariant.id) ? (
+                                                <>
+                                                    {initialQuantity !== quantity && (
+                                                        <Button
+                                                            onClick={() => {
+                                                                setQuantityVariant(activeVariant.id, quantity);
+                                                            }}
+                                                        >
+                                                            <Edit3Icon />
+                                                            Update to Cart
+                                                        </Button>
+                                                    )}
+                                                    <Button
+                                                        onClick={() => {
+                                                            removeProductVariant(activeVariant.id);
+                                                        }}
+                                                        variant="destructive"
+                                                    >
+                                                        <Trash2Icon />
+                                                        Remove to Cart
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                <Button
+                                                    disabled={activeVariant.stock === 0}
+                                                    onClick={() => {
+                                                        addToCart({ productVariantId: activeVariant.id, quantity });
+                                                    }}
+                                                >
+                                                    <ShoppingCartIcon />
+                                                    {activeVariant.stock === 0 ? "Out of stock" : "Add to Cart"}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <>
+                                    <Separator />
+                                    <div className="grid md:grid-cols-2 grid-cols-1 gap-2">
+                                        <Item variant="outline">
+                                            <ItemMedia variant="icon">
+                                                <TruckIcon />
+                                            </ItemMedia>
+                                            <ItemContent>
+                                                <ItemTitle>Free Delivery</ItemTitle>
+                                                <ItemDescription>Free delivery on orders over {formatPrice(shippingFee)}.</ItemDescription>
+                                            </ItemContent>
+                                        </Item>
+
+                                        <Item variant="outline">
+                                            <ItemMedia variant="icon">
+                                                <RotateCcwIcon />
+                                            </ItemMedia>
+                                            <ItemContent>
+                                                <ItemTitle>Return Delivery</ItemTitle>
+                                                <ItemDescription>Free 30Days Delivery Returns.</ItemDescription>
+                                            </ItemContent>
+                                        </Item>
+                                    </div>
+                                </>
                             </CardContent>
                         </Card>
+                        <Suspense fallback={<p>Loading...</p>}>
+                            <ErrorBoundary fallback={<p>Error!</p>}>
+                                <ReviewSection storeId={storeId} productId={product.id} currentUser={currentUser} />
+                            </ErrorBoundary>
+                        </Suspense>
                     </div>
                 </div>
             </div>
-            <ProductsRelated />
+            <ProductsRelated storeId={storeId} categoryIds={[product.categoryId]} productCurrentIds={[product.id]} />
         </>
     );
 };

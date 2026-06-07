@@ -43,7 +43,9 @@ export const StoreHeader = ({ stores, storeName, storeSlug }: { stores: GetStore
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                    <BreadcrumbPage onClick={() => router.push(`/${storeSlug}`)}>{storeName}</BreadcrumbPage>
+                    <BreadcrumbPage className="cursor-pointer" onClick={() => router.push(`/${storeSlug}`)}>
+                        {storeName}
+                    </BreadcrumbPage>
                 </BreadcrumbItem>
             </BreadcrumbList>
         </Breadcrumb>

@@ -7,9 +7,11 @@ import { OrderGetMany } from "../types";
 import { OrderActions } from "./order-actions";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { capitalizeFirst, formatPhone, formatPrice } from "@/lib/utils";
 import { Hint } from "@/components/hint";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import Image from "next/image";
+import { DiscountSnapshot } from "@/features/customer/types";
 
 export const columns: ColumnDef<OrderGetMany[number]>[] = [
     {
@@ -24,13 +26,14 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
         },
         cell: ({ row }) => {
             const orderCode = row.original.orderCode;
-            const shippingFee = formatPrice(row.original.shippingFee);
+            const totalItem = row.original.orderItems.length;
 
             return (
-                <Hint text={`Shipping fee: ${shippingFee}`}>
-                    <p className="line-clamp-1 font-semibold">{orderCode}</p>
-                </Hint>
-            );
+                 <div className="flex flex-col gap-y-1">
+                     <p className="line-clamp-1 font-semibold">{orderCode}</p>
+                     <span className="font-light text-gray-600 text-xs">{totalItem} items</span>
+                 </div>
+             )
         },
     },
     {
@@ -42,7 +45,7 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
             const address = row.original.address || "No information";
 
             return (
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-start">
                     <p className="text-sm font-semibold">{name || email}</p>
                     <Hint text={address}>
                         <p className="text-xs text-muted-foreground line-clamp-2">{address}</p>
@@ -55,54 +58,45 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
         accessorKey: "products",
         header: "Products",
         cell: ({ row }) => {
-            const productsItem = row.original.orderItems.map((orderItem) => ({ name: orderItem.product.name, quantity: orderItem.quantity }));
-
-            if (productsItem.length === 0) {
-                return <p className="text-muted-foreground">N/A</p>;
-            }
-
-            if (productsItem.length < 3) {
-                return (
-                    <div className="flex flex-wrap gap-1">
-                        {productsItem.map((p, index) => (
-                            <Badge key={index} variant="outline" className="whitespace-nowrap">
-                                {p.name} x{p.quantity}
-                            </Badge>
-                        ))}
-                    </div>
-                );
-            }
-
-            const firstProduct = productsItem[0];
-            const secondProduct = productsItem[1];
-            const remainingProductsItem = productsItem.slice(2);
-
+            const items = row.original.orderItems;
             return (
-                <div className="flex items-center gap-x-2">
-                    <Badge variant="outline" className="whitespace-nowrap">
-                        {firstProduct.name} x{firstProduct.quantity}
-                    </Badge>
-                    <Badge variant="outline" className="whitespace-nowrap">
-                        {secondProduct.name} x{firstProduct.quantity}
-                    </Badge>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Badge variant="secondary" className="cursor-pointer hover:bg-accent transition-colors">
-                                +{remainingProductsItem.length} more
-                            </Badge>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-fit min-w-37.5 p-3" align="start">
-                            <div className="flex flex-col gap-y-2">
-                                <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Other Categories</p>
-                                {remainingProductsItem.map((p, index) => (
-                                    <div key={index} className="text-sm font-medium border-b border-border pb-1 last:border-none">
-                                        {p.name} x{p.quantity}
+                <HoverCard>
+                    <HoverCardTrigger asChild>
+                        <Button variant="link" className="h-auto p-0">
+                            {items[0]?.productVariant.product.name}
+
+                            {items.length > 1 && <Badge variant="outline">+{items.length - 1} more</Badge>}
+                        </Button>
+                    </HoverCardTrigger>
+
+                    <HoverCardContent className="w-80 space-y-3">
+                        {items.map((item) => {
+                            const combination = Object.entries(item.productVariant.combination as Record<string, string>)
+                                .map(([k, v]) => `${k}: ${v}`)
+                                .join(" • ");
+
+                            return (
+                                <div key={item.id} className="flex gap-3">
+                                    <Image
+                                        width={30}
+                                        height={30}
+                                        alt={item.productVariant.sku}
+                                        src={item.productVariant.product.images[0]?.url}
+                                        className="h-15 w-15 rounded-md object-cover"
+                                    />
+
+                                    <div className="min-w-0 flex-1">
+                                        <p className="truncate text-sm font-medium">{item.productVariant.product.name}</p>
+
+                                        <p className="text-muted-foreground text-xs">{combination}</p>
+
+                                        <p className="text-xs">Qty: {item.quantity}</p>
                                     </div>
-                                ))}
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                </div>
+                                </div>
+                            );
+                        })}
+                    </HoverCardContent>
+                </HoverCard>
             );
         },
     },
@@ -129,19 +123,9 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
     {
         id: "price",
         accessorFn: (row) => {
-            const shippingFee = row.shippingFee;
-            let totalPrice = row.orderItems.reduce((total, item) => total + item.product.price, 0) - shippingFee;
-            const coupon = row.coupon;
+            const discountSnapshot = row.discountSnapshot as DiscountSnapshot;
 
-            if (coupon) {
-                if (coupon.promotion.type === "FIXED") {
-                    totalPrice = totalPrice - coupon.promotion.value;
-                } else if (coupon.promotion.type === "PERCENT") {
-                    totalPrice = totalPrice - totalPrice * coupon.promotion.value;
-                }
-            }
-
-            return totalPrice;
+            return discountSnapshot.total;
         },
         header: ({ column }) => {
             return (
@@ -152,17 +136,8 @@ export const columns: ColumnDef<OrderGetMany[number]>[] = [
             );
         },
         cell: ({ row }) => {
-            const shippingFee = row.original.shippingFee;
-            let totalPrice = row.original.orderItems.reduce((total, item) => total + item.product.price, 0) - shippingFee;
-            const coupon = row.original.coupon;
-
-            if (coupon) {
-                if (coupon.promotion.type === "FIXED") {
-                    totalPrice = totalPrice - coupon.promotion.value;
-                } else if (coupon.promotion.type === "PERCENT") {
-                    totalPrice = totalPrice - totalPrice * coupon.promotion.value;
-                }
-            }
+            const discountSnapshot = row.original.discountSnapshot as DiscountSnapshot;
+            const totalPrice = discountSnapshot.total;
 
             const amountPaid = row.original.amountPaid;
 

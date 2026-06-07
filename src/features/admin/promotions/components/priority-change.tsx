@@ -60,7 +60,7 @@ export const PriorityChange = ({ id, storeId, initialData, mode }: PriorityChang
                     if (initialData === priority) return;
                     change.mutate({ id, storeId, priority });
                 }}
-                disabled={mode === "COUPON" || initialData === priority || change.isPending}
+                disabled={mode === "COUPON" || change.isPending}
             />
         </div>
     );

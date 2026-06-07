@@ -339,7 +339,7 @@ export function InputColor({
                                 )}
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-3" align="start">
+                    <PopoverContent side="right" className="w-auto p-3" align="start">
                         <div className="color-picker space-y-3">
                             <div className="relative">
                                 <Button

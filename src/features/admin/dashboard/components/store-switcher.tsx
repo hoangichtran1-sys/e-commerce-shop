@@ -5,15 +5,7 @@ import { useStoreModal } from "@/hooks/use-store-modal";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
-import {
-    Combobox,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxList,
-    ComboboxSeparator,
-} from "@/components/ui/combobox";
+import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxSeparator } from "@/components/ui/combobox";
 import { InputGroupAddon } from "@/components/ui/input-group";
 import { PlusCircleIcon, StoreIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,7 +16,7 @@ export const StoreSwitcher = () => {
     const params = useParams();
     const router = useRouter();
 
-    const { data, isLoading } = useQuery(orpc.stores.getMany.queryOptions());
+    const { data, isPending } = useQuery(orpc.stores.getMany.queryOptions());
 
     const formattedItems = useMemo(() => {
         return (data || []).map((item) => ({
@@ -33,11 +25,9 @@ export const StoreSwitcher = () => {
         }));
     }, [data]);
 
-    const currentStore = formattedItems.find(
-        (item) => item.value === params.storeId,
-    );
+    const currentStore = formattedItems.find((item) => item.value === params.storeId);
 
-    if (isLoading || !currentStore) {
+    if (isPending || !currentStore) {
         return <Skeleton className="h-7 w-50" />;
     }
 
@@ -52,28 +42,18 @@ export const StoreSwitcher = () => {
             }}
             autoHighlight
         >
-            <ComboboxInput
-                className="w-50 min-w-50"
-                placeholder="Select a store"
-                showClear
-            >
+            <ComboboxInput className="w-50 min-w-50" placeholder="Select a store" showClear>
                 <InputGroupAddon>
                     <StoreIcon className="size-4 mr-2" />
                 </InputGroupAddon>
             </ComboboxInput>
             <ComboboxContent className="w-50 min-w-50">
                 <ComboboxEmpty>
-                    <span className="text-neutral-600 italic">
-                        No stores found.
-                    </span>
+                    <span className="text-neutral-600 italic">No stores found.</span>
                 </ComboboxEmpty>
                 <ComboboxList>
                     {(item: { label: string; value: string }) => (
-                        <ComboboxItem
-                            key={item.value}
-                            value={item}
-                            className="mt-2"
-                        >
+                        <ComboboxItem key={item.value} value={item} className="mt-2">
                             <StoreIcon className="size-4 mr-2" />
                             {item.label}
                         </ComboboxItem>

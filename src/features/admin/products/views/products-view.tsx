@@ -20,7 +20,7 @@ export const ProductsView = ({ storeId }: ProductsViewProps) => {
 
     const { data: products } = useSuspenseQuery(orpc.products.getMany.queryOptions({ input: { storeId } }));
 
-    const { data: categories } = useQuery(orpc.categories.getMany.queryOptions({ input: { storeId } }));
+    const { data: categories } = useQuery(orpc.categories.getManyParent.queryOptions({ input: { storeId } }));
 
     const categoryOption = (categories ?? []).map((item) => ({
         label: item.name,
@@ -34,13 +34,6 @@ export const ProductsView = ({ storeId }: ProductsViewProps) => {
         { label: "Archived", value: ProductStatus.ARCHIVED, icon: PackageIcon },
     ];
 
-    const priceOptions = [
-        { label: "Under $50", value: "under_50" },
-        { label: "$50 - $100", value: "50_100" },
-        { label: "$100 - $200", value: "100_200" },
-        { label: "Above $200", value: "above_200" },
-    ];
-
     return (
         <>
             <div className="flex items-center justify-between">
@@ -52,7 +45,6 @@ export const ProductsView = ({ storeId }: ProductsViewProps) => {
             </div>
             <Separator />
             <DataTable
-                priceOption={priceOptions}
                 statusOption={statusOption}
                 categoryOption={categoryOption}
                 data={products}

@@ -2,14 +2,18 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDownIcon, MoreVerticalIcon } from "lucide-react";
+import { ArrowUpDownIcon, BoxIcon, HeartIcon, MinusCircleIcon, MoreVerticalIcon, StarIcon } from "lucide-react";
 import { ProductGetMany } from "../types";
-import { capitalizeFirst, formatPrice } from "@/lib/utils";
+import { capitalizeFirst } from "@/lib/utils";
 import { ProductActions } from "./product-actions";
-import { SupportIcon } from "@/components/support-icon";
-import { ToggleInStock } from "./toggle-in-stock";
-import { Hint } from "@/components/hint";
-import { QuantityChange } from "./quantity-change";
+import { ToggleFeatured } from "./toggle-in-featured";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import Image from "next/image";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { ShowVariants } from "./show-variants";
+import { Badge } from "@/components/ui/badge";
+import { LOW_STOCK } from "@/constants";
 
 export const columns: ColumnDef<ProductGetMany[number]>[] = [
     {
@@ -24,60 +28,75 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         },
         cell: ({ row }) => {
             const name = row.original.name;
-            const sku = row.original.sku;
+            const firstImage = row.original.images[0];
+            const soldCount = row.original.soldCount;
+            const totalFavorite = row.original._count.favorites;
 
             return (
-                <Hint side="top" text={sku}>
-                    <p className="line-clamp-2">{name}</p>
-                </Hint>
+                <div className="flex items-center gap-x-2">
+                    <Image src={firstImage.url} alt={name} width={54} height={54} className="object-cover grayscale" />
+                    <div className="flex flex-col gap-y-1">
+                        <p className="line-clamp-2">{name}</p>
+                        <p className="text-muted-foreground">
+                            Sold count: <b className="text-foreground">{soldCount}</b>
+                        </p>
+
+                        <div className="flex items-center gap-x-1.5">
+                            <span className="text-sm font-semibold">{totalFavorite}</span>
+                            <HeartIcon className="size-3 fill-rose-500 text-rose-500" />
+                        </div>
+                    </div>
+                </div>
             );
         },
     },
     {
-        accessorKey: "price",
+        accessorKey: "features",
         header: ({ column }) => {
             return (
                 <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Price
+                    Features
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
             );
         },
         cell: ({ row }) => {
-            const price = row.original.price;
-            const soldCount = row.original.soldCount;
+            const features = row.original.features;
 
             return (
-                <div className="flex flex-col">
-                    <p className="line-clamp-1">{formatPrice(price)}</p>
-                    <p className="text-muted-foreground">
-                        Sold count: <b className="text-foreground">{soldCount}</b>
-                    </p>
-                </div>
+                <Accordion type="single" collapsible>
+                    <AccordionItem value="features">
+                        <AccordionTrigger className="max-w-md">{features.length} features related</AccordionTrigger>
+                        <AccordionContent>
+                            <ItemGroup className="max-w-sm">
+                                {features.map((feature, index) => (
+                                    <Item className="bg-white" key={index} variant="outline">
+                                        <ItemMedia>
+                                            <BoxIcon />
+                                        </ItemMedia>
+                                        <ItemContent className="gap-1">
+                                            <ItemTitle>Features {index + 1}</ItemTitle>
+                                            <ItemDescription className="text-xs text-wrap">
+                                                <span className="line-clamp-3">{feature}</span>
+                                            </ItemDescription>
+                                        </ItemContent>
+                                        <ItemActions>
+                                            <Button variant="destructive" size="icon" className="rounded-full">
+                                                <MinusCircleIcon />
+                                            </Button>
+                                        </ItemActions>
+                                    </Item>
+                                ))}
+                            </ItemGroup>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             );
-        },
-        filterFn: (row, id, value) => {
-            const price = row.getValue(id) as number;
-
-            return value.some((range: string) => {
-                switch (range) {
-                    case "under_50":
-                        return price < 50;
-                    case "50_100":
-                        return price >= 50 && price <= 100;
-                    case "100_200":
-                        return price >= 100 && price <= 200;
-                    case "above_200":
-                        return price > 200;
-                    default:
-                        return false;
-                }
-            });
         },
     },
     {
         id: "category",
-        accessorFn: (row) => row.category.name,
+        accessorFn: (row) => row.category.parent?.name,
         header: ({ column }) => {
             return (
                 <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
@@ -88,28 +107,28 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         },
         cell: ({ row }) => {
             const categoryName = row.original.category.name;
+            const parentName = row.original.category.parent?.name;
 
-            return <p className="line-clamp-1">{categoryName}</p>;
+            if (!parentName) {
+                return <p className="line-clamp-1">{categoryName}</p>;
+            }
+
+            return (
+                <Breadcrumb>
+                    <BreadcrumbList>
+                        <BreadcrumbItem>
+                            <BreadcrumbPage>{parentName}</BreadcrumbPage>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator> / </BreadcrumbSeparator>
+                        <BreadcrumbItem>
+                            <BreadcrumbPage>{categoryName}</BreadcrumbPage>
+                        </BreadcrumbItem>
+                    </BreadcrumbList>
+                </Breadcrumb>
+            );
         },
         filterFn: (row, id, value) => {
             return value.includes(row.getValue(id));
-        },
-    },
-    {
-        accessorKey: "variants",
-        header: "Variants",
-        cell: ({ row }) => {
-            const sizeValue = row.original.size.value;
-            const colorValue = row.original.color.value;
-
-            return (
-                <div className="flex items-center gap-x-2">
-                    <p className="line-clamp-1">{sizeValue}</p>
-                    <Hint text={colorValue}>
-                        <div className="h-6 w-6 rounded-full border" style={{ backgroundColor: colorValue }} />
-                    </Hint>
-                </div>
-            );
         },
     },
     {
@@ -142,51 +161,99 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         },
     },
     {
-        accessorKey: "quantity",
+        accessorKey: "rating",
         header: ({ column }) => {
             return (
                 <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                    Quantity
+                    Rating
                     <ArrowUpDownIcon className="h-4 w-4" />
                 </Button>
             );
         },
         cell: ({ row }) => {
-            const id = row.original.id;
-            const quantity = row.original.quantity;
-            const storeId = row.original.storeId;
+            const totalReview = row.original._count.reviews;
 
-            if (quantity === 0) {
-                return <p className="text-muted-foreground font-light italic">Out of Stock</p>;
+            if (totalReview === 0) {
+                return <p className="italic text-muted-foreground">No rating information</p>;
             }
 
-            return <QuantityChange storeId={storeId} id={id} initialData={quantity} />;
+            const totalRating = row.original.reviews.reduce((curr, item) => curr + item.rating, 0);
+            const rating = totalRating / totalReview;
+
+            return (
+                <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => {
+                        const starValue = i + 1;
+                        const isFull = rating >= starValue;
+                        const isHalf = rating >= starValue - 0.5 && rating < starValue;
+
+                        return (
+                            <div key={i} className="relative size-5">
+                                {/* Empty star */}
+                                <StarIcon className="absolute inset-0 text-slate-300" fill="none" />
+
+                                {/* Full star */}
+                                {isFull && <StarIcon className="absolute inset-0 text-amber-400" fill="currentColor" />}
+
+                                {/* Half star */}
+                                {isHalf && (
+                                    <div className="absolute inset-0 overflow-hidden w-1/2">
+                                        <StarIcon className="text-amber-400" fill="currentColor" />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+
+                    <span className="text-muted-foreground ml-1 text-sm">{rating}</span>
+                    <span className="text-muted-foreground ml-1 text-sm">({totalReview})</span>
+                </div>
+            );
         },
     },
     {
-        accessorKey: "inStock",
-        header: "In Stock",
+        accessorKey: "stock",
+        header: "Stock",
         cell: ({ row }) => {
-            const id = row.original.id;
-            const storeId = row.original.storeId;
-            const inStock = row.original.inStock;
-            const quantity = row.original.quantity;
+            const totalStock = row.original.variants.reduce((curr, item) => curr + item.stock, 0);
 
-            return <ToggleInStock quantity={quantity} isChecked={inStock} id={id} storeId={storeId} />;
+            if (totalStock === 0) {
+                <Badge className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300">Out of Stock</Badge>;
+            }
+            if (totalStock > 0 && totalStock <= LOW_STOCK) {
+                <Badge className="bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300">Low Stock</Badge>;
+            }
+
+            return <Badge className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">In Stock</Badge>;
         },
     },
     {
         accessorKey: "isFeatured",
         header: () => <div className="text-center w-[50%]">Featured</div>,
         cell: ({ row }) => {
+            const id = row.original.id;
+            const storeId = row.original.storeId;
             const isFeatured = row.original.isFeatured;
 
-            return (
-                <div className="w-[50%]">
-                    <span className="sr-only">{isFeatured ? "Featured" : "Not featured"}</span>
-                    <SupportIcon supported={isFeatured} />
-                </div>
-            );
+            return <ToggleFeatured isChecked={isFeatured} id={id} storeId={storeId} />;
+        },
+    },
+
+    {
+        id: "variants",
+        header: () => <div className="text-center w-[50%]">Variants</div>,
+        cell: ({ row }) => {
+            const variants = row.original.variants.map((variant) => ({
+                combination: variant.combination as Record<string, string>,
+                price: variant.price,
+                stock: variant.stock,
+                sku: variant.sku,
+            }));
+            const storeId = row.original.storeId;
+            const productId = row.original.id;
+            const productName = row.original.name;
+
+            return <ShowVariants storeId={storeId} productId={productId} productName={productName} variants={variants} />;
         },
     },
     {
@@ -194,10 +261,9 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
         cell: ({ row }) => {
             const id = row.original.id;
             const storeId = row.original.storeId;
-            const sku = row.original.sku;
 
             return (
-                <ProductActions id={id} storeId={storeId} sku={sku}>
+                <ProductActions id={id} storeId={storeId}>
                     <Button className="size-8 p-0" variant="ghost" aria-label={`Open actions for product ${id}`}>
                         <MoreVerticalIcon className="size-4" />
                     </Button>

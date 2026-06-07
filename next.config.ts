@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  images: {
+    /* config options here */
+    images: {
         remotePatterns: [
             {
                 protocol: "https",
@@ -15,9 +15,9 @@ const nextConfig: NextConfig = {
             {
                 protocol: "https",
                 hostname: "assets.shadcnstore.com",
-            }
+            },
         ],
-   },
+    },
 };
 
 export default nextConfig;

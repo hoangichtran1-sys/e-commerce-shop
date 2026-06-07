@@ -6,22 +6,8 @@ import { CheckIcon, InboxIcon, ChevronsUpDownIcon, XIcon, PlusIcon } from "lucid
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "@/components/ui/command";
-import {
-    Empty,
-    EmptyContent,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
-} from "@/components/ui/empty";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface MultipleSelectProps {
@@ -31,20 +17,13 @@ interface MultipleSelectProps {
     topic?: string;
 }
 
-export const MultipleSelect = ({
-    options,
-    selectedValues,
-    setSelectedValues,
-    topic = "option",
-}: MultipleSelectProps) => {
+export const MultipleSelect = ({ options, selectedValues, setSelectedValues, topic = "option" }: MultipleSelectProps) => {
     const id = useId();
     const [open, setOpen] = useState(false);
     const [expanded, setExpanded] = useState(false);
 
     const toggleSelection = (value: string) => {
-        const nextValues = selectedValues.includes(value)
-            ? selectedValues.filter((v) => v !== value)
-            : [...selectedValues, value];
+        const nextValues = selectedValues.includes(value) ? selectedValues.filter((v) => v !== value) : [...selectedValues, value];
 
         setSelectedValues(nextValues);
     };
@@ -69,7 +48,7 @@ export const MultipleSelect = ({
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
-                        className="h-auto min-h-8 w-[100%] justify-between hover:bg-transparent"
+                        className="h-auto min-h-8 w-full justify-between hover:bg-transparent"
                     >
                         <div className="flex flex-wrap items-center gap-1 pr-2.5">
                             {selectedValues.length > 0 ? (
@@ -78,11 +57,7 @@ export const MultipleSelect = ({
                                         const option = options.find((c) => c.value === val);
 
                                         return option ? (
-                                            <Badge
-                                                key={val}
-                                                variant="outline"
-                                                className="rounded-sm"
-                                            >
+                                            <Badge key={val} variant="outline" className="rounded-sm">
                                                 {option.label}
                                                 <Button
                                                     variant="ghost"
@@ -118,10 +93,7 @@ export const MultipleSelect = ({
                                 <span className="text-muted-foreground">Select {topic}</span>
                             )}
                         </div>
-                        <ChevronsUpDownIcon
-                            className="text-muted-foreground/80 shrink-0"
-                            aria-hidden="true"
-                        />
+                        <ChevronsUpDownIcon className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="max-w-full p-0">
@@ -135,9 +107,7 @@ export const MultipleSelect = ({
                                             <InboxIcon />
                                         </EmptyMedia>
                                         <EmptyTitle>No {topic} found</EmptyTitle>
-                                        <EmptyDescription>
-                                            Get started by creating your first item.
-                                        </EmptyDescription>
+                                        <EmptyDescription>Get started by creating your first item.</EmptyDescription>
                                     </EmptyHeader>
                                     <EmptyContent>
                                         <Button size="xs" onClick={() => {}}>
@@ -149,16 +119,10 @@ export const MultipleSelect = ({
                             </CommandEmpty>
                             <CommandGroup>
                                 {options.map((option) => (
-                                    <CommandItem
-                                        key={option.value}
-                                        value={option.value}
-                                        onSelect={() => toggleSelection(option.value)}
-                                    >
+                                    <CommandItem key={option.value} value={option.value} onSelect={() => toggleSelection(option.value)}>
                                         <div className="flex w-full items-center justify-between">
                                             <span className="truncate">{option.label}</span>
-                                            {selectedValues.includes(option.value) && (
-                                                <CheckIcon size={16} className="-mr-2" />
-                                            )}
+                                            {selectedValues.includes(option.value) && <CheckIcon size={16} className="-mr-2" />}
                                         </div>
                                     </CommandItem>
                                 ))}

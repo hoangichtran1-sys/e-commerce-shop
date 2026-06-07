@@ -190,6 +190,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
     const actionLabel = initialData ? "Save changes" : "Create";
 
     const isGlobal = useStore(form.store, (state) => state.values.isGlobal);
+    const isDisabledScope = !!initialData && initialData.isGlobal === false && initialData._count.categories > 0;
 
     return (
         <>
@@ -246,7 +247,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                             return (
                                                 <Field data-invalid={isInvalid}>
-                                                    <FieldLabel htmlFor={field.name}>Limit code</FieldLabel>
+                                                    <FieldLabel htmlFor={field.name}>Priority</FieldLabel>
                                                     <ButtonGroup>
                                                         <Input
                                                             id={field.name}
@@ -374,6 +375,7 @@ export const BillboardForm = ({ storeId, billboardId }: BillboardFormProps) => {
                                             <FieldLabel>
                                                 <Field orientation="horizontal" data-invalid={isInvalid}>
                                                     <Checkbox
+                                                        disabled={isDisabledScope}
                                                         id={field.name}
                                                         name={field.name}
                                                         aria-invalid={isInvalid}

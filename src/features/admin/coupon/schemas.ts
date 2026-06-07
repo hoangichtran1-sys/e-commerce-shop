@@ -5,10 +5,11 @@ export const formCouponSchema = z
         promotionId: z.string().min(1),
         code: z
             .string()
+            .trim()
+            .uppercase()
             .min(3, "The code is too short")
             .max(20, "The code is too long")
-            .regex(/^[A-Z0-9]+$/, "The code can only contain uppercase letters and numbers")
-            .transform((val) => val.trim().toUpperCase()),
+            .regex(/^[A-Z0-9]+$/, "The code can only contain uppercase letters and numbers"),
         usageLimit: z.number().min(1).nullable(),
         perUserLimit: z.number().min(1).nullable(),
     })

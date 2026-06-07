@@ -10,7 +10,10 @@ export const couponsRouter = base.router({
 
         const existingCoupon = await prisma.coupon.findUnique({
             where: {
-                code: input.code,
+                storeId_code: {
+                    storeId,
+                    code,
+                },
             },
         });
 

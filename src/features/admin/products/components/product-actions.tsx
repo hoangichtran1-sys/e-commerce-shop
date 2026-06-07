@@ -1,9 +1,4 @@
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CopyIcon, PencilIcon, TrashIcon } from "lucide-react";
 import React from "react";
 import { useConfirm } from "@/hooks/use-confirm";
@@ -16,15 +11,9 @@ interface ProductActionProps {
     id: string;
     storeId: string;
     children: React.ReactNode;
-    sku: string;
 }
 
-export const ProductActions = ({
-    id,
-    storeId,
-    children,
-    sku
-}: ProductActionProps) => {
+export const ProductActions = ({ id, storeId, children }: ProductActionProps) => {
     const router = useRouter();
     const queryClient = useQueryClient();
 
@@ -44,14 +33,11 @@ export const ProductActions = ({
         }),
     );
 
-    const [RemoveConfirmation, confirmRemove] = useConfirm(
-        "Are you sure?",
-        "The following action will permanently remove this product",
-    );
+    const [RemoveConfirmation, confirmRemove] = useConfirm("Are you sure?", "The following action will permanently remove this product");
 
     const onCopy = () => {
-        navigator.clipboard.writeText(sku);
-        toast.success("Product SKU copied to the clipboard");
+        navigator.clipboard.writeText(id);
+        toast.success("Product ID copied to the clipboard");
     };
 
     return (
@@ -60,19 +46,11 @@ export const ProductActions = ({
             <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                        onClick={onCopy}
-                        className="font-medium p-2.5"
-                    >
+                    <DropdownMenuItem onClick={onCopy} className="font-medium p-2.5">
                         <CopyIcon className="size-4 stroke-2" />
-                        Copy Product SKU
+                        Copy Product ID
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() =>
-                            router.push(`/admin/${storeId}/products/${id}`)
-                        }
-                        className="font-medium p-2.5"
-                    >
+                    <DropdownMenuItem onClick={() => router.push(`/admin/${storeId}/products/${id}`)} className="font-medium p-2.5">
                         <PencilIcon className="size-4 stroke-2" />
                         Edit product
                     </DropdownMenuItem>

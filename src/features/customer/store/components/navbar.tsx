@@ -11,7 +11,7 @@ interface NavbarProps {
 }
 
 export const Navbar = async ({ storeName, storeId, storeSlug }: NavbarProps) => {
-    const categories = await client.customer.getCategoriesInStore({ storeId });
+    const categories = await client.customer.getCategoriesParent({ storeId });
     const stores = await client.customer.getStores();
 
     return (

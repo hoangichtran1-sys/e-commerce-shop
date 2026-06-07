@@ -41,7 +41,7 @@ export const StoreCard = ({ item }: StoreCardProps) => {
                         </p>
                         <div className="flex items-center gap-4 pt-2">
                             <Button onClick={handleSelectStore} size="lg" className="h-10 px-8 cursor-pointer rounded-full">
-                                Shop Now
+                                Go to Shop
                             </Button>
                         </div>
                     </div>

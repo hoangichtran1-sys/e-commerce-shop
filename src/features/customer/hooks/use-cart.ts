@@ -1,58 +1,58 @@
 import { useCallback } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useCartShopping } from "../shopping/use-cart-shopping";
-import type { ProductItem } from "../shopping/use-cart-shopping";
+import type { ProductVariantItem } from "../shopping/use-cart-shopping";
 
 export const useCart = (shoppingSlug: string) => {
-    const addToCard = useCartShopping((state) => state.addToCart);
+    const addToCart = useCartShopping((state) => state.addToCart);
     const setQuantity = useCartShopping((state) => state.setQuantity);
     const removeProduct = useCartShopping((state) => state.removeProduct);
     const clearCart = useCartShopping((state) => state.clearCart);
     const clearAllCarts = useCartShopping((state) => state.clearAllCarts);
 
-    const productItems = useCartShopping(useShallow((state) => state.shoppingCarts[shoppingSlug]?.items || {}));
+    const productVariantItems = useCartShopping(useShallow((state) => state.shoppingCarts[shoppingSlug]?.items || {}));
 
-    const isProductInCart = useCallback(
-        (productId: string) => {
-            return !!productItems[productId];
+    const isProductVariantInCart = useCallback(
+        (productVariantId: string) => {
+            return !!productVariantItems[productVariantId];
         },
-        [productItems],
+        [productVariantItems],
     );
 
     const clearShoppingCart = useCallback(() => {
         clearCart(shoppingSlug);
     }, [clearCart, shoppingSlug]);
 
-    const handleAddProduct = useCallback(
-        (productItem: ProductItem) => {
-            addToCard(shoppingSlug, productItem);
+    const handleAddProductVariant = useCallback(
+        (productVariantItem: ProductVariantItem) => {
+            addToCart(shoppingSlug, productVariantItem);
         },
-        [addToCard, shoppingSlug],
+        [addToCart, shoppingSlug],
     );
 
-    const handleRemoveProduct = useCallback(
-        (productId: string) => {
-            removeProduct(shoppingSlug, productId);
+    const handleRemoveProductVariant = useCallback(
+        (productVariantId: string) => {
+            removeProduct(shoppingSlug, productVariantId);
         },
         [removeProduct, shoppingSlug],
     );
 
     const handleSetQuantity = useCallback(
-        (productId: string, quantity: number) => {
-            setQuantity(shoppingSlug, productId, quantity);
+        (productVariantId: string, quantity: number) => {
+            setQuantity(shoppingSlug, productVariantId, quantity);
         },
         [setQuantity, shoppingSlug],
     );
 
     return {
-        productItems,
-        addToCard: handleAddProduct,
-        setQuantity: handleSetQuantity,
-        removeProduct: handleRemoveProduct,
+        productVariantItems,
+        addToCart: handleAddProductVariant,
+        setQuantityVariant: handleSetQuantity,
+        removeProductVariant: handleRemoveProductVariant,
         clearCart: clearShoppingCart,
         clearAllCarts,
-        isProductInCart,
-        totalItems: Object.keys(productItems).length,
-        itemsArray: Object.values(productItems)
+        isProductVariantInCart,
+        totalVariantItems: Object.keys(productVariantItems).length,
+        variantItemsArray: Object.values(productVariantItems),
     };
 };

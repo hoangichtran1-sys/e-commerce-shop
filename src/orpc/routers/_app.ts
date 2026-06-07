@@ -4,20 +4,18 @@ import { base } from "../init";
 import { storesRouter } from "@/features/admin/stores/server/routers";
 import { billboardsRouter } from "@/features/admin/billboards/server/routers";
 import { categoriesRouter } from "@/features/admin/categories/server/routers";
-import { sizesRouter } from "../../features/admin/sizes/server/routers";
-import { colorsRouter } from "@/features/admin/colors/server/routers";
 import { productsRouter } from "@/features/admin/products/server/routers";
 import { ordersRouter } from "@/features/admin/orders/server/routers";
 import { promotionsRouter } from "@/features/admin/promotions/server/routers";
 import { couponsRouter } from "@/features/admin/coupon/server/routers";
 import { customerRouter } from "@/features/customer/server/routers";
+import { attributesRouter } from "@/features/admin/attributes/server/routers";
 
 export const router = base.router({
     stores: storesRouter,
     billboards: billboardsRouter,
     categories: categoriesRouter,
-    sizes: sizesRouter,
-    colors: colorsRouter,
+    attributes: attributesRouter,
     products: productsRouter,
     orders: ordersRouter,
     promotions: promotionsRouter,

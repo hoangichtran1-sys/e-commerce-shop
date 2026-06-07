@@ -8,7 +8,7 @@ export const formPromotionSchema = z
         categoryIds: z.array(z.string()),
         type: z.enum(PromotionType),
         mode: z.enum(PromotionMode),
-        value: z.number(),
+        value: z.number().positive(),
         startAt: z.date(),
         endAt: z.date(),
         isActive: z.boolean(),

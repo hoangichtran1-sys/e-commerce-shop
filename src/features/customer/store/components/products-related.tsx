@@ -1,79 +1,89 @@
+"use client";
+
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { orpc } from "@/orpc/orpc-rq.client";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { StarIcon } from "lucide-react";
 import Image from "next/image";
 
-type Product = {
-    id: number;
-    title: string;
-    image: string;
-    price: number;
-    rating: number;
-};
+interface ProductsRelatedProps {
+    storeId: string;
+    categoryIds: string[];
+    productCurrentIds: string[];
+}
 
-const products: Product[] = [
-    {
-        id: 1,
-        title: "Eclax Semispherical",
-        image: "https://assets.shadcnstore.com/shadcnstore.com/stock/e-commerce/eclax-semispherical.600w.fa53b6.avif",
-        price: 399,
-        rating: 5,
-    },
-    {
-        id: 2,
-        title: "Eclax Cone",
-        image: "https://assets.shadcnstore.com/shadcnstore.com/stock/e-commerce/eclax-cone.600w.ffc5c7.avif",
-        price: 399,
-        rating: 4,
-    },
-    {
-        id: 3,
-        title: "Eclax Cage Pack",
-        image: "https://assets.shadcnstore.com/shadcnstore.com/stock/e-commerce/eclax-cage-pack.600w.03040e.avif",
-        price: 399,
-        rating: 5,
-    },
-    {
-        id: 4,
-        title: "Eclax Cage Pack",
-        image: "https://assets.shadcnstore.com/shadcnstore.com/stock/e-commerce/eclax-cage-pack.600w.03040e.avif",
-        price: 399,
-        rating: 5,
-    },
-];
+export const ProductsRelated = ({ storeId, categoryIds, productCurrentIds }: ProductsRelatedProps) => {
+    const { data: products, isPending } = useQuery({
+        ...orpc.customer.getProductsRelated.queryOptions({ input: { storeId, categoryIds, productCurrentIds } }),
+        placeholderData: keepPreviousData,
+        enabled: categoryIds.length > 0,
+    });
 
-export const ProductsRelated = () => {
+    if (!products) {
+        return null;
+    }
+
     return (
         <section className="px-12 py-6 mt-6">
-        <h2 className='text-2xl font-bold text-balance md:text-xl mb-6'>Products Related</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-            {products.map((product) => (
-                <Card key={product.id} className="group overflow-hidden transition-all hover:shadow-lg">
-                    <CardContent className="flex flex-col gap-4">
-                        <div className="overflow-hidden rounded-md">
-                            <Image
-                                src={product.image}
-                                alt={product.title}
-                                width={200}
-                                height={200}
-                                className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                        </div>
+            <h2 className="text-2xl font-bold text-balance md:text-xl mb-6">Products Related</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+                {isPending && <p>Loading...</p>}
+                {products.length === 0 && <p className="text-lg italic text-muted-foreground">No products related found</p>}
+                {products.map((product) => {
+                    const totalReview = product._count.reviews;
+                    const rating = totalReview === 0 ? 0 : product.reviews.reduce((curr, item) => curr + item.rating, 0) / totalReview;
 
-                        <div className="flex flex-col gap-2">
-                            <CardTitle className="line-clamp-1 text-lg font-semibold text-balance sm:text-xl">{product.title}</CardTitle>
+                    return (
+                        <Card key={product.id} className="group overflow-hidden transition-all hover:shadow-lg">
+                            <CardContent className="flex flex-col gap-4">
+                                <div className="overflow-hidden rounded-md">
+                                    <Image
+                                        src={product.images[0].url}
+                                        alt={product.name}
+                                        width={200}
+                                        height={200}
+                                        className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                </div>
 
-                            <div className="flex items-center gap-0.5" aria-label={`${product.rating} out of 5 stars`} role="img">
-                                {Array.from({ length: product.rating }).map((_, i) => (
-                                    <StarIcon key={i} className="fill-foreground text-foreground size-4 sm:size-5" />
-                                ))}
-                            </div>
+                                <div className="flex flex-col gap-2">
+                                    <CardTitle className="line-clamp-1 text-lg font-semibold text-balance sm:text-xl">{product.name}</CardTitle>
 
-                            <p className="text-lg font-semibold sm:text-xl">${product.price.toFixed(2)}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
-       </section>
+                                    <div className="flex items-center gap-1" aria-label={`${rating} out of 5 stars`} role="img">
+                                        {[...Array(5)].map((_, i) => {
+                                            const starValue = i + 1;
+                                            const isFull = rating >= starValue;
+                                            const isHalf = rating >= starValue - 0.5 && rating < starValue;
+
+                                            return (
+                                                <div key={i} className="relative size-5">
+                                                    {/* Empty star */}
+                                                    <StarIcon className="absolute inset-0 text-slate-300" fill="none" />
+
+                                                    {/* Full star */}
+                                                    {isFull && <StarIcon className="absolute inset-0 text-amber-400" fill="currentColor" />}
+
+                                                    {/* Half star */}
+                                                    {isHalf && (
+                                                        <div className="absolute inset-0 overflow-hidden w-1/2">
+                                                            <StarIcon className="text-amber-400" fill="currentColor" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                        <span className="text-muted-foreground ml-1 mt-1">({rating})</span>
+                                    </div>
+
+                                    <p className="text-sm font-medium">
+                                        From <span className="text-lg font-bold tracking-tighter">${product.minPrice.toString()}</span>
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
+            </div>
+        </section>
     );
 };

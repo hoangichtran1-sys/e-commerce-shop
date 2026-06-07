@@ -17,6 +17,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "../ui/field";
 import { useStoreSlug } from "@/features/customer/hooks/use-store-slug";
 import { GetReview } from "@/features/customer/types";
 import { InputGroup, InputGroupAddon, InputGroupText, InputGroupTextarea } from "../ui/input-group";
+import { useReviewsFilter } from "@/features/customer/hooks/use-reviews-filter";
 
 interface ReviewModalProps {
     productId: string;
@@ -35,6 +36,8 @@ export const ReviewModal = ({ isOpen, onClose, productId, storeId, initialData }
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
 
+    const [reviewsFilter] = useReviewsFilter();
+
     const router = useRouter();
     const storeSlug = useStoreSlug();
     const queryClient = useQueryClient();
@@ -44,7 +47,9 @@ export const ReviewModal = ({ isOpen, onClose, productId, storeId, initialData }
             onSuccess: () => {
                 toast.success("Thank you your feedback");
                 queryClient.invalidateQueries(orpc.customer.getProduct.queryOptions({ input: { storeId, productId } }));
+                queryClient.invalidateQueries(orpc.customer.getReviews.queryOptions({ input: { storeId, productId, rating: reviewsFilter.rating } }));
                 onClose();
+                // form.reset();
             },
             onError: (error) => {
                 const code = getErrorCode(error);
@@ -63,6 +68,7 @@ export const ReviewModal = ({ isOpen, onClose, productId, storeId, initialData }
                 toast.success("Your feedback edited");
                 queryClient.invalidateQueries(orpc.customer.getProduct.queryOptions({ input: { storeId, productId } }));
                 queryClient.invalidateQueries(orpc.customer.getReview.queryOptions({ input: { storeId: data.storeId, productId: data.productId } }));
+                queryClient.invalidateQueries(orpc.customer.getReviews.queryOptions({ input: { storeId, productId, rating: reviewsFilter.rating } }));
                 onClose();
             },
             onError: (error) => {

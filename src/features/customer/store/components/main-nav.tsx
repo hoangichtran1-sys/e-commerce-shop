@@ -14,9 +14,9 @@ export const MainNav = ({ data }: MainNavProps) => {
     const params = useParams();
 
     const routes = data.map((route) => ({
-        href: `/${params.storeSlug}/categories/${route.id}`,
+        href: `/${params.storeSlug}/categories/${route.slug}`,
         label: route.name,
-        active: pathname === `/${params.storeSlug}/categories/${route.id}`,
+        active: pathname === `/${params.storeSlug}/categories/${route.slug}`,
     }));
 
     return (

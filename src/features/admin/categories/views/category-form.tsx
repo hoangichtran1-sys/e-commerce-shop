@@ -6,8 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { PlusCircleIcon, TrashIcon } from "lucide-react";
-import { useForm } from "@tanstack/react-form";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { useForm, useStore } from "@tanstack/react-form";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Hint } from "@/components/hint";
 import { z } from "zod";
@@ -18,14 +18,18 @@ import { useRouter } from "next/navigation";
 import { BreadcrumbHeader } from "@/components/breadcrumb-header";
 import { cn } from "@/lib/utils";
 
+import { SortableListInput, SortableListItem } from "@/components/sortable-list-input";
+import { useState } from "react";
+
 interface CategoryFormProps {
     categoryId: string;
     storeId: string;
 }
 
 const formSchema = z.object({
-    name: z.string().min(1, "Name is required"),
+    name: z.string().min(1),
     billboardId: z.string().min(1),
+    subcategories: z.array(z.string().min(1)),
 });
 
 export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
@@ -45,6 +49,16 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
         value: billboard.id,
         active: billboard.isActive,
     }));
+
+    const [listItem, setListItem] = useState<SortableListItem[]>(() => {
+        if (initialData) {
+            return initialData.children.map((child) => ({
+                name: child.name,
+                isDeletable: child._count.products === 0,
+            }));
+        }
+        return [];
+    });
 
     const create = useMutation(
         orpc.categories.create.mutationOptions({
@@ -105,23 +119,23 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
         defaultValues: {
             name: initialData?.name || "",
             billboardId: initialData?.billboardId || "",
+            subcategories: (initialData?.children ?? []).map((child) => child.name),
         },
         validators: {
             onSubmit: formSchema,
         },
         onSubmit: async ({ value }) => {
+            console.log(value)
             if (initialData) {
                 edit.mutate({
                     id: categoryId,
                     storeId,
-                    name: value.name,
-                    billboardId: value.billboardId,
+                    ...value,
                 });
             } else {
                 create.mutate({
                     storeId,
-                    name: value.name,
-                    billboardId: value.billboardId,
+                    ...value,
                 });
             }
         },
@@ -137,6 +151,8 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
     const [RemoveConfirmation, confirmRemove] = useConfirm("Are you sure?", "The following action will permanently remove this category");
 
     const actionLabel = initialData ? "Save changes" : "Create";
+
+    const name = useStore(form.store, (state) => state.values.name);
 
     return (
         <>
@@ -158,79 +174,116 @@ export const CategoryForm = ({ storeId, categoryId }: CategoryFormProps) => {
                 className="space-y-8 w-full"
             >
                 <div className="grid md:grid-cols-3 grid-cols-1 gap-8">
-                    <form.Field
-                        name="name"
-                        children={(field) => {
-                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-                            return (
-                                <Field data-invalid={isInvalid}>
-                                    <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                                    <Input
-                                        className="max-w-60"
-                                        type="text"
-                                        placeholder="Category name"
-                                        id={field.name}
-                                        name={field.name}
-                                        value={field.state.value}
-                                        onBlur={field.handleBlur}
-                                        onChange={(e) => field.handleChange(e.target.value)}
-                                        aria-invalid={isInvalid}
-                                        autoComplete="off"
-                                    />
-                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                                </Field>
-                            );
-                        }}
-                    />
-                    <form.Field
-                        name="billboardId"
-                        children={(field) => {
-                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-                            return (
-                                <Field data-invalid={isInvalid}>
-                                    <FieldLabel htmlFor={field.name}>Billboard</FieldLabel>
-                                    <div className="flex items-center justify-start gap-2">
-                                        <Select name={field.name} value={field.state.value} onValueChange={field.handleChange}>
-                                            <SelectTrigger id="select-billboard" aria-invalid={isInvalid} className="min-w-60">
-                                                <SelectValue placeholder="Select billboard" />
-                                            </SelectTrigger>
-                                            <SelectContent position="popper">
-                                                {billboardFormatted.map((item) => (
-                                                    <SelectItem key={item.value} value={item.value}>
-                                                        <div className="flex items-center gap-x-2">
-                                                            <div
-                                                                className={cn("h-2 w-2 rounded-full", item.active ? "bg-emerald-500" : "bg-rose-500")}
-                                                            />
-                                                            {item.label}
-                                                        </div>
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {billboardFormatted.length === 0 && (
-                                            <Hint text="Add billboard">
-                                                <Button
-                                                    size="icon-sm"
-                                                    type="button"
-                                                    variant="outline"
-                                                    onClick={() => router.push(`/admin/${storeId}/billboards/new`)}
-                                                >
-                                                    <PlusCircleIcon className="size-4" />
-                                                </Button>
-                                            </Hint>
-                                        )}
-                                    </div>
-                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
-                                </Field>
-                            );
-                        }}
-                    />
+                    <FieldGroup className="col-span-3">
+                        <div className="w-full max-w-[60%] flex md:flex-row flex-col items-start md:items-center justify-between gap-6">
+                            <div className="flex-1 max-w-80">
+                                <form.Field
+                                    name="name"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                                                <Input
+                                                    className="max-w-60"
+                                                    type="text"
+                                                    placeholder="Category name"
+                                                    id={field.name}
+                                                    name={field.name}
+                                                    value={field.state.value}
+                                                    onBlur={field.handleBlur}
+                                                    onChange={(e) => field.handleChange(e.target.value)}
+                                                    aria-invalid={isInvalid}
+                                                    autoComplete="off"
+                                                />
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div className="w-full max-w-80">
+                                <form.Field
+                                    name="billboardId"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Billboard</FieldLabel>
+                                                <div className="flex items-center justify-start gap-2">
+                                                    <Select name={field.name} value={field.state.value || ""} onValueChange={field.handleChange}>
+                                                        <SelectTrigger id="select-billboard" aria-invalid={isInvalid} className="min-w-80">
+                                                            <SelectValue placeholder="Select billboard" />
+                                                        </SelectTrigger>
+                                                        <SelectContent position="popper">
+                                                            {billboardFormatted.map((item) => (
+                                                                <SelectItem key={item.value} value={item.value}>
+                                                                    <div className="flex items-center gap-x-2">
+                                                                        <div
+                                                                            className={cn(
+                                                                                "h-2 w-2 rounded-full",
+                                                                                item.active ? "bg-emerald-500" : "bg-rose-500",
+                                                                            )}
+                                                                        />
+                                                                        {item.label}
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {billboardFormatted.length === 0 && (
+                                                        <Hint text="Add billboard">
+                                                            <Button
+                                                                size="icon-sm"
+                                                                type="button"
+                                                                variant="outline"
+                                                                onClick={() => router.push(`/admin/${storeId}/billboards/new`)}
+                                                            >
+                                                                <PlusCircleIcon className="size-4" />
+                                                            </Button>
+                                                        </Hint>
+                                                    )}
+                                                </div>
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </FieldGroup>
+                    {name && (
+                        <FieldGroup className="col-span-3">
+                            <div className="w-full max-w-[40%]">
+                                <form.Field
+                                    name="subcategories"
+                                    children={(field) => {
+                                        const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                        return (
+                                            <Field data-invalid={isInvalid}>
+                                                <FieldLabel htmlFor={field.name}>Subcategory</FieldLabel>
+                                                <SortableListInput
+                                                    value={listItem}
+                                                    onChange={(values) => {
+                                                        setListItem(values);
+                                                        form.setFieldValue(
+                                                            "subcategories",
+                                                            values.map((item) => item.name),
+                                                        );
+                                                    }}
+                                                />
+                                                {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                            </Field>
+                                        );
+                                    }}
+                                />
+                            </div>
+                        </FieldGroup>
+                    )}
                 </div>
                 <form.Subscribe
-                    selector={(state) => [state.values]}
-                    children={([values]) => {
-                        const isDirty = values.name !== (initialData?.name || "") || values.billboardId !== (initialData?.billboardId || "");
-
+                    selector={(state) => [state.isDirty]}
+                    children={([isDirty]) => {
                         const isDisabled = initialData ? !isDirty || edit.isPending : create.isPending;
 
                         return (

@@ -41,14 +41,9 @@ export const MainNav = ({ className }: MainNavProps) => {
             active: pathname === `/admin/${params.storeId}/categories`,
         },
         {
-            href: `/admin/${params.storeId}/sizes`,
-            label: "Sizes",
-            active: pathname === `/admin/${params.storeId}/sizes`,
-        },
-        {
-            href: `/admin/${params.storeId}/colors`,
-            label: "Colors",
-            active: pathname === `/admin/${params.storeId}/colors`,
+            href: `/admin/${params.storeId}/attributes`,
+            label: "Attributes",
+            active: pathname === `/admin/${params.storeId}/attributes`,
         },
         {
             href: `/admin/${params.storeId}/products`,
@@ -69,16 +64,6 @@ export const MainNav = ({ className }: MainNavProps) => {
             href: `/admin/${params.storeId}/coupons`,
             label: "Coupons",
             active: pathname === `/admin/${params.storeId}/coupons`,
-        },
-        {
-            href: `/admin/${params.storeId}/reviews`,
-            label: "Reviews",
-            active: pathname === `/admin/${params.storeId}/reviews`,
-        },
-        {
-            href: `/admin/${params.storeId}/replies`,
-            label: "Replies",
-            active: pathname === `/admin/${params.storeId}/replies`,
         },
         {
             href: `/admin/${params.storeId}/settings`,

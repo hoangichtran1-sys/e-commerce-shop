@@ -19,12 +19,14 @@ import { toast } from "sonner";
 interface CategoryActionProps {
     id: string;
     storeId: string;
+    slug: string;
     children: React.ReactNode;
 }
 
 export const CategoryActions = ({
     id,
     storeId,
+    slug,
     children,
 }: CategoryActionProps) => {
     const router = useRouter();
@@ -52,8 +54,8 @@ export const CategoryActions = ({
     );
 
     const onCopy = () => {
-        navigator.clipboard.writeText(id);
-        toast.success("Category ID copied to the clipboard");
+        navigator.clipboard.writeText(slug);
+        toast.success("Category slug copied to the clipboard");
     };
 
     return (
@@ -67,7 +69,7 @@ export const CategoryActions = ({
                         className="font-medium p-2.5"
                     >
                         <CopyIcon className="size-4 stroke-2" />
-                        Copy ID
+                        Copy slug
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         onClick={() =>

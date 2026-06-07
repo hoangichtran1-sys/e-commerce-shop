@@ -11,9 +11,9 @@ export const requireAuth = async () => {
         redirect("/login");
     }
 
-    if (session.user.role === "admin") {
-        redirect("/admin");
-    }
+    // if (session.user.role === "admin") {
+     //   redirect("/");
+   // }
 
     return session;
 };

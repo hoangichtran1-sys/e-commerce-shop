@@ -1,15 +1,5 @@
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-    CopyIcon,
-    ExternalLinkIcon,
-    PencilIcon,
-    TrashIcon,
-} from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { CopyIcon, ExternalLinkIcon, PencilIcon, TrashIcon } from "lucide-react";
 import React from "react";
 import { useConfirm } from "@/hooks/use-confirm";
 import { useRouter } from "next/navigation";
@@ -23,11 +13,7 @@ interface BillboardActionProps {
     children: React.ReactNode;
 }
 
-export const BillboardActions = ({
-    id,
-    storeId,
-    children,
-}: BillboardActionProps) => {
+export const BillboardActions = ({ id, storeId, children }: BillboardActionProps) => {
     const router = useRouter();
     const queryClient = useQueryClient();
 
@@ -47,10 +33,7 @@ export const BillboardActions = ({
         }),
     );
 
-    const [RemoveConfirmation, confirmRemove] = useConfirm(
-        "Are you sure?",
-        "The following action will permanently remove this billboard",
-    );
+    const [RemoveConfirmation, confirmRemove] = useConfirm("Are you sure?", "The following action will permanently remove this billboard");
 
     const onCopy = () => {
         navigator.clipboard.writeText(id);
@@ -63,32 +46,16 @@ export const BillboardActions = ({
             <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                        onClick={onCopy}
-                        className="font-medium p-2.5"
-                    >
+                    <DropdownMenuItem onClick={onCopy} className="font-medium p-2.5">
                         <CopyIcon className="size-4 stroke-2" />
                         Copy ID
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() =>
-                            window.open(
-                                `/admin/${storeId}/billboards/${id}`,
-                                "_blank",
-                            )
-                        }
-                        className="font-medium p-2.5"
-                    >
+                    <DropdownMenuItem onClick={() => window.open(`/admin/${storeId}/billboards/${id}`, "_blank")} className="font-medium p-2.5">
                         <ExternalLinkIcon className="size-4 stroke-2" />
                         Billboard details
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem
-                        onClick={() =>
-                            router.push(`/admin/${storeId}/billboards/${id}`)
-                        }
-                        className="font-medium p-2.5"
-                    >
+                    <DropdownMenuItem onClick={() => router.push(`/admin/${storeId}/billboards/${id}`)} className="font-medium p-2.5">
                         <PencilIcon className="size-4 stroke-2" />
                         Edit billboard
                     </DropdownMenuItem>
