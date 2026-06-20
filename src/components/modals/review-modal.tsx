@@ -19,6 +19,7 @@ import { GetReview } from "@/features/customer/types";
 import { InputGroup, InputGroupAddon, InputGroupText, InputGroupTextarea } from "../ui/input-group";
 import { useReviewsFilter } from "@/features/customer/hooks/use-reviews-filter";
 import { useReviewModal } from "@/features/customer/hooks/use-review-modal";
+import { DEFAULT_LIMIT } from "@/constants";
 
 interface ReviewModalProps {
     productId: string;
@@ -47,7 +48,9 @@ export const ReviewModal = ({ productId, storeId, initialData }: ReviewModalProp
             onSuccess: () => {
                 toast.success("Thank you your feedback");
                 queryClient.invalidateQueries(orpc.customer.getProduct.queryOptions({ input: { storeId, productId } }));
-                queryClient.invalidateQueries(orpc.customer.getReviews.queryOptions({ input: { storeId, productId, rating: reviewsFilter.rating } }));
+                queryClient.invalidateQueries(
+                    orpc.customer.getReviews.queryOptions({ input: { storeId, productId, rating: reviewsFilter.rating, limit: DEFAULT_LIMIT } }),
+                );
                 onClose();
                 // form.reset();
             },
@@ -68,7 +71,9 @@ export const ReviewModal = ({ productId, storeId, initialData }: ReviewModalProp
                 toast.success("Your feedback edited");
                 queryClient.invalidateQueries(orpc.customer.getProduct.queryOptions({ input: { storeId, productId } }));
                 queryClient.invalidateQueries(orpc.customer.getReview.queryOptions({ input: { storeId: data.storeId, productId: data.productId } }));
-                queryClient.invalidateQueries(orpc.customer.getReviews.queryOptions({ input: { storeId, productId, rating: reviewsFilter.rating } }));
+                queryClient.invalidateQueries(
+                    orpc.customer.getReviews.queryOptions({ input: { storeId, productId, rating: reviewsFilter.rating, limit: DEFAULT_LIMIT } }),
+                );
                 onClose();
             },
             onError: (error) => {

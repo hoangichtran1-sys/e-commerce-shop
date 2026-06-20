@@ -1,14 +1,56 @@
+/* eslint-disable react/no-children-prop */
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { orpc } from "@/orpc/orpc-rq.client";
+import { useForm, useStore } from "@tanstack/react-form";
+import { useMutation } from "@tanstack/react-query";
+import { Mail, MailIcon, MapPin, Phone } from "lucide-react";
+import { InputGroup, InputGroupAddon, InputGroupText, InputGroupTextarea } from "@/components/ui/input-group";
+import { toast } from "sonner";
+import { z } from "zod";
+
+const contactFormSchema = z.object({
+    firstName: z.string().min(1).max(30),
+    lastName: z.string().min(1).max(30),
+    email: z.email(),
+    subject: z.string().min(1).max(50),
+    message: z.string().min(3).max(1000),
+});
 
 export const StoreContact = ({ className }: { className?: string }) => {
+    const contact = useMutation(
+        orpc.customer.contact.mutationOptions({
+            onSuccess: () => {
+                toast.success("The support request has been submitted.");
+            },
+            onError: () => {
+                toast.error("Something went wrong");
+            },
+        }),
+    );
+    const form = useForm({
+        defaultValues: {
+            firstName: "",
+            lastName: "",
+            email: "",
+            subject: "",
+            message: "",
+        },
+        validators: {
+            onSubmit: contactFormSchema,
+        },
+        onSubmit: ({ value }) => {
+            contact.mutate(value);
+        },
+    });
+
+    const message = useStore(form.store, (state) => state.values.message);
+
     return (
         <section className={cn("py-16", className)}>
             <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -27,31 +69,152 @@ export const StoreContact = ({ className }: { className?: string }) => {
                             <CardTitle className="text-balance">Send us a Message</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-6 px-6">
-                            <FieldGroup>
-                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <Field>
-                                        <FieldLabel htmlFor="first-name-aB3x9">First name</FieldLabel>
-                                        <Input id="first-name-aB3x9" placeholder="John" className="h-9" />
-                                    </Field>
-                                    <Field>
-                                        <FieldLabel htmlFor="last-name-cD4y8">Last name</FieldLabel>
-                                        <Input id="last-name-cD4y8" placeholder="Doe" className="h-9" />
-                                    </Field>
-                                </div>
-                                <Field>
-                                    <FieldLabel htmlFor="email-eF5z7">Email</FieldLabel>
-                                    <Input id="email-eF5z7" type="email" placeholder="john@example.com" className="h-9" />
-                                </Field>
-                                <Field>
-                                    <FieldLabel htmlFor="subject-gH6w6">Subject</FieldLabel>
-                                    <Input id="subject-gH6w6" placeholder="How can we help?" className="h-9" />
-                                </Field>
-                                <Field>
-                                    <FieldLabel htmlFor="message-iJ7v5">Message</FieldLabel>
-                                    <Textarea id="message-iJ7v5" placeholder="Tell us more about your project..." className="min-h-30" />
-                                </Field>
-                            </FieldGroup>
-                            <Button className="h-9 px-4 py-2 w-full cursor-pointer">Send Message</Button>
+                            <form
+                                className="space-y-6"
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    form.handleSubmit();
+                                }}
+                            >
+                                <FieldGroup>
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        <form.Field
+                                            name="firstName"
+                                            children={(field) => {
+                                                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                                return (
+                                                    <Field data-invalid={isInvalid}>
+                                                        <FieldLabel htmlFor={field.name}>First Name</FieldLabel>
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="John"
+                                                            id={field.name}
+                                                            name={field.name}
+                                                            value={field.state.value}
+                                                            onBlur={field.handleBlur}
+                                                            onChange={(e) => field.handleChange(e.target.value)}
+                                                            aria-invalid={isInvalid}
+                                                            autoComplete="off"
+                                                        />
+
+                                                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                                    </Field>
+                                                );
+                                            }}
+                                        />
+                                        <form.Field
+                                            name="lastName"
+                                            children={(field) => {
+                                                const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                                return (
+                                                    <Field data-invalid={isInvalid}>
+                                                        <FieldLabel htmlFor={field.name}>Last Name</FieldLabel>
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Doe"
+                                                            id={field.name}
+                                                            name={field.name}
+                                                            value={field.state.value}
+                                                            onBlur={field.handleBlur}
+                                                            onChange={(e) => field.handleChange(e.target.value)}
+                                                            aria-invalid={isInvalid}
+                                                            autoComplete="off"
+                                                        />
+
+                                                        {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                                    </Field>
+                                                );
+                                            }}
+                                        />
+                                    </div>
+                                </FieldGroup>
+                                <FieldGroup>
+                                    <form.Field
+                                        name="email"
+                                        children={(field) => {
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                            return (
+                                                <Field data-invalid={isInvalid}>
+                                                    <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                                                    <Input
+                                                        type="email"
+                                                        placeholder="john@example.com"
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
+                                                        aria-invalid={isInvalid}
+                                                        autoComplete="off"
+                                                    />
+
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                                </Field>
+                                            );
+                                        }}
+                                    />
+                                </FieldGroup>
+                                <FieldGroup>
+                                    <form.Field
+                                        name="subject"
+                                        children={(field) => {
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                            return (
+                                                <Field data-invalid={isInvalid}>
+                                                    <FieldLabel htmlFor={field.name}>Subject</FieldLabel>
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="How can we help?"
+                                                        id={field.name}
+                                                        name={field.name}
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
+                                                        aria-invalid={isInvalid}
+                                                        autoComplete="off"
+                                                    />
+
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                                </Field>
+                                            );
+                                        }}
+                                    />
+                                </FieldGroup>
+                                <FieldGroup>
+                                    <form.Field
+                                        name="message"
+                                        children={(field) => {
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
+                                            return (
+                                                <Field data-invalid={isInvalid}>
+                                                    <FieldLabel htmlFor={field.name}>Message</FieldLabel>
+                                                    <InputGroup>
+                                                        <InputGroupTextarea
+                                                            className="min-h-30"
+                                                            id={field.name}
+                                                            name={field.name}
+                                                            value={field.state.value || ""}
+                                                            onChange={(e) => field.handleChange(e.target.value)}
+                                                            onBlur={field.handleBlur}
+                                                            placeholder="Tell us more about your product..."
+                                                            aria-invalid={isInvalid}
+                                                        />
+                                                        <InputGroupAddon align="block-end">
+                                                            <InputGroupText>{message ? message.trim().length : 0}/1000</InputGroupText>
+                                                        </InputGroupAddon>
+                                                    </InputGroup>
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                                                </Field>
+                                            );
+                                        }}
+                                    />
+                                </FieldGroup>
+
+                                <Button className="h-9 px-4 py-2 w-full cursor-pointer">
+                                    <MailIcon className="size-4 text-white" />
+                                    Send Message
+                                </Button>
+                            </form>
                         </CardContent>
                     </Card>
 
@@ -69,7 +232,7 @@ export const StoreContact = ({ className }: { className?: string }) => {
                                     </div>
                                     <div>
                                         <h4 className="text-sm font-medium">Email</h4>
-                                        <p className="text-muted-foreground text-xs">hello@company.com</p>
+                                        <p className="text-muted-foreground text-xs">support@ecommerce.com</p>
                                     </div>
                                 </div>
 
@@ -129,7 +292,11 @@ export const StoreContact = ({ className }: { className?: string }) => {
                             </CardHeader>
                             <CardContent className="px-6">
                                 <p className="text-muted-foreground mb-3 text-sm">Speak directly with our team for immediate assistance.</p>
-                                <Button variant="outline" className="h-9 px-4 py-2 w-full cursor-pointer">
+                                <Button
+                                    onClick={() => toast.info("You call to your system...")}
+                                    variant="outline"
+                                    className="h-9 px-4 py-2 w-full cursor-pointer"
+                                >
                                     <Phone />
                                     Schedule a Call
                                 </Button>

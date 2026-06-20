@@ -13,6 +13,7 @@ import { SearchIcon, StoreIcon, ArrowRight, TrendingUp, ShoppingBag } from "luci
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSearchStore } from "../../hooks/use-search-store";
 
 export const StorePickerSkeleton = () => {
     return (
@@ -30,7 +31,9 @@ export const StorePickerSkeleton = () => {
 export const StorePicker = () => {
     const user = authClient.useSession();
 
-    const { data: stores } = useSuspenseQuery(orpc.customer.getStores.queryOptions());
+    const [storeSearchParams, setStoreSearchParams] = useSearchStore();
+
+    const { data: stores } = useSuspenseQuery(orpc.customer.getStores.queryOptions({ input: { search: storeSearchParams.search } }));
 
     const [searchQuery, setSearchQuery] = useState("");
     const [api, setApi] = useState<{
@@ -55,10 +58,6 @@ export const StorePicker = () => {
     const totalProductSoldAllStore = useMemo(() => {
         return stores.reduce((sum, item) => sum + item.productSold, 0);
     }, [stores]);
-
-    if (stores.length === 0) {
-        return <NoResults icon={StoreIcon} topic="stores" isAdmin={user?.data?.user.role === "admin"} />;
-    }
 
     return (
         <section className="from-background to-accent/20 relative bg-linear-to-b">
@@ -87,7 +86,12 @@ export const StorePicker = () => {
                                 aria-label="Search products"
                             />
                             <SearchIcon className="text-muted-foreground absolute inset-s-4 top-1/2 size-5 -translate-y-1/2" />
-                            <Button size="lg" className="absolute inset-e-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full px-6 h-10">
+                            <Button
+                                onClick={() => setStoreSearchParams({ search: searchQuery })}
+                                size="lg"
+                                className="absolute inset-e-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-full px-6 h-10"
+                                disabled={searchQuery.trim().length === 0}
+                            >
                                 Search
                             </Button>
                         </div>
@@ -103,6 +107,7 @@ export const StorePicker = () => {
                             </Button>
                         </div>
                     </header>
+                    {stores.length === 0 && <NoResults icon={StoreIcon} topic="stores" isAdmin={user?.data?.user.role === "admin"} />}
                     <Suspense fallback={<StorePickerSkeleton />}>
                         <div className="flex flex-col gap-4">
                             <div className="relative h-125 w-full border-0">

@@ -96,7 +96,6 @@ export const storesRouter = base.router({
             }),
         )
         .handler(async ({ input, context }) => {
-            throw new ORPCError("NOT_FOUND");
             const store = await prisma.store.findUnique({
                 where: {
                     id: input.id,

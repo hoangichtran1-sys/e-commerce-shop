@@ -27,9 +27,10 @@ import { useReviewsFilter } from "@/features/customer/hooks/use-reviews-filter";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { cn, getErrorCode } from "@/lib/utils";
 import { useReviewModal } from "@/features/customer/hooks/use-review-modal";
+import { DEFAULT_LIMIT } from "@/constants";
 
 interface ReviewItemProps {
-    data: GetReviews[number];
+    data: GetReviews["items"][number];
     currentUser: User | null;
     storeId: string;
     productId: string;
@@ -84,6 +85,7 @@ export const ReviewItem = ({ data, currentUser, storeId, productId }: ReviewItem
                             storeId,
                             productId,
                             rating: reviewsFilter.rating,
+                            limit: DEFAULT_LIMIT,
                         },
                     }),
                 );
@@ -112,6 +114,7 @@ export const ReviewItem = ({ data, currentUser, storeId, productId }: ReviewItem
                             storeId,
                             productId,
                             rating: reviewsFilter.rating,
+                            limit: DEFAULT_LIMIT,
                         },
                     }),
                 );
@@ -138,6 +141,7 @@ export const ReviewItem = ({ data, currentUser, storeId, productId }: ReviewItem
                             storeId,
                             productId,
                             rating: reviewsFilter.rating,
+                            limit: DEFAULT_LIMIT,
                         },
                     }),
                 );

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/send-mail";
 
 export const POST = async (req: Request) => {
     let event: Stripe.Event;
@@ -193,10 +194,13 @@ export const POST = async (req: Request) => {
                         throw new Error("Payment intent ID is required");
                     }
 
-                    await prisma.$transaction(async (tx) => {
+                    const order = await prisma.$transaction(async (tx) => {
                         const order = await tx.order.findUnique({
                             where: {
                                 transactionId: paymentIntentId as string,
+                            },
+                            include: {
+                                user: { select: { email: true } },
                             },
                         });
 
@@ -212,7 +216,35 @@ export const POST = async (req: Request) => {
                                 status: "REFUND",
                             },
                         });
+
+                        return order;
                     });
+
+                    if (order) {
+                        const htmlRefundSuccess = `
+                            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #17a2b8;">
+                                <h2 style="color: #17a2b8;">Hoàn tiền thành công</h2>
+                                <p>Yêu cầu hoàn tiền cho đơn hàng <strong>${order.orderCode}</strong> đã được xử lý thành công.</p>
+                                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <p style="margin: 5px 0;"><strong>Số tiền hoàn lại:</strong> ${order.amountPaid?.toNumber() || 0} ${order.currency}</p>
+                                    <p style="margin: 5px 0;"><strong>Phương thức:</strong> Hoàn về thẻ đã thanh toán</p>
+                                </div>
+                                <p style="color: #6c757d; font-size: 14px;">
+                                    <i>*Lưu ý: Tiền thường sẽ xuất hiện trong tài khoản của bạn sau 5 đến 10 ngày làm việc tùy thuộc vào ngân hàng.</i>
+                                </p>
+                                <a href="${env.APP_URL}" 
+                                    style="display: inline-block; background: #17a2b8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                                    Xem chi tiết các đơn hàng của bạn
+                                </a>
+                            </div>
+                        `;
+
+                        await sendEmail({
+                            email: order.user.email,
+                            subject: "Refund successful",
+                            html: htmlRefundSuccess,
+                        });
+                    }
 
                     break;
                 }

@@ -28,8 +28,8 @@ export const InfiniteScroll = ({ isManual = false, hasNextPage, isFetchingNextPa
             <div ref={targetRef} className="h-1" />
             {hasNextPage ? (
                 <Button
-                    variant="ghost"
-                    className="w-full text-muted-foreground"
+                    variant="outline"
+                    className="w-full text-muted-foreground border-b shadow-sm"
                     disabled={!hasNextPage || isFetchingNextPage}
                     onClick={() => fetchNextPage()}
                 >

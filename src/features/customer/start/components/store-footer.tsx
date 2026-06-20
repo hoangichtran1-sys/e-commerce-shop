@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import Link from "next/link";
 import Image from "next/image";
+import { useMutation } from "@tanstack/react-query";
+import { orpc } from "@/orpc/orpc-rq.client";
 
 type NewsletterData = {
     title?: string;
@@ -182,12 +184,7 @@ const CONTACT_LINKS: ContactLinks = {
     ],
 };
 
-export const StoreFooter = ({
-    newsletter = NEWSLETTER_DATA,
-    footerLinks = FOOTER_LINKS,
-    contactLinks = CONTACT_LINKS,
-    className,
-}: FooterProps) => {
+export const StoreFooter = ({ newsletter = NEWSLETTER_DATA, footerLinks = FOOTER_LINKS, contactLinks = CONTACT_LINKS, className }: FooterProps) => {
     return (
         <section className={cn("pt-8 pb-8 xl:pt-12", className)}>
             <div className="container space-y-10">
@@ -271,6 +268,16 @@ const newsletterFormSchema = z.object({
 });
 
 const NewsletterSection = ({ title, description }: NewsletterFormProps) => {
+    const subscribe = useMutation(
+        orpc.customer.subscribeNewsletter.mutationOptions({
+            onSuccess: () => {
+                toast.success("Subscribed successfully");
+            },
+            onError: () => {
+                toast.error("Subscribe failed");
+            },
+        }),
+    );
     const form = useForm({
         defaultValues: {
             email: "",
@@ -279,7 +286,7 @@ const NewsletterSection = ({ title, description }: NewsletterFormProps) => {
             onSubmit: newsletterFormSchema,
         },
         onSubmit: ({ value }) => {
-            toast.success(`Send email ${value.email} successfully`);
+            subscribe.mutate({ email: value.email });
         },
     });
 

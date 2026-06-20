@@ -12,6 +12,7 @@ import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe";
 import { generateOrderCode } from "@/lib/generate-order-code";
 import { FAVORITE_BREAKPOINT, MAX_LIMIT, MIN_LIMIT, PAGINATION, RATING_BREAKPOINT, REPORT_BREAKPOINT } from "@/constants";
+import { sendEmail } from "@/lib/send-mail";
 
 export const customerRouter = base.router({
     getOrdersHistory: authed
@@ -430,26 +431,35 @@ export const customerRouter = base.router({
 
             return category.id;
         }),
-    getStores: base.handler(async () => {
-        const [stores, productSoldWithStore] = await Promise.all([
-            prisma.store.findMany({
-                orderBy: {
-                    createdAt: "desc",
-                },
+    getStores: base
+        .input(
+            z.object({
+                search: z.string().nullish(),
             }),
-            prisma.product.groupBy({
-                by: ["storeId"],
-                _sum: {
-                    soldCount: true,
-                },
-            }),
-        ]);
+        )
+        .handler(async ({ input }) => {
+            const [stores, productSoldWithStore] = await Promise.all([
+                prisma.store.findMany({
+                    where: {
+                        ...(input.search ? { name: { contains: input.search, mode: "insensitive" } } : {}),
+                    },
+                    orderBy: {
+                        createdAt: "desc",
+                    },
+                }),
+                prisma.product.groupBy({
+                    by: ["storeId"],
+                    _sum: {
+                        soldCount: true,
+                    },
+                }),
+            ]);
 
-        return stores.map((item) => ({
-            ...item,
-            productSold: productSoldWithStore.find((p) => p.storeId === item.id)?._sum.soldCount || 0,
-        }));
-    }),
+            return stores.map((item) => ({
+                ...item,
+                productSold: productSoldWithStore.find((p) => p.storeId === item.id)?._sum.soldCount || 0,
+            }));
+        }),
     getCategoriesParent: base.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
         const categories = await prisma.category.findMany({
             where: {
@@ -1454,5 +1464,59 @@ export const customerRouter = base.router({
             });
 
             return createdReviewReactionDislike;
+        }),
+    subscribeNewsletter: base
+        .input(
+            z.object({
+                email: z.email(),
+            }),
+        )
+        .handler(async ({ input }) => {
+            const htmlEmailSubscribe = `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #28a745;">
+                    <h2 style="color: #28a745;">Đăng ký thành công!</h2>
+                    <p>Chúc mừng bạn! Email <strong>${input.email}</strong> đã đăng lý để nhận thông tin mới nhất.</p>
+                    <p>Bạn sẽ sớm nhận được các thông báo chính thức từ phía chúng tôi.</p>
+                </div>
+            `;
+            const infoSendMail = await sendEmail({
+                email: input.email,
+                subject: "Subscribe to our newsletter",
+                replyTo: env.MAIL_FROM_ADDRESS,
+                html: htmlEmailSubscribe,
+            });
+
+            return infoSendMail;
+        }),
+    contact: base
+        .input(
+            z.object({
+                firstName: z.string().min(1).max(30),
+                lastName: z.string().min(1).max(30),
+                email: z.email(),
+                subject: z.string().min(1).max(50),
+                message: z.string().min(3).max(1000),
+            }),
+        )
+        .handler(async ({ input }) => {
+            const { firstName, lastName, email, subject, message } = input;
+            const htmlEmailContact = `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #17a2b8;">
+                    <h2 style="color: #17a2b8;">Vấn đề: ${subject}</h2>
+                    <p>Bạn nhận được yêu cầu hỗ trợ từ khách hàng <strong>${firstName} ${lastName}</strong>.</p>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                        <p style="margin: 5px 0;"><strong>Nội dung:</strong> ${message}</p>
+                    </div>
+                </div>
+            `;
+            const infoSendMail = await sendEmail({
+                from: email,
+                email: env.MAIL_USERNAME,
+                subject: subject,
+                replyTo: email,
+                html: htmlEmailContact,
+            });
+
+            return infoSendMail;
         }),
 });

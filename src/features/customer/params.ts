@@ -39,3 +39,9 @@ export const paginationOrders = {
 };
 
 export const paginationOrdersLoader = createLoader(paginationOrders);
+
+export const storeSearchParams = {
+    search: parseAsString.withOptions({ clearOnDefault: true }),
+};
+
+export const loaderStoreSearchParams = createLoader(storeSearchParams);
