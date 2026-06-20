@@ -4,9 +4,66 @@ import { GetOrdersByStatus } from "../type";
 import { BanIcon, ChevronRightIcon, CircleCheckIcon, PackageIcon, PackagePlusIcon, TruckIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface OrdersByStatusProps {
     data: GetOrdersByStatus;
+}
+
+export function OrdersByStatusSkeleton() {
+    return (
+        <Card className="min-h-100">
+            <CardHeader>
+                <CardTitle>
+                    <div className="flex items-center gap-2">
+                        <Button disabled size="icon-lg" className="rounded-md" variant="outline">
+                            <PackageIcon className="size-5 font-semibold text-neutral-300" />
+                        </Button>
+                        <h3 className="font-medium text-lg">Orders by status</h3>
+                    </div>
+                </CardTitle>
+                {/* Thay thế phần text động "Income X orders..." bằng text kết hợp skeleton */}
+                <CardDescription className="flex items-center gap-1.5">
+                    <span>Income</span>
+                    <Skeleton className="h-4 w-10" />
+                    <span>orders in the last 30 days</span>
+                </CardDescription>
+                <CardAction>
+                    <Button disabled title="View All" size="icon-lg" className="rounded-md" variant="outline">
+                        <ChevronRightIcon className="size-5 font-semibold text-neutral-300" />
+                    </Button>
+                </CardAction>
+            </CardHeader>
+
+            <CardContent className="mt-2">
+                <div className="flex flex-col gap-y-6">
+                    {/* Giả lập song song 4 trạng thái đơn hàng */}
+                    {Array.from({ length: 4 }).map((_, index) => (
+                        <div key={index} className="w-full">
+                            {/* Phần thông tin phía trên thanh Progress */}
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-x-3">
+                                    {/* Icon + Chữ đại diện trạng thái */}
+                                    <div className="flex items-center gap-x-2">
+                                        <Skeleton className="size-4 rounded-sm" />
+                                        <Skeleton className="h-4 w-24" />
+                                    </div>
+                                    {/* Badge tăng trưởng phần trăm (+/- %) */}
+                                    <Skeleton className="h-5 w-12 rounded-full" />
+                                </div>
+
+                                {/* Số % tổng của hàng (bên phải cùng) */}
+                                <Skeleton className="h-4 w-8" />
+                            </div>
+
+                            {/* Thanh Progress Skeleton (min-h-3 giống bản gốc của bạn) */}
+                            <Skeleton className="h-3 w-full rounded-full" />
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
 }
 
 export const OrdersByStatus = ({ data }: OrdersByStatusProps) => {

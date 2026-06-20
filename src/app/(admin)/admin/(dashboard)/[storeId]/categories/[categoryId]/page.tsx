@@ -1,3 +1,5 @@
+import { ErrorView } from "@/components/error-view";
+import { FormSkeleton } from "@/components/skeletons/form-skeleton";
 import { CategoryForm } from "@/features/admin/categories/views/category-form";
 import { HydrateClient, orpc, prefetch } from "@/orpc/orpc-rq.server";
 import { Suspense } from "react";
@@ -29,14 +31,11 @@ const Page = async ({ params }: PageProps) => {
 
     return (
         <HydrateClient>
-            <Suspense fallback={<p>Loading...</p>}>
-                <ErrorBoundary fallback={<p>Error!</p>}>
+            <Suspense fallback={<FormSkeleton />}>
+                <ErrorBoundary fallback={<ErrorView message="Error!" />}>
                     <div className="flex-col">
                         <div className="flex-1 space-y-4 p-8 pt-6">
-                            <CategoryForm
-                                storeId={storeId}
-                                categoryId={categoryId}
-                            />
+                            <CategoryForm storeId={storeId} categoryId={categoryId} />
                         </div>
                     </div>
                 </ErrorBoundary>

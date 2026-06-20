@@ -5,7 +5,7 @@ import { z } from "zod";
 import slug from "slug";
 import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 import cloudinary from "@/lib/cloudinary";
-import { format, setDate, startOfMonth, subMonths } from "date-fns";
+import { format, startOfMonth, subMonths } from "date-fns";
 import { DiscountSnapshot } from "@/features/customer/types";
 import { LOW_STOCK } from "@/constants";
 import { calculatePercentageChange } from "@/lib/utils";
@@ -96,6 +96,7 @@ export const storesRouter = base.router({
             }),
         )
         .handler(async ({ input, context }) => {
+            throw new ORPCError("NOT_FOUND");
             const store = await prisma.store.findUnique({
                 where: {
                     id: input.id,
@@ -212,14 +213,13 @@ export const storesRouter = base.router({
             }),
         )
         .handler(async ({ input }) => {
-            const now = new Date("2026-05-29T00:00:00Z"); // new Date()
+            const now = new Date();
 
             const currentStart = startOfMonth(now);
             const currentEnd = now;
 
             const previousStart = startOfMonth(subMonths(now, 1));
-            const dayOfMonth = now.getDate();
-            const previousEnd = setDate(startOfMonth(subMonths(now, 1)), dayOfMonth);
+            const previousEnd = subMonths(currentEnd, 1);
 
             const [grossSalesDataCurrent, grossSalesDataPrevious] = await Promise.all([
                 prisma.order.findMany({
@@ -511,7 +511,6 @@ export const storesRouter = base.router({
                     priorYearSales: priorYearSalesMap[monthLabel] || 0,
                 };
             });
-
             return chartData;
         }),
     getOrderByStatus: admin
@@ -521,14 +520,13 @@ export const storesRouter = base.router({
             }),
         )
         .handler(async ({ input }) => {
-            const now = new Date("2026-05-29T00:00:00Z"); // new Date()
+            const now = new Date();
 
             const currentStart = startOfMonth(now);
             const currentEnd = now;
 
             const previousStart = startOfMonth(subMonths(now, 1));
-            const dayOfMonth = now.getDate();
-            const previousEnd = setDate(startOfMonth(subMonths(now, 1)), dayOfMonth);
+            const previousEnd = subMonths(currentEnd, 1);
 
             const [thisOrderByStatus, previousOrderByStatus] = await Promise.all([
                 prisma.order.groupBy({
@@ -592,7 +590,6 @@ export const storesRouter = base.router({
                 .reduce((sum, item) => sum + item._count.orderCode, 0);
 
             const thisTotalOrder = thisOrderByStatus.reduce((sum, item) => sum + item._count.orderCode, 0);
-
             return {
                 thisTotalOrder,
                 percentageProcessing: (thisOrderByStatusProcessing / thisTotalOrder) * 100,
@@ -613,14 +610,13 @@ export const storesRouter = base.router({
             }),
         )
         .handler(async ({ input }) => {
-            const now = new Date("2026-05-29T00:00:00Z"); // new Date()
+            const now = new Date();
 
             const currentStart = startOfMonth(now);
             const currentEnd = now;
 
             const previousStart = startOfMonth(subMonths(now, 1));
-            const dayOfMonth = now.getDate();
-            const previousEnd = setDate(startOfMonth(subMonths(now, 1)), dayOfMonth);
+            const previousEnd = subMonths(currentEnd, 1);
 
             const category = await prisma.category.findUnique({
                 where: {
@@ -732,7 +728,6 @@ export const storesRouter = base.router({
                 ...item,
                 change: calculatePercentageChange(item.orderItems, previousCategoriesData.find((i) => i.id === item.id)?.orderItems || 0),
             }));
-
             return categoriesSalesData;
         }),
     getTopSellingProducts: admin
@@ -742,7 +737,7 @@ export const storesRouter = base.router({
             }),
         )
         .handler(async ({ input }) => {
-            const now = new Date("2026-05-29T00:00:00Z");
+            const now = new Date();
 
             const currentStart = startOfMonth(now);
             const currentEnd = now;
@@ -795,7 +790,6 @@ export const storesRouter = base.router({
                     },
                 },
             });
-
             return productVariantsInfo.map((variant) => ({
                 ...variant,
                 price: variant.price.toNumber(),
@@ -838,7 +832,6 @@ export const storesRouter = base.router({
                     },
                 },
             });
-
             return productVariants.map((variant) => ({
                 ...variant,
                 price: variant.price.toNumber(),

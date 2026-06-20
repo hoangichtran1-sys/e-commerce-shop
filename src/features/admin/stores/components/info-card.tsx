@@ -14,11 +14,27 @@ interface InfoCardProps {
 
 export const InfoCardSkeleton = () => {
     return (
-        <div className="border rounded-md flex items-center gap-x-2 p-3">
-            <Skeleton className="h-14 w-14 rounded-full mr-2" />
-            <div>
-                <Skeleton className="h-4 w-12" />
-                <Skeleton className="h-4 w-9" />
+        <div className="rounded-2xl lg:col-span-2 md:col-span-5 col-span-10 border border-gray-100 bg-white p-6 shadow-sm max-w-sm w-full">
+            {/* Header: Icon + Title */}
+            <div className="flex items-center gap-2">
+                {/* Icon Skeleton */}
+                <Skeleton className="h-6 w-6 rounded-full" />
+                {/* Title Skeleton */}
+                <Skeleton className="h-5 w-24" />
+            </div>
+
+            {/* Previous month text */}
+            <Skeleton className="mt-3 h-4 w-36" />
+
+            {/* Current Value (Big Number) */}
+            <Skeleton className="mt-2 h-9 w-28" />
+
+            {/* Footer: Percentage + Time Label */}
+            <div className="mt-5 flex items-center gap-2">
+                {/* Percentage Badge Skeleton */}
+                <Skeleton className="h-5 w-14 rounded-md" />
+                {/* Time Label Skeleton */}
+                <Skeleton className="h-4 w-20" />
             </div>
         </div>
     );

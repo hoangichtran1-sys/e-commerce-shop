@@ -200,3 +200,7 @@ export function formatPriceDashboard(amount: number, currency: string = "USD") {
         maximumFractionDigits: 0,
     }).format(amount);
 }
+
+export const bytesToKB = (bytes: number) => {
+    return (bytes / 1024).toFixed(2); // Rounds to 2 decimal places
+};

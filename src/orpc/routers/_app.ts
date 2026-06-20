@@ -10,6 +10,7 @@ import { promotionsRouter } from "@/features/admin/promotions/server/routers";
 import { couponsRouter } from "@/features/admin/coupon/server/routers";
 import { customerRouter } from "@/features/customer/server/routers";
 import { attributesRouter } from "@/features/admin/attributes/server/routers";
+import { uploadsRouter } from "@/features/admin/uploads/server/routers";
 
 export const router = base.router({
     stores: storesRouter,
@@ -21,6 +22,7 @@ export const router = base.router({
     promotions: promotionsRouter,
     coupons: couponsRouter,
     customer: customerRouter,
+    uploads: uploadsRouter,
 });
 
 export type Router = typeof router;

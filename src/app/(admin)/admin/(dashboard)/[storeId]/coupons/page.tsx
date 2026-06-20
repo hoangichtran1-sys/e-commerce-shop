@@ -1,3 +1,5 @@
+import { ErrorView } from "@/components/error-view";
+import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import { CouponsView } from "@/features/admin/coupon/views/coupons-view";
 import { HydrateClient, orpc, prefetch } from "@/orpc/orpc-rq.server";
 import { Suspense } from "react";
@@ -16,8 +18,8 @@ const Page = async ({ params }: PageProps) => {
 
     return (
         <HydrateClient>
-            <Suspense fallback={<p>Loading...</p>}>
-                <ErrorBoundary fallback={<p>Error!</p>}>
+            <Suspense fallback={<TableSkeleton cols={7} />}>
+                <ErrorBoundary fallback={<ErrorView message="Error!" />}>
                     <div className="flex-col">
                         <div className="flex-1 space-y-4 p-8 pt-6">
                             <CouponsView storeId={storeId} />

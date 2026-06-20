@@ -7,7 +7,7 @@ import { orpc } from "@/orpc/orpc-rq.client";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Billboard } from "../billboard";
 import { ProductFilter } from "./product-filter";
-import { ProductList } from "./product-list";
+import { ProductList, ProductListSkeleton } from "./product-list";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontalIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +18,9 @@ import { useProductsSort } from "@/features/customer/hooks/use-products-sort";
 import { GetCategory, ProductsSort } from "@/features/customer/types";
 import { useEffect, useState } from "react";
 import { useProductsFilter } from "@/features/customer/hooks/use-products-filter";
+import { ErrorView } from "@/components/error-view";
+import { usePaginationProducts } from "@/features/customer/hooks/use-pagination-products";
+import { Pagination } from "@/components/pagination";
 
 interface CategoryViewProps {
     storeId: string;
@@ -27,9 +30,9 @@ interface CategoryViewProps {
 
 const sortOptions: { value: ProductsSort; label: string }[] = [
     { value: "newest", label: "Sort by newest" },
-    { value: "a_z", label: "Name (A-Z)" },
-    { value: "z_a", label: "Name (Z-A)" },
     { value: "featured", label: "Sort by featured" },
+    { value: "best_seller", label: "Best seller" },
+    { value: "treding_score", label: "Treding score" },
     { value: "price_low", label: "Price: Low to High" },
     { value: "price_high", label: "Price: High to Low" },
 ];
@@ -37,9 +40,10 @@ const sortOptions: { value: ProductsSort; label: string }[] = [
 export const CategoryView = ({ storeId, category, categoryId }: CategoryViewProps) => {
     const [productsSort, setProductsSort] = useProductsSort();
     const [productsFilter] = useProductsFilter();
+    const [paginationProducts, setPaginationProducts] = usePaginationProducts();
 
-    const { data: products } = useSuspenseQuery(
-        orpc.customer.getProducts.queryOptions({ input: { storeId, categoryId, ...productsFilter, ...productsSort } }),
+    const { data, isFetching } = useSuspenseQuery(
+        orpc.customer.getProducts.queryOptions({ input: { storeId, categoryId, ...productsFilter, ...productsSort, ...paginationProducts } }),
     );
 
     const filterMap: Record<string, Set<string>> = {};
@@ -128,11 +132,20 @@ export const CategoryView = ({ storeId, category, categoryId }: CategoryViewProp
                                 </div>
                                 <div className="flex flex-col gap-y-4">
                                     {category.promotions.length > 0 && <CategoryBanner promotion={category.promotions[0]} />}
-                                    <Suspense fallback={<p>Loading...</p>}>
-                                        <ErrorBoundary fallback={<p>Error!</p>}>
-                                            <ProductList data={products} />
+                                    <Suspense fallback={<ProductListSkeleton />}>
+                                        <ErrorBoundary fallback={<ErrorView message="Error!" />}>
+                                            <ProductList data={data.items} />
                                         </ErrorBoundary>
                                     </Suspense>
+                                    <Pagination
+                                        disabled={isFetching}
+                                        totalPages={data.totalPages}
+                                        page={data.page}
+                                        pageSize={data.pageSize}
+                                        onPageChange={(page) => setPaginationProducts({ page })}
+                                        onPageSizeChange={(pageSize) => setPaginationProducts({ pageSize })}
+                                        pageSizeOptions={[5, 10, 20, 50, 100]}
+                                    />
                                 </div>
                             </div>
                         </div>

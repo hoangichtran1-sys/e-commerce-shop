@@ -29,12 +29,14 @@ import { GetVariantsInCard } from "@/features/customer/types";
 import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useDiscountCoupon } from "@/features/customer/hooks/use-discount-coupon";
 import { useCheckoutStates } from "@/features/customer/hooks/use-checkout-states";
+import { User } from "@/lib/auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CardDetailsProps {
     items: GetVariantsInCard;
@@ -43,6 +45,8 @@ interface CardDetailsProps {
     shippingFee: number;
     freeThreshold: number;
     productCurrentIds: string[];
+    variantIds: string[];
+    currentUser: User | null;
 }
 
 const estimatedDelivery = ["2-4 business days", "3-5 business days", "1-3 business days"];
@@ -57,9 +61,141 @@ const formSchema = z.object({
         .regex(/^[A-Z0-9]+$/),
 });
 
-export const CardDetails = ({ items, storeSlug, storeId, shippingFee, freeThreshold, productCurrentIds }: CardDetailsProps) => {
+export function CartSkeleton() {
+    return (
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 animate-pulse">
+            {/* Back Button Skeleton */}
+            <Skeleton className="h-8 w-36 mb-4 rounded-md" />
+
+            {/* Top Header Title Skeleton */}
+            <div className="flex flex-col items-center gap-2 mb-8 text-center">
+                <Skeleton className="h-10 w-64 sm:w-80" /> {/* Title */}
+                <Skeleton className="h-4 w-48" /> {/* Subtitle item count */}
+            </div>
+
+            {/* Main Grid Layout */}
+            <div className="flex flex-col gap-8 lg:flex-row">
+                {/* Left Side: Cart Items List (Simulate 2 Items) */}
+                <div className="flex-1 flex flex-col gap-6">
+                    {[...Array(2)].map((_, idx) => (
+                        <Card key={idx} className="gap-0 overflow-hidden py-0">
+                            <div className="flex flex-col sm:flex-row">
+                                {/* Product Image Skeleton */}
+                                <Skeleton className="h-36 w-full sm:w-40 shrink-0" />
+
+                                {/* Product details content */}
+                                <div className="flex-1 p-4 flex flex-col justify-between">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="space-y-2 flex-1">
+                                            <Skeleton className="h-5 w-[70%]" /> {/* Name */}
+                                            <Skeleton className="h-4 w-[40%]" /> {/* Attributes */}
+                                            <Skeleton className="h-3 w-24" /> {/* Stock status */}
+                                        </div>
+                                        {/* Favorite + Trash Buttons */}
+                                        <div className="flex gap-x-2">
+                                            <Skeleton className="size-7 rounded-full" />
+                                            <Skeleton className="size-7 rounded-md" />
+                                        </div>
+                                    </div>
+
+                                    {/* Quantity Control & Price Row */}
+                                    <div className="mt-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Skeleton className="size-8 rounded-md" /> {/* Minus */}
+                                            <Skeleton className="h-4 w-6 mx-1" /> {/* Qty Counter */}
+                                            <Skeleton className="size-8 rounded-md" /> {/* Plus */}
+                                        </div>
+                                        <div className="space-y-1 text-end">
+                                            <Skeleton className="h-5 w-20 ml-auto" /> {/* Total Price */}
+                                            <Skeleton className="h-3 w-14 ml-auto" /> {/* Original Price */}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Delivery Estimated Footer */}
+                            <CardFooter className="bg-muted/20 border-t px-4 py-2!">
+                                <Skeleton className="h-4 w-52" />
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+
+                {/* Right Side: Order Summary & Sidebar Info */}
+                <div className="flex flex-col gap-4 w-full lg:w-96 shrink-0">
+                    {/* Shipping Free Progress Threshold */}
+                    <Card className="border-dashed py-4">
+                        <CardContent className="px-4 space-y-3">
+                            <Skeleton className="h-4 w-44" />
+                            <Skeleton className="h-2 w-full rounded-full" />
+                        </CardContent>
+                    </Card>
+
+                    {/* Sticky Total Calculation Box */}
+                    <Card className="gap-0">
+                        <CardHeader className="pb-4">
+                            <Skeleton className="h-6 w-36" />
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-4">
+                            <div className="space-y-3">
+                                <div className="flex justify-between">
+                                    <Skeleton className="h-4 w-16" />
+                                    <Skeleton className="h-4 w-16" />
+                                </div>
+                                <div className="flex justify-between">
+                                    <Skeleton className="h-4 w-16" />
+                                    <Skeleton className="h-4 w-16" />
+                                </div>
+                            </div>
+                            <Skeleton className="h-px w-full" />
+                            <div className="flex justify-between items-center py-2">
+                                <Skeleton className="h-5 w-12" />
+                                <div className="space-y-1 flex flex-col items-end">
+                                    <Skeleton className="h-6 w-24" />
+                                    <Skeleton className="h-3 w-32" />
+                                </div>
+                            </div>
+                            {/* Coupon Form Input */}
+                            <Skeleton className="h-9 w-full mt-2" />
+                            <Skeleton className="h-10 w-full" /> {/* Coupon button */}
+                            {/* Checkout Button */}
+                            <Skeleton className="h-10 w-full mt-2" />
+                            {/* Note SSL */}
+                            <Skeleton className="h-3.5 w-48 mx-auto" />
+                        </CardContent>
+                    </Card>
+
+                    {/* Security Features Badges (Simulate 3 Small Badges) */}
+                    {[...Array(3)].map((_, idx) => (
+                        <Card key={idx} className="border-dashed py-4">
+                            <CardContent className="px-4 flex items-center gap-3">
+                                <Skeleton className="size-6 rounded-full" />
+                                <div className="space-y-1.5 flex-1">
+                                    <Skeleton className="h-4 w-28" />
+                                    <Skeleton className="h-3 w-36" />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export const CardDetails = ({
+    items,
+    storeSlug,
+    storeId,
+    shippingFee,
+    freeThreshold,
+    productCurrentIds,
+    variantIds,
+    currentUser,
+}: CardDetailsProps) => {
     const [isRemoving, setIsRemoving] = useState<string | null>(null);
-    const [isWishlisted, setIsWishlisted] = useState(false);
+
+    const queryClient = useQueryClient();
 
     const [, setStates] = useCheckoutStates();
 
@@ -121,6 +257,58 @@ export const CardDetails = ({ items, storeSlug, storeId, shippingFee, freeThresh
         }),
     );
 
+    const addFavorite = useMutation(
+        orpc.customer.addFavorite.mutationOptions({
+            onSuccess: (data) => {
+                toast.success("Added favorite to product");
+                queryClient.invalidateQueries(
+                    orpc.customer.getVariantsInCart.queryOptions({
+                        input: {
+                            storeId,
+                            variantIds,
+                        },
+                    }),
+                );
+                queryClient.invalidateQueries(orpc.customer.getProduct.queryOptions({ input: { storeId, productId: data.productId } }));
+            },
+            onError: (error) => {
+                const code = getErrorCode(error);
+                if (code === "UNAUTHORIZED") {
+                    toast.error("Please log in to continue");
+                    router.replace(`/login?redirect=/${storeSlug}/cart`);
+                    return;
+                }
+                toast.error(error.message);
+            },
+        }),
+    );
+
+    const removeFavorite = useMutation(
+        orpc.customer.removeFavorite.mutationOptions({
+            onSuccess: (data) => {
+                toast.success("Removed favorite to product");
+                queryClient.invalidateQueries(
+                    orpc.customer.getVariantsInCart.queryOptions({
+                        input: {
+                            storeId,
+                            variantIds,
+                        },
+                    }),
+                );
+                queryClient.invalidateQueries(orpc.customer.getProduct.queryOptions({ input: { storeId, productId: data.productId } }));
+            },
+            onError: (error) => {
+                const code = getErrorCode(error);
+                if (code === "UNAUTHORIZED") {
+                    toast.error("Please log in to continue");
+                    router.replace(`/login?redirect=/${storeSlug}/cart`);
+                    return;
+                }
+                toast.error(error.message);
+            },
+        }),
+    );
+
     const form = useForm({
         defaultValues: {
             code: "",
@@ -152,6 +340,7 @@ export const CardDetails = ({ items, storeSlug, storeId, shippingFee, freeThresh
                     {/* Cart Items */}
                     {itemsWithQuantity.map((item, index) => {
                         const attribute = Object.entries(item.combination).map(([_, val]) => val);
+                        const isFavorite = item.favorites.some((f) => f.userId === currentUser?.id);
 
                         return (
                             <Card
@@ -195,10 +384,16 @@ export const CardDetails = ({ items, storeSlug, storeId, shippingFee, freeThresh
                                                     variant="ghost"
                                                     size="icon-xs"
                                                     className="rounded-full"
-                                                    onClick={() => setIsWishlisted(!isWishlisted)}
-                                                    aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                                                    onClick={() => {
+                                                        if (isFavorite) {
+                                                            removeFavorite.mutate({ storeId, productId: item.productId });
+                                                        } else {
+                                                            addFavorite.mutate({ storeId, productId: item.productId });
+                                                        }
+                                                    }}
+                                                    aria-label={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
                                                 >
-                                                    <HeartIcon className={cn("size-3", isWishlisted && "fill-rose-500 text-rose-500")} />
+                                                    <HeartIcon className={cn("size-4", isFavorite && "fill-rose-500 text-rose-500")} />
                                                 </Button>
                                                 <Button
                                                     variant="ghost"

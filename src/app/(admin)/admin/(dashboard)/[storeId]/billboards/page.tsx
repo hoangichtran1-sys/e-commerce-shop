@@ -1,3 +1,5 @@
+import { ErrorView } from "@/components/error-view";
+import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import { BillboardView } from "@/features/admin/billboards/views/billboard-view";
 import { HydrateClient, orpc, prefetch } from "@/orpc/orpc-rq.server";
 import { Suspense } from "react";
@@ -12,14 +14,12 @@ interface PageProps {
 const Page = async ({ params }: PageProps) => {
     const { storeId } = await params;
 
-    await prefetch(
-        orpc.billboards.getMany.queryOptions({ input: { storeId } }),
-    );
+    await prefetch(orpc.billboards.getMany.queryOptions({ input: { storeId } }));
 
     return (
         <HydrateClient>
-            <Suspense fallback={<p>Loading...</p>}>
-                <ErrorBoundary fallback={<p>Error!</p>}>
+            <Suspense fallback={<TableSkeleton isSelect={true} cols={5} />}>
+                <ErrorBoundary fallback={<ErrorView message="Error!" />}>
                     <div className="flex-col">
                         <div className="flex-1 space-y-4 p-8 pt-6">
                             <BillboardView storeId={storeId} />

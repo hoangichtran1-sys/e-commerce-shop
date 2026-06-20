@@ -8,10 +8,40 @@ import { columns } from "../../orders/components/columns";
 import { OrderStatus } from "@/generated/prisma/enums";
 import { BanIcon, CircleCheckIcon, ClockIcon, PackageIcon, PackageCheckIcon, TruckIcon } from "lucide-react";
 import { TbCreditCardRefund } from "react-icons/tb";
-	
+import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+
 interface RecentOrdersProps {
     data: OrderGetMany;
 }
+
+export const RecentOrdersSkeleton = () => {
+    return (
+        <div className="max-w-full">
+            <div className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-x-4">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-8 w-16" />
+                </div>
+                <Skeleton className="h-8 w-16" />
+            </div>
+            <div className="flex max-w-full flex-col gap-4">
+                {Array.from({ length: 9 }).map((_, index1) => (
+                    <>
+                        <div className="flex gap-20" key={`row-${index1}`}>
+                            {Array.from({ length: 8 }).map((_, index2) => (
+                                <Skeleton key={`col-${index2}`} className="h-6 w-30" />
+                            ))}
+                            {index1 !== 0 && <Skeleton className="h-4 w-2 rounded-md" />}
+                        </div>
+                        {index1 === 0 && <Separator className="mb-2 mt-2" />}
+                    </>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 export const RecentOrders = ({ data }: RecentOrdersProps) => {
     const statusOption = [
@@ -43,7 +73,7 @@ export const RecentOrders = ({ data }: RecentOrdersProps) => {
         { label: "$3000 - $5000", value: "3000_5000" },
         { label: "Above $5000", value: "above_5000" },
     ];
-  
+
     return (
         <Card>
             <CardHeader>
@@ -53,7 +83,9 @@ export const RecentOrders = ({ data }: RecentOrdersProps) => {
                             <ClipboardListIcon className="size-5 font-semibold text-neutral-500" />
                         </Button>
                         <h3 className="font-medium text-lg">Recent Orders</h3>
-                        <Badge className="px-2" variant="outline">{data.length}</Badge>
+                        <Badge className="px-2" variant="outline">
+                            {data.length}
+                        </Badge>
                     </div>
                 </CardTitle>
                 <CardAction>

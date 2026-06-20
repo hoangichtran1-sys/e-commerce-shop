@@ -18,12 +18,11 @@ import { useStoreSlug } from "@/features/customer/hooks/use-store-slug";
 import { GetReview } from "@/features/customer/types";
 import { InputGroup, InputGroupAddon, InputGroupText, InputGroupTextarea } from "../ui/input-group";
 import { useReviewsFilter } from "@/features/customer/hooks/use-reviews-filter";
+import { useReviewModal } from "@/features/customer/hooks/use-review-modal";
 
 interface ReviewModalProps {
     productId: string;
     storeId: string;
-    isOpen: boolean;
-    onClose: () => void;
     initialData?: GetReview;
 }
 
@@ -32,7 +31,8 @@ const formSchema = z.object({
     feedback: z.string().trim().max(1000).nullable(),
 });
 
-export const ReviewModal = ({ isOpen, onClose, productId, storeId, initialData }: ReviewModalProps) => {
+export const ReviewModal = ({ productId, storeId, initialData }: ReviewModalProps) => {
+    const { isOpen, onClose } = useReviewModal();
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
 

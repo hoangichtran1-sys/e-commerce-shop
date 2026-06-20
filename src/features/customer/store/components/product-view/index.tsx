@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import Image from "next/image";
-import { cn, formatPrice, capitalizeFirst, getAttributesFromVariants } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { cn, formatPrice, capitalizeFirst, getAttributesFromVariants, getErrorCode } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { Separator } from "@/components/ui/separator";
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
@@ -16,11 +16,13 @@ import { ProductsRelated } from "../products-related";
 import { Preview } from "@/components/preview";
 import { User } from "@/lib/auth";
 import { useCart } from "@/features/customer/hooks/use-cart";
-import { GROWTH_RATE, MONTH_QUANTITY } from "@/constants";
-import { ReviewSection } from "./review-section";
+import { ReviewSection, ReviewsSkeleton } from "./review-section";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { GetProduct } from "@/features/customer/types";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { ErrorView } from "@/components/error-view";
 
 interface ProductDetailProps {
     storeId: string;
@@ -34,12 +36,15 @@ export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, prod
     const [mainApi, setMainApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(0);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [isWishlisted, setIsWishlisted] = useState(false);
 
-    const { addToCart, isProductVariantInCart, removeProductVariant, productVariantItems, setQuantityVariant } = useCart(storeSlug);
+    const router = useRouter();
+    const queryClient = useQueryClient();
 
-    // const { data: product } = useSuspenseQuery(orpc.customer.getProduct.queryOptions({ input: { storeId, productId } }));
-    const { data: trendingData } = useQuery(orpc.customer.checkTrending.queryOptions({ input: { storeId, productId: product.id } }));
+    const { addToCart, isProductVariantInCart, removeProductVariant, productVariantItems, setQuantityVariant, variantItemsArray } =
+        useCart(storeSlug);
+    const variantIds = variantItemsArray.map((variant) => variant.productVariantId);
+
+    // const { data: product } = useSuspenseQuery(orpc.customer.getProduct.queryOptions({ input: { storeId, productId } }))
 
     const variants = product.variants.map((variant) => ({
         sku: variant.sku,
@@ -71,6 +76,58 @@ export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, prod
         }));
     };
 
+    const addFavorite = useMutation(
+        orpc.customer.addFavorite.mutationOptions({
+            onSuccess: () => {
+                toast.success("Added favorite to product");
+                queryClient.invalidateQueries(
+                    orpc.customer.getVariantsInCart.queryOptions({
+                        input: {
+                            storeId,
+                            variantIds,
+                        },
+                    }),
+                );
+                router.refresh();
+            },
+            onError: (error) => {
+                const code = getErrorCode(error);
+                if (code === "UNAUTHORIZED") {
+                    toast.error("Please log in to continue");
+                    router.replace(`/login?redirect=/${storeSlug}/cart`);
+                    return;
+                }
+                toast.error(error.message);
+            },
+        }),
+    );
+
+    const removeFavorite = useMutation(
+        orpc.customer.removeFavorite.mutationOptions({
+            onSuccess: () => {
+                toast.success("Removed favorite to product");
+                queryClient.invalidateQueries(
+                    orpc.customer.getVariantsInCart.queryOptions({
+                        input: {
+                            storeId,
+                            variantIds,
+                        },
+                    }),
+                );
+                router.refresh();
+            },
+            onError: (error) => {
+                const code = getErrorCode(error);
+                if (code === "UNAUTHORIZED") {
+                    toast.error("Please log in to continue");
+                    router.replace(`/login?redirect=/${storeSlug}/cart`);
+                    return;
+                }
+                toast.error(error.message);
+            },
+        }),
+    );
+
     useEffect(() => {
         if (!mainApi) return;
 
@@ -94,11 +151,9 @@ export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, prod
         setQuantity((current) => Math.max(1, current + (increment ? 1 : -1)));
     };
 
-    const isTrending = useMemo(() => {
-        if (!trendingData) return false;
-
-        return trendingData.growthRate >= GROWTH_RATE && trendingData.thisMonthQty >= MONTH_QUANTITY;
-    }, [trendingData]);
+    const isFavorite = useMemo(() => {
+        return product.favorites.some((f) => f.userId === currentUser?.id);
+    }, [product, currentUser]);
 
     return (
         <>
@@ -128,7 +183,7 @@ export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, prod
                     {/* LEFT COLUMN: Gallery */}
                     <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-6 h-fit">
                         <Carousel setApi={setMainApi} className="w-full relative">
-                            {isTrending && (
+                            {product.isTrending && (
                                 <Badge className="absolute left-3 top-3 backdrop-blur z-10">
                                     <FlameIcon className="size-4" />
                                     Trending
@@ -153,8 +208,9 @@ export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, prod
                                 <button
                                     key={i}
                                     onMouseEnter={() => scrollTo(i)}
-                                    className={`aspect-square rounded-lg border-2 overflow-hidden transition-all ${current === i ? "border-primary" : "border-transparent opacity-60"
-                                        }`}
+                                    className={`aspect-square rounded-lg border-2 overflow-hidden transition-all ${
+                                        current === i ? "border-primary" : "border-transparent opacity-60"
+                                    }`}
                                 >
                                     <Image width={50} height={50} src={src.url} alt="Thumb" className="w-full h-full object-cover" />
                                 </button>
@@ -186,7 +242,7 @@ export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, prod
                                                     <h2 className="font-bold tracking-tighter text-4xl mb-2">
                                                         {formatPrice(
                                                             activeVariant.price -
-                                                            (activeVariant.price * product.category.parent.promotions[0].value) / 100,
+                                                                (activeVariant.price * product.category.parent.promotions[0].value) / 100,
                                                         )}
                                                     </h2>
                                                     <h2 className="italic font-light tracking-tighter text-4xl mb-2 text-muted-foreground line-through">
@@ -286,17 +342,39 @@ export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, prod
                                 </div>
 
                                 <div className="flex items-end gap-x-2">
-                                    <Button aria-label="Share product" className="rounded-full" size="icon-xs" variant="outline" onClick={() => { }}>
+                                    <Button
+                                        onClick={async () => {
+                                            try {
+                                                await navigator.share({
+                                                    title: product.name,
+                                                    text: product.description || "No description",
+                                                    url: window.location.href,
+                                                });
+                                            } catch {
+                                                toast.error("Share product failed");
+                                            }
+                                        }}
+                                        aria-label="Share product"
+                                        className="rounded-full"
+                                        size="icon-xs"
+                                        variant="outline"
+                                    >
                                         <Share2Icon className="size-3" />
                                     </Button>
                                     <Button
                                         variant="outline"
                                         size="icon-xs"
                                         className="rounded-full"
-                                        onClick={() => setIsWishlisted(!isWishlisted)}
-                                        aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                                        onClick={() => {
+                                            if (isFavorite) {
+                                                removeFavorite.mutate({ storeId, productId: product.id });
+                                            } else {
+                                                addFavorite.mutate({ storeId, productId: product.id });
+                                            }
+                                        }}
+                                        aria-label={isFavorite ? "Remove from wishlist" : "Add to wishlist"}
                                     >
-                                        <Heart className={cn("size-3", isWishlisted && "fill-rose-500 text-rose-500")} />
+                                        <Heart className={cn("size-3", isFavorite && "fill-rose-500 text-rose-500")} />
                                     </Button>
                                     {activeVariant && (
                                         <div className="flex items-center gap-x-3">
@@ -363,8 +441,8 @@ export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, prod
                                 </>
                             </CardContent>
                         </Card>
-                        <Suspense fallback={<p>Loading...</p>}>
-                            <ErrorBoundary fallback={<p>Error!</p>}>
+                        <Suspense fallback={<ReviewsSkeleton />}>
+                            <ErrorBoundary fallback={<ErrorView message="Error!" />}>
                                 <ReviewSection storeId={storeId} productId={product.id} currentUser={currentUser} />
                             </ErrorBoundary>
                         </Suspense>

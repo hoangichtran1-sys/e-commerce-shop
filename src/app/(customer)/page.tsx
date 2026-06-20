@@ -1,3 +1,4 @@
+import { ErrorView } from "@/components/error-view";
 import { StoreContact } from "@/features/customer/start/components/store-contact";
 import { StoreFaq } from "@/features/customer/start/components/store-faq";
 import { StoreFooter } from "@/features/customer/start/components/store-footer";
@@ -6,7 +7,6 @@ import { StoreTestimonial } from "@/features/customer/start/components/store-tes
 import { HydrateClient, orpc, prefetch } from "@/orpc/orpc-rq.server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 
 const Page = async () => {
@@ -22,11 +22,9 @@ const Page = async () => {
     return (
         <>
             <HydrateClient>
-                <Suspense fallback={<p>Loading...</p>}>
-                    <ErrorBoundary fallback={<p>Error!</p>}>
-                        <StorePicker />
-                    </ErrorBoundary>
-                </Suspense>
+                <ErrorBoundary fallback={<ErrorView message="Error!" />}>
+                    <StorePicker />
+                </ErrorBoundary>
             </HydrateClient>
             <StoreTestimonial />
             <StoreFaq />

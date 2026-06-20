@@ -29,7 +29,7 @@ export const Pagination = ({
     pageSizeOptions,
 }: PaginationProps) => {
     return (
-        <div className="flex items-center justify-end gap-x-4 w-full mt-8">
+        <div className="flex items-center justify-between gap-x-4 w-full mt-8">
             <div className="flex items-center gap-x-4 text-sm text-muted-foreground">
                 <span>
                     Page {page} of {totalPages || 1}
@@ -47,7 +47,7 @@ export const Pagination = ({
                         <SelectTrigger className="h-8 w-20">
                             <SelectValue placeholder="Size" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="item-aligned">
                             {pageSizeOptions?.map((size) => (
                                 <SelectItem key={size} value={String(size)}>
                                     {size}

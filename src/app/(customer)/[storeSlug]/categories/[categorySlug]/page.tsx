@@ -1,4 +1,4 @@
-import { loaderProductsFilterParams, loaderProductsSortParams } from "@/features/customer/params";
+import { loaderProductsFilterParams, loaderProductsSortParams, paginationProductsLoader } from "@/features/customer/params";
 import { CategoryView } from "@/features/customer/store/components/category-view";
 import { client } from "@/lib/orpc";
 import { HydrateClient, orpc, prefetch } from "@/orpc/orpc-rq.server";
@@ -18,6 +18,7 @@ const Page = async ({ params, searchParams }: PageProps) => {
 
     const productsFilter = loaderProductsFilterParams(sq);
     const productsSort = loaderProductsSortParams(sq);
+    const paginationProducts = paginationProductsLoader(sq);
 
     const store = await client.customer.getStoreBySlug({ slug: storeSlug });
 
@@ -25,7 +26,11 @@ const Page = async ({ params, searchParams }: PageProps) => {
 
     const category = await client.customer.getCategory({ categoryId, storeId: store.id });
 
-    await prefetch(orpc.customer.getProducts.queryOptions({ input: { storeId: store.id, categoryId, ...productsFilter, ...productsSort } }));
+    await prefetch(
+        orpc.customer.getProducts.queryOptions({
+            input: { storeId: store.id, categoryId, ...productsFilter, ...productsSort, ...paginationProducts },
+        }),
+    );
 
     return (
         <HydrateClient>

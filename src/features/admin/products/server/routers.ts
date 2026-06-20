@@ -7,6 +7,8 @@ import cloudinary from "@/lib/cloudinary";
 import { createProductWithVariantsSchema, updateProductWithVariantsSchema, variantItemSchema } from "../schemas";
 import { Prisma } from "@/generated/prisma/client";
 import { checkDuplicate, generateSearchable, getMinPrice } from "@/lib/utils";
+import { startOfMonth, subMonths } from "date-fns";
+import { GROWTH_RATE, MONTH_QUANTITY } from "@/constants";
 
 export const productsRouter = base.router({
     upload: admin
@@ -400,12 +402,6 @@ export const productsRouter = base.router({
                 variants: true,
                 images: true,
                 reviews: true,
-                _count: {
-                    select: {
-                        reviews: true,
-                        favorites: true,
-                    },
-                },
             },
             orderBy: {
                 createdAt: "desc",
@@ -423,5 +419,91 @@ export const productsRouter = base.router({
         }));
 
         return productsFormatted;
+    }),
+    checkTrending: admin.input(z.object({ storeId: z.string().min(1), productIds: z.array(z.string().min(1)) })).handler(async ({ input }) => {
+        const now = new Date();
+
+        const currentStart = startOfMonth(now);
+        const currentEnd = now;
+
+        const previousStart = startOfMonth(subMonths(now, 1));
+        const previousEnd = subMonths(currentEnd, 1);
+
+        for (const productId of input.productIds) {
+            const [thisMonthData, lastMonthData, thisTotalMonthQuantity] = await Promise.all([
+                prisma.orderItem.aggregate({
+                    where: {
+                        productVariant: {
+                            product: {
+                                id: productId,
+                            },
+                        },
+                        order: {
+                            status: {
+                                in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"],
+                            },
+                            createdAt: {
+                                gte: currentStart,
+                                lte: currentEnd,
+                            },
+                        },
+                    },
+                    _sum: {
+                        quantity: true,
+                    },
+                }),
+                prisma.orderItem.aggregate({
+                    where: {
+                        productVariant: {
+                            product: {
+                                id: productId,
+                            },
+                        },
+                        order: {
+                            status: {
+                                in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"],
+                            },
+                            createdAt: {
+                                gte: previousStart,
+                                lte: previousEnd,
+                            },
+                        },
+                    },
+                    _sum: {
+                        quantity: true,
+                    },
+                }),
+                prisma.orderItem.aggregate({
+                    where: {
+                        order: {
+                            storeId: input.storeId,
+                            status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
+                            createdAt: { gte: currentStart, lte: currentEnd },
+                        },
+                    },
+                    _sum: { quantity: true },
+                }),
+            ]);
+
+            const thisMonthQty = thisMonthData._sum.quantity || 0;
+            const lastMonthQty = lastMonthData._sum.quantity || 0;
+
+            const growthRate = (thisMonthQty - lastMonthQty) / Math.max(lastMonthQty, 1);
+            const totalQuantity = thisTotalMonthQuantity._sum.quantity || 0;
+
+            const score = growthRate * Math.log10(thisMonthQty + 1);
+
+            await prisma.product.update({
+                where: {
+                    id: productId,
+                },
+                data: {
+                    trendingScore: score,
+                    isTrending: growthRate >= GROWTH_RATE && totalQuantity >= MONTH_QUANTITY ? true : false,
+                },
+            });
+        }
+
+        return input.productIds;
     }),
 });

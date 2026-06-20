@@ -4,17 +4,17 @@ import { Heading } from "@/components/heading";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { InfoCard } from "../components/info-card";
+import { InfoCard, InfoCardSkeleton } from "../components/info-card";
 import { BanknoteIcon, DollarSignIcon, HandCoinsIcon, ShoppingBagIcon, UsersIcon } from "lucide-react";
 import { calculatePercentageChange } from "@/lib/utils";
-import { RevenueChart, TimePeriod } from "../components/revenue-chart";
+import { RevenueChart, RevenueChartSkeleton, TimePeriod } from "../components/revenue-chart";
 import { useState, Suspense } from "react";
-import { SalesCategory } from "../components/sales-category";
-import { BestSellingProduct } from "../components/best-selling-product";
-import { ProductLowStock } from "../components/product-low-stock";
-import { OrdersByStatus } from "../components/orders-by-status";
+import { SalesCategory, SalesCategorySkeleton } from "../components/sales-category";
+import { BestSellingProduct, BestSellingProductsSkeleton } from "../components/best-selling-product";
+import { ProductLowStock, ProductLowStockSkeleton } from "../components/product-low-stock";
+import { OrdersByStatus, OrdersByStatusSkeleton } from "../components/orders-by-status";
 import { LIMIT_ORDERS } from "@/constants";
-import { RecentOrders } from "../components/recent-orders";
+import { RecentOrders, RecentOrdersSkeleton } from "../components/recent-orders";
 
 interface StoreViewProp {
     storeId: string;
@@ -100,7 +100,11 @@ export const StoreView = ({ storeId }: StoreViewProp) => {
                 <Heading title="Dashboard" description="Overview of your store" />
                 <Separator />
                 <div className="grid gap-4 md:grid-cols-10 grid-cols-1">
-                    <Suspense fallback={<p>Loading...</p>}>
+                    <Suspense
+                        fallback={Array.from({ length: 5 }).map((_, index) => (
+                            <InfoCardSkeleton key={index} />
+                        ))}
+                    >
                         {infoCardOption.map((item) => (
                             <InfoCard
                                 key={item.title}
@@ -114,12 +118,12 @@ export const StoreView = ({ storeId }: StoreViewProp) => {
                         ))}
                     </Suspense>
                     <div className="lg:col-span-6 col-span-10 max-w-full">
-                        <Suspense fallback={<p>Loading...</p>}>
+                        <Suspense fallback={<RevenueChartSkeleton />}>
                             <RevenueChart chartData={chartData} timePeriod={timePeriod} setTimePeriod={setTimePeriod} />
                         </Suspense>
                     </div>
                     <div className="lg:col-span-4 col-span-10 max-w-full">
-                        <Suspense fallback={<p>Loading...</p>}>
+                        <Suspense fallback={<SalesCategorySkeleton />}>
                             <SalesCategory
                                 selectCategory={selectCategory}
                                 onSelectCategory={setSelectCategory}
@@ -129,22 +133,22 @@ export const StoreView = ({ storeId }: StoreViewProp) => {
                         </Suspense>
                     </div>
                     <div className="lg:col-span-3 md:col-span-5 col-span-10 max-w-full">
-                        <Suspense fallback={<p>Loading...</p>}>
+                        <Suspense fallback={<BestSellingProductsSkeleton />}>
                             <BestSellingProduct data={topSellingProductsData} />
                         </Suspense>
                     </div>
                     <div className="lg:col-span-3 md:col-span-5 col-span-10 max-w-full">
-                        <Suspense fallback={<p>Loading...</p>}>
+                        <Suspense fallback={<ProductLowStockSkeleton />}>
                             <ProductLowStock data={productsLowStockData} />
                         </Suspense>
                     </div>
                     <div className="lg:col-span-4 col-span-10 max-w-full">
-                        <Suspense fallback={<p>Loading...</p>}>
+                        <Suspense fallback={<OrdersByStatusSkeleton />}>
                             <OrdersByStatus data={orderByStatusData} />
                         </Suspense>
                     </div>
                     <div className="col-span-10 max-w-full">
-                        <Suspense fallback={<p>Loading...</p>}>
+                        <Suspense fallback={<RecentOrdersSkeleton />}>
                             <RecentOrders data={recentOrdersData} />
                         </Suspense>
                     </div>

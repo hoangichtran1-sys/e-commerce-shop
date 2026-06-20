@@ -9,19 +9,21 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { GeneratedAvatar } from "@/components/generated-avatar";
+import { useStoreSlug } from "@/features/customer/hooks/use-store-slug";
+import { Skeleton } from "./ui/skeleton";
 
 export const UserMenu = () => {
     const isMounted = useMountedState();
-
     const router = useRouter();
+    const storeSlug = useStoreSlug();
+
+    if (!isMounted) {
+        return <Skeleton className="h-12 w-12 rounded-full" />;
+    }
 
     const session = authClient.useSession();
 
     const currentUser = session?.data?.user;
-
-    if (!currentUser || !isMounted) {
-        return null;
-    }
 
     const onLogout = () => {
         authClient.signOut({
@@ -33,6 +35,9 @@ export const UserMenu = () => {
             },
         });
     };
+    if (!currentUser) {
+        return <Skeleton className="h-12 w-12 rounded-full" />;
+    }
 
     return (
         <div className="flex flex-row items-center gap-3">
@@ -51,21 +56,23 @@ export const UserMenu = () => {
                     className="w-64 md:w-48 rounded-xl shadow-md bg-white overflow-hidden right-1 top-12 text-sm font-semibold"
                 >
                     {currentUser.role === "admin" && (
-                        <DropdownMenuItem className="mt-2" onClick={() => {}}>
+                        <DropdownMenuItem className="mt-2" onClick={() => router.push("/admin/upload")}>
                             <ImageUpIcon className="size-5" />
                             Upload manage
                         </DropdownMenuItem>
                     )}
                     {currentUser.role === "admin" && (
-                        <DropdownMenuItem className="mt-2" onClick={() => {}}>
+                        <DropdownMenuItem className="mt-2" onClick={() => router.push("/admin")}>
                             <LockIcon className="size-5" />
                             Admin manage
                         </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem className="mt-2" onClick={() => {}}>
-                        <PackageCheckIcon className="size-5" />
-                        My orders
-                    </DropdownMenuItem>
+                    {!!storeSlug && (
+                        <DropdownMenuItem className="mt-2" onClick={() => router.push(`/${storeSlug}/orders`)}>
+                            <PackageCheckIcon className="size-5" />
+                            My orders
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem className="mt-2" onClick={() => {}}>
                         <CgProfile className="size-5" />
                         My profile

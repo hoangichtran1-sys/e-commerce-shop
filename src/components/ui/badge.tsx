@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
 
 import { cn } from "@/lib/utils";
-import { OrderStatus, PromotionMode, PromotionType } from "@/generated/prisma/enums";
+import { OrderStatus, PromotionMode, PromotionType, UploadType } from "@/generated/prisma/enums";
 
 const badgeVariants = cva(
     "group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
@@ -40,6 +40,9 @@ const badgeVariants = cva(
                     "border-none bg-purple-600/10 text-purple-700 focus-visible:ring-purple-600/20 focus-visible:outline-none dark:bg-purple-400/10 dark:text-purple-400 dark:focus-visible:ring-purple-400/40 [a&]:hover:bg-purple-600/5 dark:[a&]:hover:bg-purple-400/5",
                 [OrderStatus.REFUND]:
                     "border-none bg-gray-600/10 text-gray-700 focus-visible:ring-gray-600/20 focus-visible:outline-none dark:bg-gray-400/10 dark:text-gray-400 dark:focus-visible:ring-gray-400/40 [a&]:hover:bg-gray-600/5 dark:[a&]:hover:bg-gray-400/5",
+                [UploadType.STORE]: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
+                [UploadType.BILLBOARD]: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+                [UploadType.PRODUCT]: "bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
             },
         },
         defaultVariants: {

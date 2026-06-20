@@ -1,5 +1,6 @@
-import { parseAsString, parseAsFloat, parseAsStringLiteral, createLoader, parseAsArrayOf } from "nuqs/server";
+import { parseAsString, parseAsFloat, parseAsStringLiteral, createLoader, parseAsArrayOf, parseAsInteger } from "nuqs/server";
 import { featuresValue, reviewsFilter, sortValues } from "./types";
+import { PAGINATION } from "@/constants";
 
 export const productsFilterParams = {
     sizes: parseAsArrayOf(parseAsString).withDefault([]).withOptions({ clearOnDefault: true }),
@@ -24,3 +25,17 @@ export const reviewsFilterParams = {
 };
 
 export const loaderReviewsFilterParams = createLoader(reviewsFilterParams);
+
+export const paginationProducts = {
+    page: parseAsInteger.withDefault(PAGINATION.DEFAULT_PAGE).withOptions({ clearOnDefault: true }),
+    pageSize: parseAsInteger.withDefault(PAGINATION.DEFAULT_PAGE_SIZE).withOptions({ clearOnDefault: true }),
+};
+
+export const paginationProductsLoader = createLoader(paginationProducts);
+
+export const paginationOrders = {
+    page: parseAsInteger.withDefault(PAGINATION.DEFAULT_PAGE).withOptions({ clearOnDefault: true }),
+    pageSize: parseAsInteger.withDefault(PAGINATION.DEFAULT_PAGE_SIZE).withOptions({ clearOnDefault: true }),
+};
+
+export const paginationOrdersLoader = createLoader(paginationOrders);

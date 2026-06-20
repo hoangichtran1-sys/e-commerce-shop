@@ -12,7 +12,9 @@ interface LayoutProps {
 const Layout = async ({ children, params }: LayoutProps) => {
     const { storeSlug } = await params;
 
-    const store = await client.customer.getStoreBySlug({ slug: storeSlug })
+    const store = await client.customer.getStoreBySlug({ slug: storeSlug });
+
+    // const promotionCampaigns = await client.customer.getPromotionCampaigns({ storeId: store.id });
 
     return (
         <>

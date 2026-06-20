@@ -266,12 +266,19 @@ model Product {
     name        String
     description String?       @db.Text
     isFeatured  Boolean       @default(false)
+    isTrending  Boolean       @default(false)
     status      ProductStatus
 
     minPrice Decimal @default(0)
     maxPrice Decimal @default(0)
 
-    soldCount            Int      @default(0)
+    soldCount      Int   @default(0)
+    trendingScore  Int   @default(0)
+    ratingSum      Int @default(0)
+    averageRating  Float @default(0)
+    reviewCount    Int   @default(0)
+    favoriteCount  Int   @default(0)
+
     features             String[]
     searchableAttributes String[]
 

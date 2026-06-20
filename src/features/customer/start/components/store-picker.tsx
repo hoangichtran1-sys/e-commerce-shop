@@ -2,15 +2,30 @@
 
 import { orpc } from "@/orpc/orpc-rq.client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { StoreCard } from "./store-card";
+import { StoreCard, StoreCardSkeleton } from "./store-card";
 import { authClient } from "@/lib/auth-client";
 import { NoResults } from "@/components/no-results";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { SearchIcon, StoreIcon, ArrowRight, TrendingUp, ShoppingBag } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export const StorePickerSkeleton = () => {
+    return (
+        <div className="flex flex-col items-center gap-4">
+            <div className="relative h-125 w-full border-0">
+                <StoreCardSkeleton />
+            </div>
+
+            {/* Dots Navigation - Enhanced */}
+            <Skeleton className="mt-8 h-3 w-16" />
+        </div>
+    );
+};
 
 export const StorePicker = () => {
     const user = authClient.useSession();
@@ -36,6 +51,10 @@ export const StorePicker = () => {
 
         return () => clearInterval(interval);
     }, [api, currentSlide, stores.length]);
+
+    const totalProductSoldAllStore = useMemo(() => {
+        return stores.reduce((sum, item) => sum + item.productSold, 0);
+    }, [stores]);
 
     if (stores.length === 0) {
         return <NoResults icon={StoreIcon} topic="stores" isAdmin={user?.data?.user.role === "admin"} />;
@@ -84,52 +103,53 @@ export const StorePicker = () => {
                             </Button>
                         </div>
                     </header>
-
-                    <div className="flex flex-col gap-4">
-                        <div className="relative h-125 w-full border-0">
-                            <Carousel
-                                className="group size-full"
-                                setApi={setApi}
-                                opts={{
-                                    align: "start",
-                                    loop: true,
-                                    duration: 20,
-                                    skipSnaps: true,
-                                }}
-                                onSelect={() => {
-                                    if (api) {
-                                        setCurrentSlide(api.selectedScrollSnap());
-                                    }
-                                }}
-                            >
-                                <CarouselContent className="h-full">
-                                    {stores.map((store) => (
-                                        <CarouselItem key={store.id} className="h-full">
-                                            <StoreCard item={store} />
-                                        </CarouselItem>
-                                    ))}
-                                </CarouselContent>
-                            </Carousel>
-                        </div>
-
-                        {/* Dots Navigation - Enhanced */}
-                        <div className="relative mt-8 flex justify-center gap-3">
-                            {stores.map((_, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => {
-                                        api?.scrollTo(index);
-                                        setCurrentSlide(index);
+                    <Suspense fallback={<StorePickerSkeleton />}>
+                        <div className="flex flex-col gap-4">
+                            <div className="relative h-125 w-full border-0">
+                                <Carousel
+                                    className="group size-full"
+                                    setApi={setApi}
+                                    opts={{
+                                        align: "start",
+                                        loop: true,
+                                        duration: 20,
+                                        skipSnaps: true,
                                     }}
-                                    className={`relative size-3 rounded-full transition-all ${currentSlide === index ? "bg-primary" : "bg-foreground/20 hover:bg-foreground/40"}`}
-                                    aria-label={`Go to slide ${index + 1}`}
-                                    aria-current={currentSlide === index ? "step" : undefined}
+                                    onSelect={() => {
+                                        if (api) {
+                                            setCurrentSlide(api.selectedScrollSnap());
+                                        }
+                                    }}
                                 >
-                                    {currentSlide === index && <span className="absolute inset-0 m-auto rounded-full" />}
-                                </button>
-                            ))}
+                                    <CarouselContent className="h-full">
+                                        {stores.map((store) => (
+                                            <CarouselItem key={store.id} className="h-full">
+                                                <StoreCard item={store} totalSoldProduct={totalProductSoldAllStore} />
+                                            </CarouselItem>
+                                        ))}
+                                    </CarouselContent>
+                                </Carousel>
+                            </div>
+
+                            {/* Dots Navigation - Enhanced */}
+                            <div className="relative mt-8 flex justify-center gap-3">
+                                {stores.map((_, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => {
+                                            api?.scrollTo(index);
+                                            setCurrentSlide(index);
+                                        }}
+                                        className={`relative size-3 rounded-full transition-all ${currentSlide === index ? "bg-primary" : "bg-foreground/20 hover:bg-foreground/40"}`}
+                                        aria-label={`Go to slide ${index + 1}`}
+                                        aria-current={currentSlide === index ? "step" : undefined}
+                                    >
+                                        {currentSlide === index && <span className="absolute inset-0 m-auto rounded-full" />}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    </Suspense>
                 </div>
             </div>
         </section>

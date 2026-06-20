@@ -2,6 +2,8 @@ import { BillboardForm } from "@/features/admin/billboards/views/billboard-form"
 import { HydrateClient, orpc, prefetch } from "@/orpc/orpc-rq.server";
 import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
+import { FormSkeleton } from "@/components/skeletons/form-skeleton";
+import { ErrorView } from "@/components/error-view";
 
 interface PageProps {
     params: Promise<{
@@ -23,14 +25,11 @@ const Page = async ({ params }: PageProps) => {
 
     return (
         <HydrateClient>
-            <Suspense fallback={<p>Loading...</p>}>
-                <ErrorBoundary fallback={<p>Error!</p>}>
+            <Suspense fallback={<FormSkeleton />}>
+                <ErrorBoundary fallback={<ErrorView message="Error!" />}>
                     <div className="flex-col">
                         <div className="flex-1 space-y-4 p-8 pt-6">
-                            <BillboardForm
-                                storeId={storeId}
-                                billboardId={billboardId}
-                            />
+                            <BillboardForm storeId={storeId} billboardId={billboardId} />
                         </div>
                     </div>
                 </ErrorBoundary>

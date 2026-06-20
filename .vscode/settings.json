@@ -1,5 +1,6 @@
 {
     "editor.formatOnSave": true,
+    "editor.formatOnType": false,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
@@ -14,5 +15,12 @@
     "search.exclude": {
         "**/node_modules": true,
         "**/.next": true
-    }
+    },
+    "eslint.run": "onSave",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "typescript.tsserver.maxTsServerMemory": 4096,
+
+    "typescript.tsserver.experimental.enableProjectDiagnostics": false
 }

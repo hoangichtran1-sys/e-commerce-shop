@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma, ReviewReportReason } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { base, authed } from "@/orpc/init";
 import { ORPCError } from "@orpc/client";
@@ -11,56 +11,73 @@ import type Stripe from "stripe";
 import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe";
 import { generateOrderCode } from "@/lib/generate-order-code";
-import { setDate, startOfMonth, subMonths } from "date-fns";
+import { FAVORITE_BREAKPOINT, MAX_LIMIT, MIN_LIMIT, PAGINATION, RATING_BREAKPOINT, REPORT_BREAKPOINT } from "@/constants";
 
 export const customerRouter = base.router({
     getOrdersHistory: authed
         .input(
             z.object({
                 storeId: z.string().min(1),
+                page: z.number().default(PAGINATION.DEFAULT_PAGE),
+                pageSize: z.number().min(PAGINATION.MIN_PAGE_SIZE).max(PAGINATION.MAX_PAGE_SIZE).default(PAGINATION.DEFAULT_PAGE_SIZE),
             }),
         )
         .handler(async ({ input, context }) => {
-            const orders = await prisma.order.findMany({
-                where: {
-                    storeId: input.storeId,
-                    userId: context.user.id,
-                    status: {
-                        notIn: ["PENDING"],
+            const { page, pageSize } = input;
+
+            const [orders, totalCount] = await Promise.all([
+                prisma.order.findMany({
+                    where: {
+                        storeId: input.storeId,
+                        userId: context.user.id,
+                        status: {
+                            notIn: ["PENDING"],
+                        },
                     },
-                },
-                include: {
-                    orderItems: {
-                        include: {
-                            productVariant: {
-                                select: {
-                                    product: {
-                                        select: {
-                                            images: {
-                                                select: {
-                                                    url: true,
+                    include: {
+                        orderItems: {
+                            include: {
+                                productVariant: {
+                                    select: {
+                                        product: {
+                                            select: {
+                                                images: {
+                                                    select: {
+                                                        url: true,
+                                                    },
+                                                    take: 1,
                                                 },
-                                                take: 1,
+                                                name: true,
                                             },
-                                            name: true,
                                         },
+                                        sku: true,
+                                        combination: true,
                                     },
-                                    sku: true,
-                                    combination: true,
                                 },
                             },
                         },
+                        _count: {
+                            select: { orderItems: true },
+                        },
                     },
-                    _count: {
-                        select: { orderItems: true },
+                    orderBy: {
+                        createdAt: "desc",
                     },
-                },
-                orderBy: {
-                    createdAt: "desc",
-                },
-            });
+                    skip: (page - 1) * pageSize,
+                    take: pageSize,
+                }),
+                prisma.order.count({
+                    where: {
+                        storeId: input.storeId,
+                        userId: context.user.id,
+                        status: {
+                            notIn: ["PENDING"],
+                        },
+                    },
+                }),
+            ]);
 
-            return orders.map((order) => ({
+            const items = orders.map((order) => ({
                 ...order,
                 amountPaid: order.amountPaid?.toNumber(),
                 orderItems: order.orderItems.map((item) => ({
@@ -69,6 +86,20 @@ export const customerRouter = base.router({
                     finalPrice: item.finalPrice.toNumber(),
                 })),
             }));
+
+            const totalPages = Math.ceil(totalCount / pageSize);
+            const hasNextPage = page < totalPages;
+            const hasPreviousPage = page > 1;
+
+            return {
+                items,
+                page,
+                pageSize,
+                totalCount,
+                totalPages,
+                hasNextPage,
+                hasPreviousPage,
+            };
         }),
     checkout: authed
         .input(
@@ -400,13 +431,24 @@ export const customerRouter = base.router({
             return category.id;
         }),
     getStores: base.handler(async () => {
-        const stores = await prisma.store.findMany({
-            orderBy: {
-                createdAt: "desc",
-            },
-        });
+        const [stores, productSoldWithStore] = await Promise.all([
+            prisma.store.findMany({
+                orderBy: {
+                    createdAt: "desc",
+                },
+            }),
+            prisma.product.groupBy({
+                by: ["storeId"],
+                _sum: {
+                    soldCount: true,
+                },
+            }),
+        ]);
 
-        return stores;
+        return stores.map((item) => ({
+            ...item,
+            productSold: productSoldWithStore.find((p) => p.storeId === item.id)?._sum.soldCount || 0,
+        }));
     }),
     getCategoriesParent: base.input(z.object({ storeId: z.string().min(1) })).handler(async ({ input }) => {
         const categories = await prisma.category.findMany({
@@ -450,14 +492,11 @@ export const customerRouter = base.router({
                 select: {
                     name: true,
                     id: true,
-                    _count: {
-                        select: { reviews: true },
-                    },
-                    reviews: {
-                        select: { rating: true },
-                    },
                     minPrice: true,
                     maxPrice: true,
+                    averageRating: true,
+                    reviewCount: true,
+                    favoriteCount: true,
                     images: {
                         select: {
                             url: true,
@@ -489,10 +528,13 @@ export const customerRouter = base.router({
                 sizes: z.array(z.string()).optional().default([]),
                 subcategorySlugs: z.array(z.string()).optional().default([]),
                 features: z.array(z.enum(featuresValue)).optional().default([]),
+                page: z.number().default(PAGINATION.DEFAULT_PAGE),
+                pageSize: z.number().min(PAGINATION.MIN_PAGE_SIZE).max(PAGINATION.MAX_PAGE_SIZE).default(PAGINATION.DEFAULT_PAGE_SIZE),
             }),
         )
         .handler(async ({ input }) => {
-            const { storeId, categoryId, colors, sizes, minPrice, maxPrice, search, sort, subcategorySlugs, isFeatured, features } = input;
+            const { storeId, categoryId, colors, sizes, minPrice, maxPrice, search, sort, subcategorySlugs, isFeatured, features, page, pageSize } =
+                input;
             const now = new Date();
 
             const hasMin = minPrice !== null && minPrice !== undefined;
@@ -508,7 +550,6 @@ export const customerRouter = base.router({
 
             const queryProducts: Prisma.ProductWhereInput = { storeId, status: "PUBLISHED" };
             const andAttributeConditions: any[] = [];
-            //const featuresConditions: any[] = [];
 
             if (colors && colors.length > 0) {
                 andAttributeConditions.push({
@@ -524,6 +565,22 @@ export const customerRouter = base.router({
                         hasSome: sizes.map((val) => `size:${val.trim()}`),
                     },
                 });
+            }
+
+            if (features.includes("top_favorite")) {
+                queryProducts.favoriteCount = { gte: FAVORITE_BREAKPOINT };
+            }
+
+            if (features.includes("top_rated")) {
+                queryProducts.averageRating = { gte: RATING_BREAKPOINT };
+            }
+
+            if (features.includes("free_shipping")) {
+                queryProducts.minPrice = { gte: env.SHIPPING_FEE };
+            }
+
+            if (features.includes("top_trending")) {
+                queryProducts.isTrending = true;
             }
 
             if (isFeatured !== undefined && isFeatured !== null) {
@@ -586,102 +643,34 @@ export const customerRouter = base.router({
                         },
                     },
                     _count: {
-                        select: { variants: true, reviews: true, favorites: true },
-                    },
-                    reviews: {
-                        select: {
-                            rating: true,
-                        },
+                        select: { variants: true },
                     },
                 },
                 orderBy: sortMap[sort],
+                skip: (page - 1) * pageSize,
+                take: pageSize,
             });
 
-            return products.map((product) => ({
+            const totalPages = Math.ceil(products.length / pageSize);
+            const hasNextPage = page < totalPages;
+            const hasPreviousPage = page > 1;
+
+            const items = products.map((product) => ({
                 ...product,
                 minPrice: product.minPrice.toNumber(),
                 maxPrice: product.maxPrice.toNumber(),
             }));
+
+            return {
+                items,
+                page,
+                pageSize,
+                totalCount: items.length,
+                totalPages,
+                hasNextPage,
+                hasPreviousPage,
+            };
         }),
-    checkTrending: base.input(z.object({ storeId: z.string().min(1), productId: z.string().min(1) })).handler(async ({ input }) => {
-        const now = new Date();
-
-        const currentStart = startOfMonth(now);
-        const currentEnd = now;
-
-        const previousStart = startOfMonth(subMonths(now, 1));
-        const dayOfMonth = now.getDate();
-        const previousEnd = setDate(startOfMonth(subMonths(now, 1)), dayOfMonth);
-
-        const [thisMonthData, lastMonthData, thisTotalMonthQuantity] = await Promise.all([
-            prisma.orderItem.aggregate({
-                where: {
-                    productVariant: {
-                        product: {
-                            id: input.productId,
-                        },
-                    },
-                    order: {
-                        status: {
-                            in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"],
-                        },
-                        createdAt: {
-                            gte: currentStart,
-                            lte: currentEnd,
-                        },
-                    },
-                },
-                _sum: {
-                    quantity: true,
-                },
-            }),
-            prisma.orderItem.aggregate({
-                where: {
-                    productVariant: {
-                        product: {
-                            id: input.productId,
-                        },
-                    },
-                    order: {
-                        status: {
-                            in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"],
-                        },
-                        createdAt: {
-                            gte: previousStart,
-                            lte: previousEnd,
-                        },
-                    },
-                },
-                _sum: {
-                    quantity: true,
-                },
-            }),
-            prisma.orderItem.aggregate({
-                where: {
-                    order: {
-                        storeId: input.storeId,
-                        status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
-                        createdAt: { gte: currentStart, lte: currentEnd },
-                    },
-                },
-                _sum: { quantity: true },
-            }),
-        ]);
-
-        const thisMonthQty = thisMonthData._sum.quantity || 0;
-        const lastMonthQty = lastMonthData._sum.quantity || 0;
-
-        const growthRate = (thisMonthQty - lastMonthQty) / Math.max(lastMonthQty, 1);
-
-        const score = growthRate * Math.log10(thisMonthQty + 1);
-
-        return {
-            score,
-            growthRate,
-            totalQuantity: thisTotalMonthQuantity._sum.quantity || 0,
-            thisMonthQty,
-        };
-    }),
     getProduct: base.input(z.object({ storeId: z.string().min(1), productId: z.string().min(1) })).handler(async ({ input }) => {
         const now = new Date();
 
@@ -717,19 +706,9 @@ export const customerRouter = base.router({
                         },
                     },
                 },
-                reviews: {
-                    select: {
-                        rating: true,
-                    },
-                },
                 favorites: {
                     select: {
                         userId: true,
-                    },
-                },
-                _count: {
-                    select: {
-                        reviews: true,
                     },
                 },
             },
@@ -826,6 +805,7 @@ export const customerRouter = base.router({
                 category: variant.product.category.name,
                 categoryId: variant.product.categoryId,
                 productId: variant.product.id,
+                favorites: variant.product.favorites,
                 finalPrice:
                     applyPromotion(variant.price.toNumber(), variant.product.category.parent?.promotions[0])?.finalPrice ?? variant.price.toNumber(),
                 discount: applyPromotion(variant.price.toNumber(), variant.product.category.parent?.promotions[0])?.discountValue ?? 0,
@@ -994,17 +974,42 @@ export const customerRouter = base.router({
                 throw new ORPCError("CONFLICT");
             }
 
-            const reviewCreated = await prisma.review.create({
-                data: {
-                    storeId: input.storeId,
-                    productId: input.productId,
-                    userId: context.user.id,
-                    rating: input.rating,
-                    feedback: input.feedback,
-                },
-            });
+            return await prisma.$transaction(async (tx) => {
+                const product = await tx.product.findUniqueOrThrow({
+                    where: { id: input.productId },
+                    select: {
+                        reviewCount: true,
+                        ratingSum: true,
+                    },
+                });
+                const newReviewCount = product.reviewCount + 1;
+                const newRatingSum = product.ratingSum + input.rating;
 
-            return reviewCreated;
+                const reviewCreated = await tx.review.create({
+                    data: {
+                        storeId: input.storeId,
+                        productId: input.productId,
+                        userId: context.user.id,
+                        rating: input.rating,
+                        feedback: input.feedback,
+                    },
+                });
+
+                if (reviewCreated) {
+                    await tx.product.update({
+                        where: {
+                            id: input.productId,
+                        },
+                        data: {
+                            reviewCount: newReviewCount,
+                            ratingSum: newRatingSum,
+                            averageRating: newRatingSum / newReviewCount,
+                        },
+                    });
+                }
+
+                return reviewCreated;
+            });
         }),
     updateReview: authed
         .input(
@@ -1030,17 +1035,41 @@ export const customerRouter = base.router({
                 throw new ORPCError("NOT_FOUND");
             }
 
-            const reviewUpdated = await prisma.review.update({
-                where: {
-                    id: existingReview.id,
-                },
-                data: {
-                    rating: input.rating,
-                    feedback: input.feedback,
-                },
-            });
+            return await prisma.$transaction(async (tx) => {
+                const product = await tx.product.findUniqueOrThrow({
+                    where: { id: input.productId },
+                    select: {
+                        reviewCount: true,
+                        ratingSum: true,
+                    },
+                });
 
-            return reviewUpdated;
+                const newRatingSum = product.ratingSum - existingReview.rating + input.rating;
+
+                const reviewUpdated = await tx.review.update({
+                    where: {
+                        id: existingReview.id,
+                    },
+                    data: {
+                        rating: input.rating,
+                        feedback: input.feedback,
+                    },
+                });
+
+                if (reviewUpdated) {
+                    await tx.product.update({
+                        where: {
+                            id: input.productId,
+                        },
+                        data: {
+                            ratingSum: newRatingSum,
+                            averageRating: newRatingSum / product.reviewCount,
+                        },
+                    });
+                }
+
+                return reviewUpdated;
+            });
         }),
     getReview: authed
         .input(
@@ -1068,22 +1097,69 @@ export const customerRouter = base.router({
                 storeId: z.string().min(1),
                 productId: z.string().min(1),
                 rating: z.literal(reviewsFilter),
+                cursor: z
+                    .object({
+                        id: z.string(),
+                        createdAt: z.date(),
+                    })
+                    .nullish(),
+                limit: z.number().min(MIN_LIMIT).max(MAX_LIMIT),
             }),
         )
         .handler(async ({ input }) => {
-            const reviews = await prisma.review.findMany({
+            const { storeId, productId, rating, cursor, limit } = input;
+            const data = await prisma.review.findMany({
                 where: {
-                    storeId: input.storeId,
-                    productId: input.productId,
-                    rating: input.rating !== "all" ? Number(input.rating) : undefined,
+                    storeId,
+                    productId,
+                    rating: rating !== "all" ? Number(rating) : undefined,
+                    ...(cursor
+                        ? {
+                              OR: [
+                                  { createdAt: { lt: cursor.createdAt } },
+                                  {
+                                      AND: [{ createdAt: cursor.createdAt }, { id: { lt: cursor.id } }],
+                                  },
+                              ],
+                          }
+                        : {}),
                 },
-                include: { user: { select: { email: true, name: true, image: true } } },
-                orderBy: {
-                    createdAt: "desc",
+                include: {
+                    user: { select: { email: true, name: true, image: true } },
+                    _count: {
+                        select: { reports: true, reactions: true },
+                    },
+                    reports: {
+                        select: {
+                            userId: true,
+                        },
+                    },
+                    reactions: {
+                        select: {
+                            userId: true,
+                            type: true,
+                            id: true,
+                        },
+                    },
                 },
+                orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+                take: limit + 1,
             });
 
-            return reviews;
+            const hasMore = data.length > limit;
+            const items = hasMore ? data.slice(0, -1) : data;
+            const lastItem = items[items.length - 1];
+            const nextCursor = hasMore
+                ? {
+                      id: lastItem.id,
+                      createdAt: lastItem.createdAt,
+                  }
+                : null;
+
+            return {
+                items,
+                nextCursor,
+            };
         }),
     addFavorite: authed
         .input(
@@ -1117,14 +1193,29 @@ export const customerRouter = base.router({
                 throw new ORPCError("CONFLICT");
             }
 
-            const addedFavorite = await prisma.favorite.create({
-                data: {
-                    userId: context.user.id,
-                    productId: input.productId,
-                },
-            });
+            return await prisma.$transaction(async (tx) => {
+                const addedFavorite = await tx.favorite.create({
+                    data: {
+                        userId: context.user.id,
+                        productId: input.productId,
+                    },
+                });
 
-            return addedFavorite;
+                if (addedFavorite) {
+                    await tx.product.update({
+                        where: {
+                            id: input.productId,
+                        },
+                        data: {
+                            favoriteCount: {
+                                increment: 1,
+                            },
+                        },
+                    });
+                }
+
+                return addedFavorite;
+            });
         }),
     removeFavorite: authed
         .input(
@@ -1158,15 +1249,210 @@ export const customerRouter = base.router({
                 throw new ORPCError("NOT_FOUND");
             }
 
-            const removedFavorite = await prisma.favorite.delete({
+            return await prisma.$transaction(async (tx) => {
+                const removedFavorite = await tx.favorite.delete({
+                    where: {
+                        userId_productId: {
+                            userId: context.user.id,
+                            productId: input.productId,
+                        },
+                    },
+                });
+
+                if (removedFavorite) {
+                    await tx.product.update({
+                        where: {
+                            id: input.productId,
+                        },
+                        data: {
+                            favoriteCount: {
+                                decrement: 1,
+                            },
+                        },
+                    });
+                }
+
+                return removedFavorite;
+            });
+        }),
+    createReport: authed
+        .input(
+            z.object({
+                reviewId: z.string().min(1),
+                type: z.enum(ReviewReportReason),
+                reason: z.string().min(3).max(100).nullable(),
+            }),
+        )
+        .handler(async ({ input, context }) => {
+            const existingReport = await prisma.reviewReport.findUnique({
                 where: {
-                    userId_productId: {
+                    reviewId_userId: {
+                        reviewId: input.reviewId,
                         userId: context.user.id,
-                        productId: input.productId,
                     },
                 },
             });
 
-            return removedFavorite;
+            if (existingReport) {
+                throw new ORPCError("CONFLICT");
+            }
+            return await prisma.$transaction(async (tx) => {
+                const reportCreated = await prisma.reviewReport.create({
+                    data: {
+                        userId: context.user.id,
+                        reviewId: input.reviewId,
+                        type: input.type,
+                        reason: input.reason,
+                    },
+                });
+
+                if (reportCreated) {
+                    const reviewUpdated = await prisma.review.update({
+                        where: {
+                            id: input.reviewId,
+                        },
+                        data: {
+                            reportCount: {
+                                increment: 1,
+                            },
+                        },
+                    });
+
+                    if (reviewUpdated.reportCount > REPORT_BREAKPOINT) {
+                        await prisma.review.update({
+                            where: {
+                                id: input.reviewId,
+                            },
+                            data: {
+                                isHidden: true,
+                            },
+                        });
+                    }
+                }
+
+                return reportCreated;
+            });
+        }),
+    getPromotionCampaigns: base
+        .input(
+            z.object({
+                storeId: z.string().min(1),
+            }),
+        )
+        .handler(async ({ input }) => {
+            const now = new Date();
+
+            const promotionCampaigns = await prisma.promotion.findMany({
+                where: {
+                    storeId: input.storeId,
+                    mode: "CATEGORY_CAMPAIGN",
+                    isActive: true,
+                    startAt: { lte: now },
+                    endAt: { gte: now },
+                },
+                orderBy: [{ priority: "desc" }, { value: "desc" }],
+                include: {
+                    categories: {
+                        select: { slug: true },
+                        take: 1,
+                    },
+                },
+            });
+
+            return promotionCampaigns;
+        }),
+    like: authed
+        .input(
+            z.object({
+                reviewId: z.string().min(1),
+            }),
+        )
+        .handler(async ({ input, context }) => {
+            const existingReviewReactionLike = await prisma.reviewReaction.findFirst({
+                where: {
+                    userId: context.user.id,
+                    reviewId: input.reviewId,
+                    type: "LIKE",
+                },
+            });
+
+            if (existingReviewReactionLike) {
+                const deletedReviewReaction = await prisma.reviewReaction.delete({
+                    where: {
+                        userId_reviewId: {
+                            userId: context.user.id,
+                            reviewId: input.reviewId,
+                        },
+                    },
+                });
+
+                return deletedReviewReaction;
+            }
+
+            const createdReviewReactionLike = await prisma.reviewReaction.upsert({
+                where: {
+                    userId_reviewId: {
+                        userId: context.user.id,
+                        reviewId: input.reviewId,
+                    },
+                },
+                update: {
+                    type: "LIKE",
+                },
+                create: {
+                    userId: context.user.id,
+                    reviewId: input.reviewId,
+                    type: "LIKE",
+                },
+            });
+
+            return createdReviewReactionLike;
+        }),
+    dislike: authed
+        .input(
+            z.object({
+                reviewId: z.string().min(1),
+            }),
+        )
+        .handler(async ({ input, context }) => {
+            const existingReviewReactionDislike = await prisma.reviewReaction.findFirst({
+                where: {
+                    userId: context.user.id,
+                    reviewId: input.reviewId,
+                    type: "DISLIKE",
+                },
+            });
+
+            if (existingReviewReactionDislike) {
+                const deletedReviewReaction = await prisma.reviewReaction.delete({
+                    where: {
+                        userId_reviewId: {
+                            userId: context.user.id,
+                            reviewId: input.reviewId,
+                        },
+                    },
+                });
+
+                return deletedReviewReaction;
+            }
+
+            const createdReviewReactionDislike = await prisma.reviewReaction.upsert({
+                where: {
+                    userId_reviewId: {
+                        userId: context.user.id,
+                        reviewId: input.reviewId,
+                    },
+                },
+                update: {
+                    type: "DISLIKE",
+                },
+                create: {
+                    userId: context.user.id,
+                    reviewId: input.reviewId,
+                    type: "DISLIKE",
+                },
+            });
+
+            return createdReviewReactionDislike;
         }),
 });

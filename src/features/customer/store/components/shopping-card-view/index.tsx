@@ -6,23 +6,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/features/customer/hooks/use-cart";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/orpc/orpc-rq.client";
-import { CardDetails } from "./cart-details";
+import { CardDetails, CartSkeleton } from "./cart-details";
 import { useConfettiStore } from "@/features/customer/hooks/use-confetti-store";
 import { useCheckoutStates } from "@/features/customer/hooks/use-checkout-states";
 import { toast } from "sonner";
 import { useEffect, useMemo } from "react";
 import { useDiscountCoupon } from "@/features/customer/hooks/use-discount-coupon";
 import { useRouter } from "next/navigation";
+import { User } from "@/lib/auth";
 
 interface ShoppingCartProps {
     storeId: string;
     storeSlug: string;
     shippingFee: number;
     freeThreshold: number;
+    currentUser: User | null;
 }
 
-export const ShoppingCart = ({ storeId, storeSlug, shippingFee, freeThreshold }: ShoppingCartProps) => {
+export const ShoppingCart = ({ storeId, storeSlug, shippingFee, freeThreshold, currentUser }: ShoppingCartProps) => {
     const router = useRouter();
+    const queryClient = useQueryClient();
+    const [states, setStates] = useCheckoutStates();
+    const { onOpenConfetti } = useConfettiStore();
+    const { setDiscountOption } = useDiscountCoupon();
+
     const { variantItemsArray, clearCart } = useCart(storeSlug);
 
     const variantIds = variantItemsArray.map((variant) => variant.productVariantId);
@@ -30,7 +37,7 @@ export const ShoppingCart = ({ storeId, storeSlug, shippingFee, freeThreshold }:
     const { data, isPending } = useQuery({
         ...orpc.customer.getVariantsInCart.queryOptions({ input: { storeId, variantIds } }),
         placeholderData: keepPreviousData,
-        refetchInterval: 30000,
+        refetchInterval: 60000,
     });
 
     const productCurrentIds = useMemo(() => {
@@ -43,11 +50,6 @@ export const ShoppingCart = ({ storeId, storeSlug, shippingFee, freeThreshold }:
 
         return Array.from(uniqueIds);
     }, [data]);
-
-    const queryClient = useQueryClient();
-    const [states, setStates] = useCheckoutStates();
-    const { onOpenConfetti } = useConfettiStore();
-    const { setDiscountOption } = useDiscountCoupon();
 
     useEffect(() => {
         if (states.success) {
@@ -80,7 +82,7 @@ export const ShoppingCart = ({ storeId, storeSlug, shippingFee, freeThreshold }:
     }, [states.success, states.cancel]);
 
     if (isPending) {
-        return <p>Loading...</p>;
+        return <CartSkeleton />;
     }
 
     if (data && data.length === 0) {
@@ -90,9 +92,14 @@ export const ShoppingCart = ({ storeId, storeSlug, shippingFee, freeThreshold }:
                     <ShoppingBag className="text-muted-foreground/50 mb-4 size-12" />
                     <h3 className="text-lg font-medium">Your cart is empty</h3>
                     <p className="text-muted-foreground mt-1 text-sm">Add some items to get started</p>
-                    <Button className="h-9 px-4 py-2 mt-4 cursor-pointer" variant="outline">
-                        Continue Shopping
-                    </Button>
+                    <div className="flex items-center gap-x-2">
+                        <Button onClick={() => router.push(`/${storeSlug}/orders`)} className="h-9 px-4 py-2 mt-4 cursor-pointer" variant="secondary">
+                            My orders
+                        </Button>
+                        <Button onClick={() => router.push(`/${storeSlug}`)} className="h-9 px-4 py-2 mt-4 cursor-pointer" variant="outline">
+                            Continue Shopping
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -106,6 +113,8 @@ export const ShoppingCart = ({ storeId, storeSlug, shippingFee, freeThreshold }:
             shippingFee={shippingFee}
             freeThreshold={freeThreshold}
             productCurrentIds={productCurrentIds}
+            variantIds={variantIds}
+            currentUser={currentUser}
         />
     );
 };

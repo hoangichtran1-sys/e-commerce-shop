@@ -5,11 +5,12 @@ import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/orpc/orpc-rq.client";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { BookCheckIcon, BookIcon, PackageIcon, PlusIcon, ScissorsIcon } from "lucide-react";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { BookCheckIcon, BookIcon, FlameIcon, PackageIcon, PlusIcon, ScissorsIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { columns } from "../components/columns";
 import { ProductStatus } from "@/generated/prisma/enums";
+import { toast } from "sonner";
 
 interface ProductsViewProps {
     storeId: string;
@@ -17,6 +18,7 @@ interface ProductsViewProps {
 
 export const ProductsView = ({ storeId }: ProductsViewProps) => {
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     const { data: products } = useSuspenseQuery(orpc.products.getMany.queryOptions({ input: { storeId } }));
 
@@ -34,14 +36,34 @@ export const ProductsView = ({ storeId }: ProductsViewProps) => {
         { label: "Archived", value: ProductStatus.ARCHIVED, icon: PackageIcon },
     ];
 
+    const productIds = products.map((p) => p.id);
+
+    const checkTrending = useMutation(
+        orpc.products.checkTrending.mutationOptions({
+            onSuccess: () => {
+                toast.success("Check all products successfully");
+                queryClient.invalidateQueries(orpc.products.getMany.queryOptions({ input: { storeId } }));
+            },
+            onError: (error) => {
+                toast.error(error.message);
+            },
+        }),
+    );
+
     return (
         <>
             <div className="flex items-center justify-between">
                 <Heading title={`Products (${products.length})`} description="Manage products for your store" />
-                <Button onClick={() => router.push(`/admin/${storeId}/products/new`)}>
-                    <PlusIcon className="size-4" />
-                    Add New
-                </Button>
+                <div className="flex items-center gap-x-2">
+                    <Button onClick={() => router.push(`/admin/${storeId}/products/new`)}>
+                        <PlusIcon className="size-4" />
+                        Add New
+                    </Button>
+                    <Button variant="outline" onClick={() => checkTrending.mutate({ storeId, productIds })}>
+                        <FlameIcon className="size-4" />
+                        Check Treding
+                    </Button>
+                </div>
             </div>
             <Separator />
             <DataTable

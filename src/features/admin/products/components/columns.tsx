@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDownIcon, BoxIcon, HeartIcon, MinusCircleIcon, MoreVerticalIcon, StarIcon } from "lucide-react";
+import { ArrowUpDownIcon, BoxIcon, FlameIcon, HeartIcon, MinusCircleIcon, MoreVerticalIcon, StarIcon } from "lucide-react";
 import { ProductGetMany } from "../types";
 import { capitalizeFirst } from "@/lib/utils";
 import { ProductActions } from "./product-actions";
@@ -14,6 +14,9 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, 
 import { ShowVariants } from "./show-variants";
 import { Badge } from "@/components/ui/badge";
 import { LOW_STOCK } from "@/constants";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 
 export const columns: ColumnDef<ProductGetMany[number]>[] = [
     {
@@ -30,13 +33,21 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
             const name = row.original.name;
             const firstImage = row.original.images[0];
             const soldCount = row.original.soldCount;
-            const totalFavorite = row.original._count.favorites;
+            const totalFavorite = row.original.favoriteCount;
+            const isTrending = row.original.isTrending;
 
             return (
                 <div className="flex items-center gap-x-2">
                     <Image src={firstImage.url} alt={name} width={54} height={54} className="object-cover grayscale" />
                     <div className="flex flex-col gap-y-1">
-                        <p className="line-clamp-2">{name}</p>
+                        <div className="flex items-center gap-x-1">
+                            <p className="line-clamp-2">{name}</p>
+                            {isTrending && (
+                                <Button size="icon-xs" variant="ghost" title="Trending">
+                                    <FlameIcon />
+                                </Button>
+                            )}
+                        </div>
                         <p className="text-muted-foreground">
                             Sold count: <b className="text-foreground">{soldCount}</b>
                         </p>
@@ -171,43 +182,67 @@ export const columns: ColumnDef<ProductGetMany[number]>[] = [
             );
         },
         cell: ({ row }) => {
-            const totalReview = row.original._count.reviews;
+            const totalReview = row.original.reviewCount;
+            const rating = row.original.averageRating;
+
+            const oneStar = row.original.reviews.filter((rev) => rev.rating === 1).length;
+            const twoStar = row.original.reviews.filter((rev) => rev.rating === 2).length;
+            const threeStar = row.original.reviews.filter((rev) => rev.rating === 3).length;
+            const fourStar = row.original.reviews.filter((rev) => rev.rating === 4).length;
+            const fiveStar = row.original.reviews.filter((rev) => rev.rating === 5).length;
 
             if (totalReview === 0) {
                 return <p className="italic text-muted-foreground">No rating information</p>;
             }
 
-            const totalRating = row.original.reviews.reduce((curr, item) => curr + item.rating, 0);
-            const rating = totalRating / totalReview;
-
             return (
-                <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => {
-                        const starValue = i + 1;
-                        const isFull = rating >= starValue;
-                        const isHalf = rating >= starValue - 0.5 && rating < starValue;
+                <HoverCard openDelay={10} closeDelay={100}>
+                    <HoverCardTrigger asChild>
+                        <div className="flex items-center gap-1 hover:cursor-pointer">
+                            {[...Array(5)].map((_, i) => {
+                                const starValue = i + 1;
+                                const isFull = rating >= starValue;
+                                const isHalf = rating >= starValue - 0.5 && rating < starValue;
 
-                        return (
-                            <div key={i} className="relative size-5">
-                                {/* Empty star */}
-                                <StarIcon className="absolute inset-0 text-slate-300" fill="none" />
+                                return (
+                                    <div key={i} className="relative size-5">
+                                        {/* Empty star */}
+                                        <StarIcon className="absolute inset-0 text-slate-300" fill="none" />
 
-                                {/* Full star */}
-                                {isFull && <StarIcon className="absolute inset-0 text-amber-400" fill="currentColor" />}
+                                        {/* Full star */}
+                                        {isFull && <StarIcon className="absolute inset-0 text-amber-400" fill="currentColor" />}
 
-                                {/* Half star */}
-                                {isHalf && (
-                                    <div className="absolute inset-0 overflow-hidden w-1/2">
-                                        <StarIcon className="text-amber-400" fill="currentColor" />
+                                        {/* Half star */}
+                                        {isHalf && (
+                                            <div className="absolute inset-0 overflow-hidden w-1/2">
+                                                <StarIcon className="text-amber-400" fill="currentColor" />
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                );
+                            })}
+                        </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="flex w-40 flex-col gap-1">
+                        <div className="flex items-center justify-start gap-x-1">
+                             <span className="text-foreground ml-1 text-sm flex items-center gap-x-1">
+                                 <StarIcon className="size-3 fill-amber-400 text-amber-400" />
+                                 {rating}
+                             </span>
+                             <span className="text-muted-foreground ml-1 text-sm">({totalReview} reviews)</span>
+                        </div>
+                        <Separator className="mb-1" />
+                        {[fiveStar, fourStar, threeStar, twoStar, oneStar].map((pct, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs">
+                                <div className="w-8 text-sm flex items-center gap-x-1">
+                                    {5 - i} <StarIcon className="size-4 fill-amber-400 text-amber-400" />{" "}
+                                </div>
+                                <Progress value={(pct / totalReview) * 100} className="h-1.5" />
+                                <span className="w-8 text-right">{(pct / totalReview) * 100}%</span>
                             </div>
-                        );
-                    })}
-
-                    <span className="text-muted-foreground ml-1 text-sm">{rating}</span>
-                    <span className="text-muted-foreground ml-1 text-sm">({totalReview})</span>
-                </div>
+                        ))}
+                    </HoverCardContent>
+                </HoverCard>
             );
         },
     },

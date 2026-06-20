@@ -1,22 +1,22 @@
 import { ReviewModal } from "@/components/modals/review-modal";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { GeneratedAvatar } from "@/components/generated-avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ReviewsFilter } from "@/features/customer/types";
+import { ReviewCursor, ReviewsFilter } from "@/features/customer/types";
 import { User } from "@/lib/auth";
-import { Edit2Icon, FlagIcon, MessageSquareIcon, PlusCircleIcon, Star, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { MessageSquareIcon, PlusCircleIcon, Star } from "lucide-react";
+import { useMemo } from "react";
 import { orpc } from "@/orpc/orpc-rq.client";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { NoResults } from "@/components/no-results";
-import { Hint } from "@/components/hint";
-import { format, formatDistanceToNow } from "date-fns";
 import { cn, formatNumber } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useReviewsFilter } from "@/features/customer/hooks/use-reviews-filter";
+import { useReviewModal } from "@/features/customer/hooks/use-review-modal";
+import { ReviewItem } from "./review-item";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DEFAULT_LIMIT } from "@/constants";
+import { InfiniteScroll } from "@/components/infinite-scroll";
 
 interface ReviewSectionProps {
     storeId: string;
@@ -51,22 +51,112 @@ const ratingOptions = [
     },
 ];
 
-export const ReviewSection = ({ storeId, productId, currentUser }: ReviewSectionProps) => {
-    const [openReviewModal, setOpenReviewModal] = useState(false);
+export function ReviewsSkeleton() {
+    return (
+        <Card className="shadow-sm w-full">
+            {/* Header Skeleton */}
+            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+                <CardTitle className="text-lg font-bold">Reviews</CardTitle>
+                <div className="flex items-center gap-x-2">
+                    {/* Button Submit Review Skeleton */}
+                    <Skeleton className="h-9 w-28" />
+                    {/* Select Filter Skeleton */}
+                    <Skeleton className="h-9 w-30" />
+                </div>
+            </CardHeader>
 
-    const [isLiked, setIsLiked] = useState(false);
-    const [isDisliked, setIsDisliked] = useState(false);
+            {/* Content Skeleton */}
+            <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Bên trái: Danh sách các item review đang loading (Giả lập 3 items) */}
+                    <div className="md:col-span-2 order-2 md:order-1 space-y-4">
+                        {[...Array(4)].map((_, idx) => (
+                            <div key={idx} className="p-4 rounded-lg border bg-card shadow-sm space-y-3">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-3">
+                                        {/* Avatar Skeleton */}
+                                        <Skeleton className="h-10 w-10 rounded-full" />
+                                        <div className="space-y-2">
+                                            {/* Tên User */}
+                                            <Skeleton className="h-4 w-32" />
+                                            {/* Badge Sao + Date */}
+                                            <div className="flex items-center gap-x-2">
+                                                <Skeleton className="h-5 w-12 rounded" />
+                                                <Skeleton className="h-3 w-16" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Icon Action (Flag hoặc Edit) */}
+                                    <Skeleton className="h-8 w-8 rounded-md" />
+                                </div>
+                                {/* Nội dung comment phản hồi */}
+                                <div className="space-y-2 pt-1">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-[90%]" />
+                                </div>
+                                {/* Like / Dislike buttons */}
+                                <div className="mt-4 flex gap-4 pt-1">
+                                    <Skeleton className="h-8 w-12" />
+                                    <Skeleton className="h-8 w-12" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Bên phải: Hộp thống kê tiến trình sao (Sticky) */}
+                    <div className="space-y-6 order-1 md:order-2">
+                        <div className="p-6 border rounded-xl sticky top-6 space-y-4">
+                            {/* Điểm số trung bình tổng quan */}
+                            <div className="flex flex-col items-center gap-2 mb-4">
+                                <Skeleton className="h-8 w-24" />
+                                <Skeleton className="h-3 w-32" />
+                            </div>
+                            {/* 5 dòng Progress bar đại diện cho 5 mức sao */}
+                            <div className="space-y-3">
+                                {[...Array(5)].map((_, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <Skeleton className="h-4 w-12" />
+                                        <Skeleton className="h-2 flex-1" />
+                                        <Skeleton className="h-4 w-8" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+export const ReviewSection = ({ storeId, productId, currentUser }: ReviewSectionProps) => {
+    const { onOpen } = useReviewModal();
 
     const [reviewsFilter, setReviewsFilter] = useReviewsFilter();
 
-    const { data: reviews } = useSuspenseQuery(
-        orpc.customer.getReviews.queryOptions({ input: { storeId, productId, rating: reviewsFilter.rating } }),
+    const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useSuspenseInfiniteQuery(
+        orpc.customer.getReviews.infiniteOptions({
+            input: (pageParam: ReviewCursor | undefined) => ({
+                storeId,
+                productId,
+                rating: reviewsFilter.rating,
+                limit: DEFAULT_LIMIT,
+                cursor: pageParam,
+            }),
+            initialPageParam: undefined,
+            getNextPageParam: (lastPage) => lastPage.nextCursor,
+            staleTime: 10000,
+        }),
     );
 
     const { data: initialData } = useQuery({
         ...orpc.customer.getReview.queryOptions({ input: { storeId, productId } }),
         enabled: !!currentUser,
     });
+
+    const reviews = useMemo(() => {
+        return data.pages.flatMap((page) => page.items);
+    }, [data]);
 
     const rating = useMemo(() => {
         const totalReview = reviews.length;
@@ -99,18 +189,12 @@ export const ReviewSection = ({ storeId, productId, currentUser }: ReviewSection
 
     return (
         <>
-            <ReviewModal
-                initialData={initialData}
-                storeId={storeId}
-                productId={productId}
-                isOpen={openReviewModal}
-                onClose={() => setOpenReviewModal(false)}
-            />
+            <ReviewModal initialData={initialData} storeId={storeId} productId={productId} />
             <Card className="shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
                     <CardTitle className="text-lg font-bold">Reviews</CardTitle>
                     <div className="flex items-center gap-x-2">
-                        <Button onClick={() => setOpenReviewModal(true)} variant="outline" size="sm" className={cn("gap-2", initialData && "hidden")}>
+                        <Button onClick={onOpen} variant="outline" size="sm" className={cn("gap-2", initialData && "hidden")}>
                             <PlusCircleIcon className="w-4 h-4" /> Submit Review
                         </Button>
                         <Select
@@ -137,79 +221,16 @@ export const ReviewSection = ({ storeId, productId, currentUser }: ReviewSection
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="md:col-span-2 order-2 md:order-1 space-y-4">
                             {reviewsDataFormatted.length === 0 && <NoResults icon={MessageSquareIcon} topic="reviews" />}
-                            {reviewsDataFormatted.map((rev) => {
-                                return (
-                                    <div key={rev.id} className="p-4 rounded-lg border bg-card text-card-foreground shadow-sm space-y-3">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex items-center gap-3">
-                                                {rev.user.image ? (
-                                                    <Avatar>
-                                                        <AvatarImage src={rev.user.image} />
-                                                    </Avatar>
-                                                ) : (
-                                                    <GeneratedAvatar seed={rev.user.name || rev.user.email} />
-                                                )}
-                                                <div>
-                                                    <p className="font-semibold text-sm">{rev.user.name || rev.user.email}</p>
-                                                    <div className="flex items-center gap-x-2 mt-1">
-                                                        <Badge variant="outline">
-                                                            <div className="flex items-center gap-1">
-                                                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                                                <span className="text-xs font-semibold text-neutral-600">{rev.rating}</span>
-                                                            </div>
-                                                        </Badge>
-                                                        <span className="text-muted-foreground">•</span>
-                                                        <Hint text={format(rev.createdAt, "LLL dd, y")}>
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {formatDistanceToNow(new Date(rev.createdAt), { addSuffix: true })}
-                                                            </span>
-                                                        </Hint>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-x-2">
-                                                <Button variant="ghost" onClick={() => {}} size="icon">
-                                                    <FlagIcon />
-                                                </Button>
-                                                {currentUser && currentUser.id === rev.userId && (
-                                                    <Button variant="ghost" onClick={() => setOpenReviewModal(true)} size="icon">
-                                                        <Edit2Icon />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <p className="text-sm text-slate-700 leading-relaxed line-clamp-5">
-                                            &quot;{rev.feedback || "No feedback"}&quot;
-                                        </p>
-                                        <div className="mt-4 flex gap-4">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setIsLiked((current) => !current)}
-                                                className="h-8 px-3 text-xs text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                                                aria-label="review reaction"
-                                            >
-                                                <ThumbsUpIcon className={cn("size-4", isLiked && "fill-current")} />
-                                                <span>{isLiked ? 1 : 0}</span>
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setIsDisliked((current) => !current)}
-                                                className="h-8 px-3 text-xs text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                                                aria-label="review reaction"
-                                            >
-                                                <ThumbsDownIcon className={cn("size-4", isDisliked && "fill-current")} />
-                                                <span>{isDisliked ? 1 : 0}</span>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            {reviewsDataFormatted.length >= 8 && (
-                                <Button variant="ghost" className="w-full text-muted-foreground">
-                                    Load more..
-                                </Button>
+                            {reviewsDataFormatted.map((rev) => (
+                                <ReviewItem key={rev.id} data={rev} storeId={storeId} productId={productId} currentUser={currentUser} />
+                            ))}
+                            {reviewsDataFormatted.length >= DEFAULT_LIMIT && (
+                                <InfiniteScroll
+                                    isManual
+                                    hasNextPage={hasNextPage}
+                                    isFetchingNextPage={isFetchingNextPage}
+                                    fetchNextPage={fetchNextPage}
+                                />
                             )}
                         </div>
 

@@ -1,3 +1,4 @@
+import { ErrorView } from "@/components/error-view";
 import { LIMIT_ORDERS } from "@/constants";
 import { StoreView } from "@/features/admin/stores/views/store-view";
 import { client } from "@/lib/orpc";
@@ -39,7 +40,7 @@ const Page = async ({ params }: PageProps) => {
 
     return (
         <HydrateClient>
-            <ErrorBoundary fallback={<p>Error!</p>}>
+            <ErrorBoundary fallback={<ErrorView message="Error!" />}>
                 <StoreView storeId={storeId} />
             </ErrorBoundary>
         </HydrateClient>

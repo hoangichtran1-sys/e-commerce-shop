@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { capitalizeFirst, capitalizeWords, cn } from "@/lib/utils";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { FlameIcon, GemIcon, HeartIcon, LucideIcon, SearchIcon, StarIcon, TruckIcon } from "lucide-react";
+import { FlameIcon, HeartIcon, LucideIcon, SearchIcon, StarIcon, TruckIcon } from "lucide-react";
 import { Category } from "@/generated/prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Features } from "@/features/customer/types";
@@ -12,6 +12,7 @@ import { useProductsFilter } from "@/features/customer/hooks/use-products-filter
 import { MAX_PRODUCT_PRICE, MIN_PRODUCT_PRICE } from "@/constants";
 import { useDebouncedCallback } from "use-debounce";
 import { useMemo, useState } from "react";
+import { usePaginationProducts } from "@/features/customer/hooks/use-pagination-products";
 
 interface ProductFilterProps {
     data: (Category & {
@@ -23,11 +24,6 @@ interface ProductFilterProps {
 }
 
 export const featuresOption: { label: string; value: Features; icon: LucideIcon }[] = [
-    {
-        label: "Best seller",
-        value: "best_seller",
-        icon: GemIcon,
-    },
     {
         label: "Top Trending",
         value: "top_trending",
@@ -52,6 +48,7 @@ export const featuresOption: { label: string; value: Features; icon: LucideIcon 
 
 export const ProductFilter = ({ data, attributesGroup }: ProductFilterProps) => {
     const [productsFilter, setProductsFilter] = useProductsFilter();
+    const [, setPaginationProducts] = usePaginationProducts();
 
     const [search, setSearch] = useState(productsFilter.search || "");
     const [priceRange, setPriceRange] = useState<number[]>([
@@ -61,6 +58,7 @@ export const ProductFilter = ({ data, attributesGroup }: ProductFilterProps) => 
 
     const debounceSearch = useDebouncedCallback((searchValue: string) => {
         setProductsFilter({ search: searchValue });
+        setPaginationProducts({ page: 1 });
     }, 300);
 
     const debouncePriceRange = useDebouncedCallback((priceRange: number[]) => {
@@ -68,6 +66,7 @@ export const ProductFilter = ({ data, attributesGroup }: ProductFilterProps) => 
             minPrice: priceRange[0],
             maxPrice: priceRange[1],
         });
+        setPaginationProducts({ page: 1 });
     }, 300);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,6 +88,7 @@ export const ProductFilter = ({ data, attributesGroup }: ProductFilterProps) => 
                 subcategorySlugs: nextSlugs,
             };
         });
+        setPaginationProducts({ page: 1 });
     };
 
     const handleToggleSelectFeature = (value: Features) => {
@@ -103,6 +103,7 @@ export const ProductFilter = ({ data, attributesGroup }: ProductFilterProps) => 
                 features: nextFeatures,
             };
         });
+        setPaginationProducts({ page: 1 });
     };
 
     const handleToggleSelectColor = (value: string) => {
@@ -117,6 +118,7 @@ export const ProductFilter = ({ data, attributesGroup }: ProductFilterProps) => 
                 colors: nextColors,
             };
         });
+        setPaginationProducts({ page: 1 });
     };
 
     const handleToggleSelectSize = (value: string) => {
@@ -131,6 +133,7 @@ export const ProductFilter = ({ data, attributesGroup }: ProductFilterProps) => 
                 sizes: nextSizes,
             };
         });
+        setPaginationProducts({ page: 1 });
     };
 
     const handleReset = () => {
@@ -143,6 +146,7 @@ export const ProductFilter = ({ data, attributesGroup }: ProductFilterProps) => 
             maxPrice: null,
             search: null,
         });
+        setPaginationProducts({ page: 1 });
     };
 
     const totalFilter = useMemo(() => {

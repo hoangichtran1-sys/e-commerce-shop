@@ -3,6 +3,7 @@ import { MainNav } from "./main-nav";
 import { client } from "@/lib/orpc";
 import { StoreHeader } from "./store-header";
 import { NavbarActions } from "./navbar-actions";
+import { TopPromoBanner } from "@/features/customer/store/components/product-featured/top-promo-banner";
 
 interface NavbarProps {
     storeName: string;
@@ -13,9 +14,11 @@ interface NavbarProps {
 export const Navbar = async ({ storeName, storeId, storeSlug }: NavbarProps) => {
     const categories = await client.customer.getCategoriesParent({ storeId });
     const stores = await client.customer.getStores();
+    const promotionCampaigns = await client.customer.getPromotionCampaigns({ storeId });
 
     return (
-        <div className="border-b">
+        <div className="border-b mt-10">
+            <TopPromoBanner data={promotionCampaigns} storeSlug={storeSlug} />
             <Container>
                 <div className="relative px-4 sm:px-6 lg:px-8 flex h-16 items-center">
                     <div className="ml-4 flex lg:ml-0 gap-x-2 font-bold">

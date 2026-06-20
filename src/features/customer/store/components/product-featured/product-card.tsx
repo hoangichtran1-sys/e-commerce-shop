@@ -2,18 +2,77 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExpandIcon, StarIcon, SparklesIcon, EyeIcon } from "lucide-react";
+import { ExpandIcon, StarIcon, SparklesIcon, EyeIcon, HeartIcon } from "lucide-react";
 import { FALLBACK_IMAGE } from "@/constants";
 import { GetProducts } from "@/features/customer/types";
 import { useStoreSlug } from "@/features/customer/hooks/use-store-slug";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ExpandedProduct } from "../product-view/expanded-product";
 import { useRouter } from "next/navigation";
 import { Hint } from "@/components/hint";
+import { Separator } from "@/components/ui/separator";
+import { formatNumber } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProductCardProps {
-    product: GetProducts[number];
+    product: GetProducts["items"][number];
     isGlobal: boolean;
+}
+
+export function ProductCardSkeleton() {
+    return (
+        <Card className="overflow-hidden border-0 shadow-none pt-0 pointer-events-none w-full">
+            {/* IMAGE CONTAINER (Giữ nguyên tỉ lệ aspect-square) */}
+            <div className="relative aspect-square rounded-md overflow-hidden">
+                <Skeleton className="h-full w-full" />
+
+                {/* Giả lập một Badge Category mờ ở góc trái nếu muốn layout tự nhiên */}
+                <div className="absolute left-2 top-2">
+                    <Skeleton className="h-5 w-16 rounded-md bg-neutral-200/50 dark:bg-neutral-800/50" />
+                </div>
+            </div>
+
+            {/* PRODUCT INFO CONTENT */}
+            <CardContent className="space-y-3 p-4">
+                {/* NAME & STOCK BADGE */}
+                <div className="flex items-center justify-between gap-x-2">
+                    {/* Product Name */}
+                    <Skeleton className="h-6 w-2/3" />
+                    {/* Stock Badge */}
+                    <Skeleton className="h-5 w-16 rounded-md" />
+                </div>
+
+                {/* RATING & FAVORITE AREA */}
+                <div className="flex items-center gap-2 h-4">
+                    {/* Rating (Star + Number) */}
+                    <div className="flex items-center gap-x-1">
+                        <Skeleton className="size-4 rounded-sm" />
+                        <Skeleton className="h-4 w-12" />
+                    </div>
+
+                    <Separator orientation="vertical" className="h-3" />
+
+                    {/* Favorite (Heart + Number) */}
+                    <div className="flex items-center gap-x-1">
+                        <Skeleton className="size-4 rounded-sm" />
+                        <Skeleton className="h-4 w-6" />
+                    </div>
+                </div>
+
+                {/* PRICE & OPTIONS */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                    {/* Price Label (From $XX) */}
+                    <div className="flex items-baseline gap-1">
+                        <Skeleton className="h-4 w-8" />
+                        <Skeleton className="h-6 w-12" />
+                    </div>
+
+                    {/* Options Badge */}
+                    <Skeleton className="h-5 w-16 rounded-md" />
+                </div>
+            </CardContent>
+        </Card>
+    );
 }
 
 export function ProductCard({ product, isGlobal }: ProductCardProps) {
@@ -24,15 +83,6 @@ export function ProductCard({ product, isGlobal }: ProductCardProps) {
     const stock = product.variants.reduce((total, variant) => total + variant.stock, 0);
 
     const [openPreviewModal, setOpenPreviewModal] = useState(false);
-
-    const rating = useMemo(() => {
-        const totalReview = product._count.reviews;
-        if (totalReview === 0) return 0;
-
-        const totalRating = product.reviews.reduce((curr, item) => curr + item.rating, 0);
-        return totalRating / totalReview;
-    }, [product]);
-    console.log(product.minPrice);
 
     return (
         <>
@@ -112,30 +162,16 @@ export function ProductCard({ product, isGlobal }: ProductCardProps) {
 
                     {/* RATING */}
                     <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => {
-                            const starValue = i + 1;
-                            const isFull = rating >= starValue;
-                            const isHalf = rating >= starValue - 0.5 && rating < starValue;
-
-                            return (
-                                <div key={i} className="relative size-5">
-                                    {/* Empty star */}
-                                    <StarIcon className="absolute inset-0 text-slate-300" fill="none" />
-
-                                    {/* Full star */}
-                                    {isFull && <StarIcon className="absolute inset-0 text-amber-400" fill="currentColor" />}
-
-                                    {/* Half star */}
-                                    {isHalf && (
-                                        <div className="absolute inset-0 overflow-hidden w-1/2">
-                                            <StarIcon className="text-amber-400" fill="currentColor" />
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                        <span className="text-muted-foreground ml-1 text-sm">{rating}</span>
-                        <span className="text-muted-foreground ml-1 text-sm">({product._count.reviews})</span>
+                        <div className="flex items-center gap-x-1">
+                            <StarIcon className="size-4 fill-amber-500 text-amber-500" />
+                            <span className="text-foreground text-sm font-semibold">{product.averageRating}</span>
+                            <span className="text-muted-foreground text-sm">({formatNumber(product.reviewCount)})</span>
+                        </div>
+                        <Separator orientation="vertical" />
+                        <div className="flex items-center gap-x-1">
+                            <HeartIcon className="size-4 fill-rose-500 text-rose-500" />
+                            <span className="text-foreground text-sm font-semibold">{product.favoriteCount}</span>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2">

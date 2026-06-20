@@ -10,9 +10,90 @@ import { Hint } from "@/components/hint";
 import { useState } from "react";
 import { TrackOrderModal } from "./track-order-modal";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface OrderHistoryCardProps {
-    data: GetOrdersHistory[number];
+    data: GetOrdersHistory["items"][number];
+}
+
+export function OrdersSkeleton() {
+    return (
+        <div className="space-y-6">
+            {[...Array(3)].map((_, cardIdx) => (
+                <Card key={cardIdx} className="mb-4 animate-pulse">
+                    {/* Header Skeleton */}
+                    <CardHeader className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-x-6">
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-x-2">
+                                <Skeleton className="h-8 w-48" /> {/* Order Code */}
+                                <Skeleton className="h-6 w-20 rounded-full" /> {/* Badge Status */}
+                            </div>
+                            <Skeleton className="h-4 w-36" /> {/* Date Placed */}
+                        </div>
+                        <div className="space-y-1.5 text-end max-sm:text-start flex flex-col items-end max-sm:items-start">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-40" />
+                        </div>
+                    </CardHeader>
+
+                    {/* Table Content Skeleton */}
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="w-[40%]">
+                                        <Skeleton className="h-4 w-12" />
+                                    </TableHead>
+                                    <TableHead className="hidden sm:table-cell text-end">
+                                        <Skeleton className="h-4 w-24 ml-auto" />
+                                    </TableHead>
+                                    <TableHead className="hidden md:table-cell text-end">
+                                        <Skeleton className="h-4 w-16 ml-auto" />
+                                    </TableHead>
+                                    <TableHead className="text-end">
+                                        <Skeleton className="h-4 w-12 ml-auto" />
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {[...Array(2)].map((_, itemIdx) => (
+                                    <TableRow key={itemIdx}>
+                                        {/* Item Info */}
+                                        <TableCell className="flex flex-col sm:flex-row sm:items-center gap-3 py-3">
+                                            <Skeleton className="w-16 h-16 rounded-md shrink-0" />
+                                            <div className="space-y-2 flex-1">
+                                                <Skeleton className="h-4 w-[80%]" />
+                                                <Skeleton className="h-3 w-[50%]" />
+                                            </div>
+                                        </TableCell>
+                                        {/* Date */}
+                                        <TableCell className="hidden sm:table-cell text-end">
+                                            <Skeleton className="h-4 w-24 ml-auto" />
+                                        </TableCell>
+                                        {/* Quantity */}
+                                        <TableCell className="hidden md:table-cell text-end">
+                                            <Skeleton className="h-4 w-8 ml-auto" />
+                                        </TableCell>
+                                        {/* Price */}
+                                        <TableCell className="text-end">
+                                            <Skeleton className="h-4 w-16 ml-auto" />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+
+                    {/* Footer Buttons Skeleton */}
+                    <CardFooter className="flex flex-wrap gap-4 border-t-0 bg-transparent pt-0">
+                        <Skeleton className="h-9 w-36" /> {/* View Details */}
+                        <Skeleton className="h-9 w-28" /> {/* Track Order */}
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
+    );
 }
 
 export const OrderHistoryCard = ({ data }: OrderHistoryCardProps) => {
@@ -22,7 +103,7 @@ export const OrderHistoryCard = ({ data }: OrderHistoryCardProps) => {
     return (
         <>
             <TrackOrderModal status={data.status} isOpen={openTrackModal} onClose={() => setOpenTrackModal(false)} updatedAt={data.updatedAt} />
-            <Card className="mb-4">
+            <Card className="space-y-6">
                 <CardHeader className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between md:gap-x-6">
                     <div>
                         <CardTitle className="flex items-center gap-x-2">
@@ -90,14 +171,14 @@ export const OrderHistoryCard = ({ data }: OrderHistoryCardProps) => {
                             })}
                         </TableBody>
                         <TableFooter className="bg-transparent">
-                            {/* Mobile and Tablet Footer - colSpan={1} */}
+                            {/* Mobile and Tablet Footer - colSpan={2} */}
                             <TableRow className="font-semibold hover:bg-transparent md:hidden">
                                 <TableCell colSpan={1}></TableCell>
                                 <TableCell className="text-end">{formatPrice(discountSnapshot.total)}</TableCell>
                             </TableRow>
-                            {/* Desktop Footer - colSpan={2} */}
+                            {/* Desktop Footer - colSpan={4} */}
                             <TableRow className="font-semibold hover:bg-transparent hidden md:table-row">
-                                <TableCell colSpan={2}></TableCell>
+                                <TableCell colSpan={3}></TableCell>
                                 <TableCell className="text-end">{formatPrice(discountSnapshot.total)}</TableCell>
                             </TableRow>
                         </TableFooter>
