@@ -7,20 +7,8 @@ import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-    FieldSeparator,
-} from "@/components/ui/field";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field, FieldError, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { FaFacebookF } from "react-icons/fa";
@@ -35,7 +23,7 @@ const registerSchema = z
     })
     .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords don't match!",
-        path: ["confirmPassword", "password"],
+        path: ["confirmPassword"],
     });
 
 export function SignUpForm() {
@@ -50,6 +38,7 @@ export function SignUpForm() {
         },
         validators: {
             onSubmit: registerSchema,
+            onChange: registerSchema,
         },
         onSubmit: async ({ value }) => {
             await authClient.signUp.email(
@@ -94,9 +83,7 @@ export function SignUpForm() {
             <Card>
                 <CardHeader className="text-center">
                     <CardTitle>Get started</CardTitle>
-                    <CardDescription>
-                        Create your account to get started
-                    </CardDescription>
+                    <CardDescription>Create your account to get started</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form
@@ -107,70 +94,37 @@ export function SignUpForm() {
                     >
                         <div className="grid gap-6">
                             <div className="flex flex-col gap-4">
-                                <Button
-                                    className="w-full"
-                                    variant="outline"
-                                    type="button"
-                                    onClick={() => onSocial("google")}
-                                >
+                                <Button className="w-full" variant="outline" type="button" onClick={() => onSocial("google")}>
                                     <FcGoogle />
                                     Continue with Google
                                 </Button>
-                                <Button
-                                    className="w-full"
-                                    variant="outline"
-                                    type="button"
-                                    onClick={() => onSocial("facebook")}
-                                >
+                                <Button className="w-full" variant="outline" type="button" onClick={() => onSocial("facebook")}>
                                     <FaFacebookF className="text-blue-500" />
                                     Continue with Facebook
                                 </Button>
                             </div>
-                            <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                                Or continue with
-                            </FieldSeparator>
+                            <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">Or continue with</FieldSeparator>
                             <div className="grid gap-6">
                                 <FieldGroup>
                                     <form.Field
                                         name="name"
                                         children={(field) => {
-                                            const isInvalid =
-                                                field.state.meta.isTouched &&
-                                                !field.state.meta.isValid;
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                             return (
                                                 <Field data-invalid={isInvalid}>
-                                                    <FieldLabel
-                                                        htmlFor={field.name}
-                                                    >
-                                                        Name
-                                                    </FieldLabel>
+                                                    <FieldLabel htmlFor={field.name}>Name</FieldLabel>
                                                     <Input
                                                         type="text"
                                                         placeholder="e.g. test"
                                                         id={field.name}
                                                         name={field.name}
-                                                        value={
-                                                            field.state.value
-                                                        }
-                                                        onBlur={
-                                                            field.handleBlur
-                                                        }
-                                                        onChange={(e) =>
-                                                            field.handleChange(
-                                                                e.target.value,
-                                                            )
-                                                        }
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
                                                         aria-invalid={isInvalid}
                                                         autoComplete="off"
                                                     />
-                                                    {isInvalid && (
-                                                        <FieldError
-                                                            errors={
-                                                                field.state.meta
-                                                                    .errors
-                                                            }
-                                                        />
-                                                    )}
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                                 </Field>
                                             );
                                         }}
@@ -178,43 +132,22 @@ export function SignUpForm() {
                                     <form.Field
                                         name="email"
                                         children={(field) => {
-                                            const isInvalid =
-                                                field.state.meta.isTouched &&
-                                                !field.state.meta.isValid;
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                             return (
                                                 <Field data-invalid={isInvalid}>
-                                                    <FieldLabel
-                                                        htmlFor={field.name}
-                                                    >
-                                                        Email
-                                                    </FieldLabel>
+                                                    <FieldLabel htmlFor={field.name}>Email</FieldLabel>
                                                     <Input
                                                         type="email"
                                                         placeholder="e.g. test@gmail.com"
                                                         id={field.name}
                                                         name={field.name}
-                                                        value={
-                                                            field.state.value
-                                                        }
-                                                        onBlur={
-                                                            field.handleBlur
-                                                        }
-                                                        onChange={(e) =>
-                                                            field.handleChange(
-                                                                e.target.value,
-                                                            )
-                                                        }
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
                                                         aria-invalid={isInvalid}
                                                         autoComplete="off"
                                                     />
-                                                    {isInvalid && (
-                                                        <FieldError
-                                                            errors={
-                                                                field.state.meta
-                                                                    .errors
-                                                            }
-                                                        />
-                                                    )}
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                                 </Field>
                                             );
                                         }}
@@ -222,43 +155,22 @@ export function SignUpForm() {
                                     <form.Field
                                         name="password"
                                         children={(field) => {
-                                            const isInvalid =
-                                                field.state.meta.isTouched &&
-                                                !field.state.meta.isValid;
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                             return (
                                                 <Field data-invalid={isInvalid}>
-                                                    <FieldLabel
-                                                        htmlFor={field.name}
-                                                    >
-                                                        Password
-                                                    </FieldLabel>
+                                                    <FieldLabel htmlFor={field.name}>Password</FieldLabel>
                                                     <Input
                                                         type="password"
                                                         placeholder="*********"
                                                         id={field.name}
                                                         name={field.name}
-                                                        value={
-                                                            field.state.value
-                                                        }
-                                                        onBlur={
-                                                            field.handleBlur
-                                                        }
-                                                        onChange={(e) =>
-                                                            field.handleChange(
-                                                                e.target.value,
-                                                            )
-                                                        }
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
                                                         aria-invalid={isInvalid}
                                                         autoComplete="off"
                                                     />
-                                                    {isInvalid && (
-                                                        <FieldError
-                                                            errors={
-                                                                field.state.meta
-                                                                    .errors
-                                                            }
-                                                        />
-                                                    )}
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                                 </Field>
                                             );
                                         }}
@@ -266,43 +178,22 @@ export function SignUpForm() {
                                     <form.Field
                                         name="confirmPassword"
                                         children={(field) => {
-                                            const isInvalid =
-                                                field.state.meta.isTouched &&
-                                                !field.state.meta.isValid;
+                                            const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
                                             return (
                                                 <Field data-invalid={isInvalid}>
-                                                    <FieldLabel
-                                                        htmlFor={field.name}
-                                                    >
-                                                        Confirm Password
-                                                    </FieldLabel>
+                                                    <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
                                                     <Input
                                                         type="password"
                                                         placeholder="*********"
                                                         id={field.name}
                                                         name={field.name}
-                                                        value={
-                                                            field.state.value
-                                                        }
-                                                        onBlur={
-                                                            field.handleBlur
-                                                        }
-                                                        onChange={(e) =>
-                                                            field.handleChange(
-                                                                e.target.value,
-                                                            )
-                                                        }
+                                                        value={field.state.value}
+                                                        onBlur={field.handleBlur}
+                                                        onChange={(e) => field.handleChange(e.target.value)}
                                                         aria-invalid={isInvalid}
                                                         autoComplete="off"
                                                     />
-                                                    {isInvalid && (
-                                                        <FieldError
-                                                            errors={
-                                                                field.state.meta
-                                                                    .errors
-                                                            }
-                                                        />
-                                                    )}
+                                                    {isInvalid && <FieldError errors={field.state.meta.errors} />}
                                                 </Field>
                                             );
                                         }}
@@ -314,10 +205,7 @@ export function SignUpForm() {
                             </div>
                             <div className="text-center text-sm">
                                 Already have an account?{" "}
-                                <Link
-                                    href="/login"
-                                    className="underline underline-offset-4"
-                                >
+                                <Link href="/login" className="underline underline-offset-4">
                                     Login
                                 </Link>
                             </div>

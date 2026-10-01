@@ -71,28 +71,28 @@ export const OrdersByStatus = ({ data }: OrdersByStatusProps) => {
         {
             icon: PackagePlusIcon,
             label: "Paid/Processing",
-            percentage: data.percentageProcessing,
+            percentage: data.percentageProcessing || 0,
             change: data.changeProcessing,
             color: "text-amber-500",
         },
         {
             icon: TruckIcon,
             label: "Shipped",
-            percentage: data.percentageShipped,
+            percentage: data.percentageShipped || 0,
             change: data.changeShipped,
             color: "text-blue-500",
         },
         {
             icon: CircleCheckIcon,
             label: "Delivered",
-            percentage: data.percentageDelivered,
+            percentage: data.percentageDelivered || 0,
             change: data.changeDelivered,
             color: "text-green-500",
         },
         {
             icon: BanIcon,
             label: "Cancel/Refund",
-            percentage: data.percentageClosed,
+            percentage: data.percentageClosed || 0,
             change: data.changeClosed,
             color: "text-red-500",
         },
@@ -132,7 +132,7 @@ export const OrdersByStatus = ({ data }: OrdersByStatusProps) => {
                                         </Badge>
                                     ) : (
                                         <Badge variant="outline" className="text-rose-500">
-                                            -{Math.abs(item.change)}
+                                            -{Math.abs(item.change)}%
                                         </Badge>
                                     )}
                                 </div>

@@ -1,3 +1,4 @@
+import { type ORPCErrorCode } from "@orpc/client";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
@@ -60,7 +61,7 @@ export function generateRandomCode(length = 8) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getErrorCode(error: any) {
-    return error?.code || error?.data?.code;
+    return (error?.code || error?.data?.code) as ORPCErrorCode;
 }
 
 export function safeRedirect(url: string | null) {

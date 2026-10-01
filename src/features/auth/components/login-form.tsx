@@ -33,6 +33,7 @@ export function LoginForm() {
         },
         validators: {
             onSubmit: loginSchema,
+            onChange: loginSchema,
         },
         onSubmit: async ({ value }) => {
             await authClient.signIn.email(
