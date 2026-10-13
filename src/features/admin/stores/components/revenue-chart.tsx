@@ -30,11 +30,11 @@ interface RevenueChartProps {
 const chartConfig = {
     grossSales: {
         label: "Gross sales",
-        color: "#18181B",
+        color: "var(--primary)",
     },
     priorYearSales: {
         label: "Prior year",
-        color: "#B7B6B7",
+        color: "var(--secondary)",
     },
 } satisfies ChartConfig;
 
@@ -44,10 +44,8 @@ export function RevenueChartSkeleton() {
             <CardHeader>
                 <CardTitle>
                     <div className="flex items-center justify-between gap-3">
-                        {/* Skeleton cho tổng số tiền doanh thu (Text lớn bên trái) */}
                         <Skeleton className="h-8 w-36" />
 
-                        {/* Giữ nguyên cụm Legend (Gross sales / Prior year) tĩnh để định hình UI */}
                         <div className="flex items-center gap-x-3">
                             <div className="flex items-center gap-x-2">
                                 <div className="h-3 w-3 border rounded-full bg-zinc-950/20" />
@@ -76,13 +74,9 @@ export function RevenueChartSkeleton() {
             </CardHeader>
 
             <CardContent>
-                {/* Giả lập khung ChartContainer gốc với chiều cao min-h-87.5 */}
                 <div className="min-h-87.5 w-full flex flex-col justify-end pt-6">
-                    {/* Khu vực giả lập các cột biểu đồ (Bars) */}
                     <div className="flex items-end justify-between gap-4 px-2 h-48 w-full border-b border-zinc-100">
-                        {/* Loop tạo 6 cụm cột đại diện cho 6 tháng (Mỗi cụm có 2 cột: hiện tại và năm trước) */}
                         {Array.from({ length: 6 }).map((_, i) => {
-                            // Tạo độ cao ngẫu nhiên một chút cho tự nhiên, hoặc fix cứng tùy bạn
                             const heights = [
                                 { current: "h-[60%]", prior: "h-[45%]" },
                                 { current: "h-[85%]", prior: "h-[70%]" },
@@ -94,16 +88,13 @@ export function RevenueChartSkeleton() {
 
                             return (
                                 <div key={i} className="flex items-end gap-2 flex-1 justify-center max-w-[60px]">
-                                    {/* Cột đại diện Gross Sales (Màu đậm hơn chút) */}
                                     <Skeleton className={`w-4 ${heights[i].current} rounded-t-[4px] bg-neutral-200`} />
-                                    {/* Cột đại diện Prior Year (Màu nhạt hơn) */}
                                     <Skeleton className={`w-4 ${heights[i].prior} rounded-t-[4px] bg-neutral-100`} />
                                 </div>
                             );
                         })}
                     </div>
 
-                    {/* Giả lập XAxis (Dòng chữ tháng dưới chân biểu đồ) */}
                     <div className="flex justify-between gap-4 px-2 pt-3">
                         {Array.from({ length: 6 }).map((_, i) => (
                             <div key={i} className="flex justify-center flex-1 max-w-[60px]">
@@ -132,11 +123,11 @@ export const RevenueChart = ({ chartData, timePeriod, setTimePeriod }: RevenueCh
                         <h2 className="text-2xl font-semibold tracking-tight text-gray-900">{formatPriceDashboard(grosSalesInTimePeriod)}</h2>
                         <div className="flex items-center gap-x-3">
                             <div className="flex items-center gap-x-2">
-                                <div className="h-3 w-3 border rounded-full bg-zinc-900" />
+                                <div className="h-3 w-3 border rounded-full bg-primary" />
                                 <span className="text-sm text-muted-foreground">Gross sales</span>
                             </div>
                             <div className="flex items-center gap-x-2">
-                                <div className="h-3 w-3 border rounded-full bg-zinc-400" />
+                                <div className="h-3 w-3 border rounded-full bg-secondary" />
                                 <span className="text-sm text-muted-foreground">Prior year</span>
                             </div>
                         </div>

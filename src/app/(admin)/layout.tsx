@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
 import { ModalsProvider } from "@/providers/modals-provider";
-import { Inter } from "next/font/google";
+import { Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { cn } from "@/lib/utils";
 
 interface LayoutProps {
     children: React.ReactNode;
 }
 
-const inter = Inter({ subsets: ["latin"] });
+const fontSans = Geist_Mono({
+    subsets: ["latin"],
+    variable: "--font-sans",
+});
+
+const fontMono = JetBrains_Mono({
+    subsets: ["latin"],
+    variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
     title: "E-commerce admin",
@@ -15,7 +24,7 @@ export const metadata: Metadata = {
 
 const Layout = ({ children }: LayoutProps) => {
     return (
-        <div className={`${inter.className}`}>
+        <div className={cn(fontSans.variable, fontMono.variable)}>
             <ModalsProvider />
             {children}
         </div>

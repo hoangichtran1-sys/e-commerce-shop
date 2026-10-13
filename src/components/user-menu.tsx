@@ -1,9 +1,21 @@
 "use client";
 
 import { useMountedState } from "react-use";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useTheme } from "next-themes";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuPortal,
+    DropdownMenuSubContent,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "./ui/button";
 import { authClient } from "@/lib/auth-client";
-import { ImageUpIcon, LockIcon, LogOutIcon, PackageCheckIcon } from "lucide-react";
+import { ImageUpIcon, LockIcon, LogOutIcon, Moon, PackageCheckIcon, Sun } from "lucide-react";
 import { CgProfile } from "react-icons/cg";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -13,6 +25,7 @@ import { useStoreSlug } from "@/features/customer/hooks/use-store-slug";
 import { Skeleton } from "./ui/skeleton";
 
 export const UserMenu = () => {
+    const { setTheme } = useTheme();
     const isMounted = useMountedState();
     const router = useRouter();
     const storeSlug = useStoreSlug();
@@ -78,6 +91,22 @@ export const UserMenu = () => {
                         My profile
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuSub>
+                        <DropdownMenuSubTrigger asChild>
+                            <Button variant="outline" size="icon">
+                                <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+                                <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+                                <span>Toggle theme</span>
+                            </Button>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                            <DropdownMenuSubContent align="end">
+                                <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                    </DropdownMenuSub>
                     <DropdownMenuItem className="mt-4" onClick={onLogout}>
                         <LogOutIcon className="size-5" />
                         Logout

@@ -1,19 +1,11 @@
-import type { Metadata } from "next";
 import { ORPCQueryProvider } from "@/orpc/orpc-rq.client";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/providers/theme-provider";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Inter } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next";
 
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-    title: "E-commerce",
-    description: "E-commerce",
-};
 
 export default function RootLayout({
     children,
@@ -21,11 +13,13 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" className={`${inter.className} h-full antialiased`}>
+        <html lang="en" suppressHydrationWarning className="h-full antialiased">
             <body className="min-h-full flex flex-col">
                 <ORPCQueryProvider>
                     <NuqsAdapter>
-                        <TooltipProvider>{children}</TooltipProvider>
+                        <ThemeProvider storageKey="ecommerce-theme" attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+                            <TooltipProvider>{children}</TooltipProvider>
+                        </ThemeProvider>
                         <Toaster />
                         <ReactQueryDevtools initialIsOpen={false} />
                     </NuqsAdapter>

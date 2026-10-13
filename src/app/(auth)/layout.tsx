@@ -1,8 +1,17 @@
 import { AuthLayout } from "@/features/auth/components/auth-layout";
+import { cn } from "@/lib/utils";
 import { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist_Mono, JetBrains_Mono } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
+const fontSans = Geist_Mono({
+    subsets: ["latin"],
+    variable: "--font-sans",
+});
+
+const fontMono = JetBrains_Mono({
+    subsets: ["latin"],
+    variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
     title: "E-commerce auth",
@@ -10,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
-    return <AuthLayout className={inter.className}>{children}</AuthLayout>;
+    return <AuthLayout className={cn(fontSans.variable, fontMono.variable)}>{children}</AuthLayout>;
 };
 
 export default Layout;

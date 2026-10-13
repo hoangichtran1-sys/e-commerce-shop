@@ -1,12 +1,24 @@
 import { ConfettiProvider } from "@/providers/confetti-provider";
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Montserrat, Noto_Serif_Georgian, Fira_Code } from "next/font/google";
 
 interface LayoutProps {
     children: React.ReactNode;
 }
+const fontSans = Montserrat({
+    subsets: ["latin"],
+    variable: "--font-sans",
+});
 
-const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-plus-jakarta" });
+const fontSerif = Noto_Serif_Georgian({
+    subsets: ["latin"],
+    variable: "--font-serif",
+});
+
+const fontMono = Fira_Code({
+    subsets: ["latin"],
+    variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
     title: "E-commerce store",
@@ -15,7 +27,7 @@ export const metadata: Metadata = {
 
 const Layout = ({ children }: LayoutProps) => {
     return (
-        <div className={`${plusJakartaSans.variable}`}>
+        <div className={`theme-store ${fontSans.variable} ${fontSerif.variable} ${fontMono.variable}`}>
             <ConfettiProvider />
             {children}
         </div>

@@ -15,7 +15,7 @@ interface SalesCategoryProps {
 
 const TOP_COUNT = 4;
 
-const colorOptions = ["bg-zinc-900", "bg-zinc-600", "bg-zinc-500", "bg-zinc-400"];
+const colorOptions = ["bg-amber-900", "bg-amber-600", "bg-amber-500", "bg-amber-400"];
 
 export function SalesCategorySkeleton() {
     return (
@@ -132,7 +132,7 @@ export const SalesCategory = ({ categories, selectCategory, onSelectCategory, ca
             revenue: totalOthersRevenue,
             orderItems: totalOthersOrderItems,
             change: 0,
-            color: "bg-zinc-300",
+            color: "bg-amber-300",
         });
     }
 

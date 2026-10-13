@@ -30,7 +30,7 @@ export const RevenueTooltip = ({ active, payload, label }: RevenueTooltipProps) 
             <div className="space-y-2">
                 <div className="flex items-center justify-between gap-6">
                     <div className="flex items-center gap-2">
-                        <div className="size-3 rounded-full bg-zinc-900" />
+                        <div className="size-3 rounded-full bg-primary" />
                         <span className="text-muted-foreground">Gross sales:</span>
                     </div>
 
@@ -39,7 +39,7 @@ export const RevenueTooltip = ({ active, payload, label }: RevenueTooltipProps) 
 
                 <div className="flex items-center justify-between gap-6">
                     <div className="flex items-center gap-2">
-                        <div className="size-3 rounded-full bg-zinc-400" />
+                        <div className="size-3 rounded-full bg-secondary" />
                         <span className="text-muted-foreground">Prior year:</span>
                     </div>
 
