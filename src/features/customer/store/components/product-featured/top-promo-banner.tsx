@@ -1,7 +1,7 @@
 "use client";
 
 import { GetPromotionCampaigns } from "@/features/customer/types";
-import { format } from "date-fns";
+import { format, isAfter } from "date-fns";
 import Link from "next/link";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,10 @@ export const TopPromoBanner = ({ data, storeSlug }: TopPromoBannerProps) => {
             url: `/${storeSlug}/categories/${item.categories[0].slug}`,
         }));
     }, [data, storeSlug]);
+
+    const isNotPromotion = data.every((item) => isAfter(new Date(), item.endAt));
+
+    if (isNotPromotion) return null;
 
     return (
         <div className="fixed top-0 left-0 z-50 w-full bg-zinc-900 py-2 text-sm font-bold text-white overflow-hidden hover:[&_div]:paused select-none shadow-md">
