@@ -14,7 +14,7 @@ const Page = async () => {
     return (
         <HydrateClient>
             <Suspense fallback={<TableSkeleton cols={6} isSelect={true} />}>
-                <ErrorBoundary fallback={<ErrorView message="Error!" />}>
+                <ErrorBoundary fallback={<ErrorView message="Failed to fetch data" />}>
                     <div className="flex-col">
                         <div className="flex-1 space-y-4 p-8 pt-6">
                             <UploadView />

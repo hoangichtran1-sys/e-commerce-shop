@@ -17,10 +17,11 @@ import {
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { SearchIcon, TrashIcon, XIcon } from "lucide-react";
+import { InboxIcon, SearchIcon, TrashIcon, XIcon } from "lucide-react";
 import { DataTableFacetedFilter, FilterOption } from "./data-table-faceted-filter";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
 import { DataTableViewOptions } from "./data-table-view-options";
+import { NoResults } from "./no-results";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -147,7 +148,7 @@ export function DataTable<TData, TValue>({
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No results.
+                                    <NoResults topic="results" icon={InboxIcon} isAdmin display={false} />
                                 </TableCell>
                             </TableRow>
                         )}

@@ -30,7 +30,7 @@ const Page = async ({ searchParams }: PageProps) => {
     return (
         <>
             <HydrateClient>
-                <ErrorBoundary fallback={<ErrorView message="Error!" />}>
+                <ErrorBoundary fallback={<ErrorView message="Failed to fetch data" />}>
                     <StorePicker />
                 </ErrorBoundary>
             </HydrateClient>

@@ -26,7 +26,7 @@ const Page = async ({ params }: PageProps) => {
     return (
         <HydrateClient>
             <Suspense fallback={<FormSkeleton />}>
-                <ErrorBoundary fallback={<ErrorView message="Error!" />}>
+                <ErrorBoundary fallback={<ErrorView message="Failed to fetch data" />}>
                     <div className="flex-col">
                         <div className="flex-1 space-y-4 p-8 pt-6">
                             <AttributeForm storeId={storeId} attributeId={attributeId} />

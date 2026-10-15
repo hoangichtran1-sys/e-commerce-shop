@@ -9,9 +9,10 @@ interface NoResultsProps {
     icon?: LucideIcon;
     topic?: string;
     isAdmin?: boolean;
+    display?: boolean;
 }
 
-export const NoResults = ({ icon: Icon = InboxIcon, topic = "items", isAdmin = false }: NoResultsProps) => {
+export const NoResults = ({ icon: Icon = InboxIcon, topic = "items", isAdmin = false, display = true }: NoResultsProps) => {
     const router = useRouter();
 
     return (
@@ -31,7 +32,7 @@ export const NoResults = ({ icon: Icon = InboxIcon, topic = "items", isAdmin = f
                         <RefreshCcwIcon />
                         Refresh
                     </Button>
-                    {isAdmin && (
+                    {isAdmin && display && (
                         <Button type="button" onClick={() => router.push("/admin")} variant="secondary">
                             <PlusIcon />
                             Add {topic}

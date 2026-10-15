@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardAction, CardDescription } from "@/components/ui/card";
-import { GetOrdersByStatus } from "../type";
+import { GetOrdersByStatus } from "../types";
 import { BanIcon, ChevronRightIcon, CircleCheckIcon, PackageIcon, PackagePlusIcon, TruckIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";

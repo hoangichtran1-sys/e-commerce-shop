@@ -1,34 +1,30 @@
 import { ErrorView } from "@/components/error-view";
 import { LIMIT_ORDERS } from "@/constants";
+import { loaderStoreFilters } from "@/features/admin/stores/params";
 import { StoreView } from "@/features/admin/stores/views/store-view";
 import { client } from "@/lib/orpc";
 import { HydrateClient, orpc, prefetch } from "@/orpc/orpc-rq.server";
+import { SearchParams } from "nuqs/server";
 import { ErrorBoundary } from "react-error-boundary";
 
 interface PageProps {
     params: Promise<{
         storeId: string;
     }>;
+    filterParams: Promise<SearchParams>;
 }
 
-const Page = async ({ params }: PageProps) => {
+const Page = async ({ params, filterParams }: PageProps) => {
     const { storeId } = await params;
+    const storeFilters = await loaderStoreFilters(filterParams);
 
     const categoriesParent = await client.categories.getManyParent({ storeId });
 
     await prefetch(orpc.stores.getOverviewCards.queryOptions({ input: { storeId } }));
 
-    // TODO: use nuqs params
-    await prefetch(orpc.stores.getRevenueChart.queryOptions({ input: { storeId, timePeriod: "6_MONTH" } }));
+    await prefetch(orpc.stores.getRevenueChart.queryOptions({ input: { storeId, timePeriod: storeFilters.timePeriod } }));
 
-    await prefetch(
-        orpc.categories.getManyParent.queryOptions({
-            input: { storeId },
-        }),
-    );
-
-    // TODO: use nuqs params
-    await prefetch(orpc.stores.getSalesByCategory.queryOptions({ input: { storeId, categoryId: categoriesParent[0].id } }));
+    await prefetch(orpc.stores.getSalesByCategory.queryOptions({ input: { storeId, categoryId: storeFilters.categoryParent } }));
 
     await prefetch(orpc.stores.getOrderByStatus.queryOptions({ input: { storeId } }));
 
@@ -40,8 +36,8 @@ const Page = async ({ params }: PageProps) => {
 
     return (
         <HydrateClient>
-            <ErrorBoundary fallback={<ErrorView message="Error!" />}>
-                <StoreView storeId={storeId} />
+            <ErrorBoundary fallback={<ErrorView message="Failed to fetch data" />}>
+                <StoreView storeId={storeId} categoriesParent={categoriesParent} />
             </ErrorBoundary>
         </HydrateClient>
     );

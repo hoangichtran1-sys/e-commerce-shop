@@ -28,7 +28,7 @@ const Page = async ({ params, paginationParams }: PageProps) => {
     return (
         <HydrateClient>
             <Suspense fallback={<OrdersHistorySkeleton />}>
-                <ErrorBoundary fallback={<ErrorView message="Error!" />}>
+                <ErrorBoundary fallback={<ErrorView message="Failed to fetch data" />}>
                     <OrdersHistory storeId={store.id} />
                 </ErrorBoundary>
             </Suspense>

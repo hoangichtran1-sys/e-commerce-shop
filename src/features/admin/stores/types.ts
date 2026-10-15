@@ -6,3 +6,4 @@ export type GetSalesByCategory = Outputs["stores"]["getSalesByCategory"];
 export type GetOrdersByStatus = Outputs["stores"]["getOrderByStatus"];
 export type GetTopSellingProducts = Outputs["stores"]["getTopSellingProducts"];
 export type GetProductsLowStock = Outputs["stores"]["getProductsLowStock"];
+export type GetCategoryParent = Outputs["categories"]["getManyParent"];

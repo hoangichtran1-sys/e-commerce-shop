@@ -605,10 +605,13 @@ export const storesRouter = base.router({
         .input(
             z.object({
                 storeId: z.string().min(1),
-                categoryId: z.string().min(1),
+                categoryId: z.string().min(1).nullable(),
             }),
         )
         .handler(async ({ input }) => {
+            if (!input.categoryId) {
+                return [];
+            }
             const now = new Date();
 
             const currentStart = startOfMonth(now);
@@ -633,7 +636,7 @@ export const storesRouter = base.router({
             });
 
             if (!category) {
-                throw new ORPCError("NOT_FOUND");
+                return [];
             }
 
             const subcategoryIds = category.children.map((sub) => sub.id);

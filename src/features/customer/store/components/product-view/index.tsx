@@ -442,7 +442,7 @@ export const ProductView = ({ storeId, storeSlug, shippingFee, currentUser, prod
                             </CardContent>
                         </Card>
                         <Suspense fallback={<ReviewsSkeleton />}>
-                            <ErrorBoundary fallback={<ErrorView message="Error!" />}>
+                            <ErrorBoundary fallback={<ErrorView message="Failed to fetch data" />}>
                                 <ReviewSection storeId={storeId} productId={product.id} currentUser={currentUser} />
                             </ErrorBoundary>
                         </Suspense>

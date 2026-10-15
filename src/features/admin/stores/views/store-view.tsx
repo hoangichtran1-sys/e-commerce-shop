@@ -7,43 +7,42 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { InfoCard, InfoCardSkeleton } from "../components/info-card";
 import { BanknoteIcon, DollarSignIcon, HandCoinsIcon, ShoppingBagIcon, UsersIcon } from "lucide-react";
 import { calculatePercentageChange } from "@/lib/utils";
-import { RevenueChart, RevenueChartSkeleton, TimePeriod } from "../components/revenue-chart";
-import { useState, Suspense } from "react";
+import { RevenueChart, RevenueChartSkeleton } from "../components/revenue-chart";
+import { Suspense } from "react";
 import { SalesCategory, SalesCategorySkeleton } from "../components/sales-category";
 import { BestSellingProduct, BestSellingProductsSkeleton } from "../components/best-selling-product";
 import { ProductLowStock, ProductLowStockSkeleton } from "../components/product-low-stock";
 import { OrdersByStatus, OrdersByStatusSkeleton } from "../components/orders-by-status";
 import { LIMIT_ORDERS } from "@/constants";
 import { RecentOrders, RecentOrdersSkeleton } from "../components/recent-orders";
+import { GetCategoryParent } from "../types";
+import { useStoreFilters } from "../hooks/use-store-filters";
 
 interface StoreViewProp {
     storeId: string;
+    categoriesParent: GetCategoryParent;
 }
 
-export const StoreView = ({ storeId }: StoreViewProp) => {
-    const [timePeriod, setTimePeriod] = useState<TimePeriod>("6_MONTH");
+export const StoreView = ({ storeId, categoriesParent }: StoreViewProp) => {
+    const [storeFilters, setStoreFilters] = useStoreFilters();
 
     const { data: overviewData } = useSuspenseQuery(orpc.stores.getOverviewCards.queryOptions({ input: { storeId } }));
     const { data: chartData } = useSuspenseQuery(
         orpc.stores.getRevenueChart.queryOptions({
             input: {
                 storeId,
-                timePeriod,
+                timePeriod: storeFilters.timePeriod,
             },
         }),
     );
 
-    const { data: categories } = useSuspenseQuery(orpc.categories.getManyParent.queryOptions({ input: { storeId } }));
-
-    const categoriesFormatted = categories.map((category) => ({
+    const categoriesFormatted = categoriesParent.map((category) => ({
         label: category.name,
         value: category.id,
     }));
 
-    const [selectCategory, setSelectCategory] = useState(categoriesFormatted[0].value);
-
     const { data: categoriesSalesData } = useSuspenseQuery(
-        orpc.stores.getSalesByCategory.queryOptions({ input: { storeId, categoryId: selectCategory } }),
+        orpc.stores.getSalesByCategory.queryOptions({ input: { storeId, categoryId: storeFilters.categoryParent } }),
     );
     const { data: topSellingProductsData } = useSuspenseQuery(orpc.stores.getTopSellingProducts.queryOptions({ input: { storeId } }));
     const { data: productsLowStockData } = useSuspenseQuery(orpc.stores.getProductsLowStock.queryOptions({ input: { storeId } }));
@@ -119,14 +118,24 @@ export const StoreView = ({ storeId }: StoreViewProp) => {
                     </Suspense>
                     <div className="lg:col-span-6 col-span-10 max-w-full">
                         <Suspense fallback={<RevenueChartSkeleton />}>
-                            <RevenueChart chartData={chartData} timePeriod={timePeriod} setTimePeriod={setTimePeriod} />
+                            <RevenueChart
+                                chartData={chartData}
+                                timePeriod={storeFilters.timePeriod}
+                                setTimePeriod={(timePeriod) => {
+                                    setStoreFilters({ timePeriod });
+                                }}
+                            />
                         </Suspense>
                     </div>
                     <div className="lg:col-span-4 col-span-10 max-w-full">
                         <Suspense fallback={<SalesCategorySkeleton />}>
                             <SalesCategory
-                                selectCategory={selectCategory}
-                                onSelectCategory={setSelectCategory}
+                                selectCategory={
+                                    storeFilters.categoryParent || (categoriesFormatted.length > 0 ? categoriesFormatted[0].value : undefined)
+                                }
+                                onSelectCategory={(value) => {
+                                    setStoreFilters({ categoryParent: value });
+                                }}
                                 categories={categoriesFormatted}
                                 categoriesSalesData={categoriesSalesData}
                             />

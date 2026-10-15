@@ -33,7 +33,7 @@ const Page = async ({ params, paginationParams }: PageProps) => {
             </div>
             <HydrateClient>
                 <Suspense fallback={<ProductFeaturedSkeleton />}>
-                    <ErrorBoundary fallback={<ErrorView message="Error!" />}>
+                    <ErrorBoundary fallback={<ErrorView message="Failed to fetch data" />}>
                         <div className="flex flex-col gap-y-8 px-4 sm:px-6 lg:px-8">
                             <ProductFeatured storeId={store.id} title="Featured Products" />
                         </div>

@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
-import { ArrowDownRightIcon, ArrowUpRightIcon, LayoutGridIcon } from "lucide-react";
+import { ArrowDownRightIcon, ArrowUpRightIcon, BarChart3Icon, LayoutGridIcon } from "lucide-react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, SelectLabel } from "@/components/ui/select";
-import { GetSalesByCategory } from "../type";
+import { GetSalesByCategory } from "../types";
 import { cn, formatNumber } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NoResults } from "@/components/no-results";
 
 interface SalesCategoryProps {
     categories: { label: string; value: string }[];
-    selectCategory: string;
+    selectCategory: string | undefined;
     onSelectCategory: (value: string) => void;
     categoriesSalesData: GetSalesByCategory;
 }
@@ -150,9 +151,9 @@ export const SalesCategory = ({ categories, selectCategory, onSelectCategory, ca
                 <CardAction>
                     <Select value={selectCategory} onValueChange={onSelectCategory}>
                         <SelectTrigger className="min-w-36">
-                            <SelectValue />
+                            <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent position="item-aligned">
+                        <SelectContent position="popper">
                             <SelectGroup>
                                 <SelectLabel>Category</SelectLabel>
                                 {categories.map((item) => (
@@ -172,6 +173,7 @@ export const SalesCategory = ({ categories, selectCategory, onSelectCategory, ca
                         <span className="text-sm font-light text-gray-700">MTD gross sales</span>
                     </div>
                 </div>
+                {categories.length === 0 && <NoResults topic="category" icon={BarChart3Icon} isAdmin display={false} />}
                 <div className="w-full h-3 rounded-full overflow-hidden flex gap-0.5 bg-gray-100 mt-2">
                     {topCategories.map((item) => {
                         const percentage = (item.revenue / totalRevenue) * 100;

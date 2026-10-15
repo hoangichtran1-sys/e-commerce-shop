@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardAction, CardDescription } from "@/components/ui/card";
-import { ChevronRightIcon } from "lucide-react";
+import { BoxIcon, ChevronRightIcon } from "lucide-react";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
-import { GetProductsLowStock } from "../type";
+import { GetProductsLowStock } from "../types";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Hint } from "@/components/hint";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NoResults } from "@/components/no-results";
 
 interface ProductLowStockProps {
     data: GetProductsLowStock;
@@ -75,6 +76,7 @@ export const ProductLowStock = ({ data }: ProductLowStockProps) => {
             </CardHeader>
             <CardContent>
                 <ItemGroup className="gap-4">
+                    {data.length === 0 && <NoResults topic="product" icon={BoxIcon} isAdmin display={false} />}
                     {data.map((item) => {
                         const combination = Object.entries(item.combination)
                             .map(([k, v]) => `${k}: ${v}`)

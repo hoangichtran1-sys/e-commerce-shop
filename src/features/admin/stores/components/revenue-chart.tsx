@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
-import { GetRevenueChart } from "../type";
+import { GetRevenueChart } from "../types";
 import {
     DropdownMenu,
     DropdownMenuContent,

@@ -133,7 +133,7 @@ export const CategoryView = ({ storeId, category, categoryId }: CategoryViewProp
                                 <div className="flex flex-col gap-y-4">
                                     {category.promotions.length > 0 && <CategoryBanner promotion={category.promotions[0]} />}
                                     <Suspense fallback={<ProductListSkeleton />}>
-                                        <ErrorBoundary fallback={<ErrorView message="Error!" />}>
+                                        <ErrorBoundary fallback={<ErrorView message="Failed to fetch data" />}>
                                             <ProductList data={data.items} />
                                         </ErrorBoundary>
                                     </Suspense>

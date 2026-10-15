@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardAction, CardDescription } from "@/components/ui/card";
-import { ChevronRightIcon } from "lucide-react";
+import { BoxIcon, ChevronRightIcon } from "lucide-react";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
-import { GetTopSellingProducts } from "../type";
+import { GetTopSellingProducts } from "../types";
 import Image from "next/image";
 import { formatPriceDashboard } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NoResults } from "@/components/no-results";
 
 interface BestSellingProductProps {
     data: GetTopSellingProducts;
@@ -74,6 +75,7 @@ export const BestSellingProduct = ({ data }: BestSellingProductProps) => {
             </CardHeader>
             <CardContent>
                 <ItemGroup className="gap-4">
+                    {data.length === 0 && <NoResults topic="product" icon={BoxIcon} isAdmin display={false} />}
                     {data.map((item) => {
                         const combination = Object.entries(item.combination)
                             .map(([k, v]) => `${k}: ${v}`)
