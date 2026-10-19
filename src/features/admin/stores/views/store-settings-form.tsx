@@ -20,6 +20,7 @@ import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 import { Hint } from "@/components/hint";
 import { ImageUploadBillboard } from "@/components/image-upload-billboard";
+// import { getDirtyValues } from "@/lib/utils";
 
 interface StoreSettingsFormProps {
     storeId: string;
@@ -89,9 +90,7 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
         onSubmit: async ({ value }) => {
             edit.mutate({
                 id: storeId,
-                name: value.name,
-                description: value.description,
-                thumbnailUrl: value.thumbnailUrl,
+                ...value,
             });
         },
     });
@@ -280,7 +279,10 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
                 <form.Subscribe
                     selector={(state) => [state.values]}
                     children={([values]) => {
-                        const hasChanged = values.name !== initialData.name || values.description !== initialData.description || values.thumbnailUrl !== initialData.thumbnail;
+                        const hasChanged =
+                            values.name !== initialData.name ||
+                            values.description !== initialData.description ||
+                            values.thumbnailUrl !== initialData.thumbnail;
 
                         return (
                             <Button disabled={!hasChanged || edit.isPending || remove.isPending} type="submit" className="ml-auto">
@@ -290,6 +292,6 @@ export const StoreSettingsForm = ({ storeId }: StoreSettingsFormProps) => {
                     }}
                 />
             </form>
-       </>
+        </>
     );
 };

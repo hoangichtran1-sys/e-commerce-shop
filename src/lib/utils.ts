@@ -205,3 +205,16 @@ export function formatPriceDashboard(amount: number, currency: string = "USD") {
 export const bytesToKB = (bytes: number) => {
     return (bytes / 1024).toFixed(2); // Rounds to 2 decimal places
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getDirtyValues<T extends Record<string, any>>(currentValues: T, defaultValues: T): Partial<T> {
+    const dirtyValues: Partial<T> = {};
+
+    for (const key in currentValues) {
+        if (currentValues[key] !== defaultValues[key]) {
+            dirtyValues[key] = currentValues[key];
+        }
+    }
+
+    return dirtyValues;
+}

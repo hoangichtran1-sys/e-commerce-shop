@@ -6,7 +6,7 @@ import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 import cloudinary from "@/lib/cloudinary";
 import { createProductWithVariantsSchema, updateProductWithVariantsSchema, variantItemSchema } from "../schemas";
 import { Prisma } from "@/generated/prisma/client";
-import { checkDuplicate, generateSearchable, getMinPrice } from "@/lib/utils";
+import { checkDuplicate, generateSearchable, getMinPrice, getMaxPrice } from "@/lib/utils";
 import { startOfMonth, subMonths } from "date-fns";
 import { GROWTH_RATE, MONTH_QUANTITY } from "@/constants";
 
@@ -84,7 +84,7 @@ export const productsRouter = base.router({
 
         const searchableAttrs = generateSearchable(variants);
         const minPrice = getMinPrice(variants);
-        const maxPrice = getMinPrice(variants);
+        const maxPrice = getMaxPrice(variants);
 
         return await prisma.$transaction(async (tx) => {
             const productCreated = await tx.product.create({
@@ -150,7 +150,7 @@ export const productsRouter = base.router({
 
         const searchableAttrs = generateSearchable(variants);
         const minPrice = getMinPrice(variants);
-        const maxPrice = getMinPrice(variants);
+        const maxPrice = getMaxPrice(variants);
 
         return await prisma.$transaction(async (tx) => {
             const oldImages = await tx.productImage.findMany({
