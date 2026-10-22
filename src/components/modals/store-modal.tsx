@@ -27,6 +27,7 @@ export const StoreModal = () => {
                 window.location.assign(`/admin/${data.id}`);
             },
             onError: (error) => {
+                console.log(error);
                 toast.error(error.message);
             },
         }),

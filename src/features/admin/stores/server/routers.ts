@@ -68,6 +68,7 @@ export const storesRouter = base.router({
             }),
         )
         .handler(async ({ input, context }) => {
+            // throw new ORPCError("NOT_FOUND", { message: "Customer error" });
             const existingStore = await prisma.store.findFirst({
                 where: {
                     slug: slug(input.name),

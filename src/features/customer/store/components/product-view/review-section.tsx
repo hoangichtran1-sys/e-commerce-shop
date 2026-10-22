@@ -163,7 +163,7 @@ export const ReviewSection = ({ storeId, productId, currentUser }: ReviewSection
         if (totalReview === 0) return 0;
 
         const totalRating = reviews.reduce((curr, item) => curr + item.rating, 0);
-        return totalRating / totalReview;
+        return Number((totalRating / totalReview).toFixed(2));
     }, [reviews]);
 
     const reviewProgress = useMemo(() => {
@@ -277,7 +277,7 @@ export const ReviewSection = ({ storeId, productId, currentUser }: ReviewSection
                                                 className="h-1.5"
                                             />
                                             <span className="w-8 text-right">
-                                                {reviewsDataFormatted.length > 0 ? (pct / reviewsDataFormatted.length) * 100 : 0}%
+                                                {reviewsDataFormatted.length > 0 ? Number((pct / reviewsDataFormatted.length).toFixed(2)) * 100 : 0}%
                                             </span>
                                         </div>
                                     ))}
